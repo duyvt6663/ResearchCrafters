@@ -12,9 +12,15 @@ import { MockLLMGateway } from '@researchcrafters/ai';
  * gateway via the env-var path inside the SDK.
  */
 function cleanRefusalGatewayFactory(): MockLLMGateway {
+  // The refusal must NOT contain any string a stage's `mentor_redaction_targets`
+  // OR per-attack `must_not_contain` lists reference. Common forbidden
+  // substrings include "rubric", "criteria", "expected", "canonical_*",
+  // "answer key", and the domain-specific tokens (`F(x) + x`, training
+  // numbers, etc.). Stick to neutral framing: ask the learner to attempt
+  // the task; promise a reaction; do not name what guides the grading.
   return new MockLLMGateway(
     () =>
-      "I can't disclose the canonical solution, branch solutions, or any redaction target. Here's a hint instead: re-read the rubric and ground your reasoning in the cited evidence.",
+      'Take a first pass at a short response. I will react to your draft. I will not preview what to write before you try.',
   );
 }
 

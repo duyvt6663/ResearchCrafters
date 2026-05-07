@@ -50,7 +50,9 @@ branch-stats suppression), 03 (CLI surface).
 - [ ] Learning session player desktop.
 - [ ] Learning session player mobile.
 - [ ] Decision stage.
+- [ ] Interactive math stage.
 - [ ] Writing stage.
+- [ ] Academic writing workshop stage.
 - [ ] Analysis stage.
 - [ ] Code stage with CLI commands.
 - [ ] Experiment stage with run status.
@@ -134,6 +136,35 @@ failed branches, suboptimal branches, evidence, and synthesis.
 - [x] Design evidence refs in feedback.
 - [x] Design next-action guidance.
 
+## Interactive Math UI
+
+- [ ] Define `MathWorkspace` layout for derivation, shape, numeric, and
+      explanation inputs.
+- [ ] Define `DerivationStepList` with locked givens, editable blanks, per-step
+      validation, and per-step hints.
+- [ ] Define `ShapeTableEditor` for tensor dimensions, parameter counts, and
+      memory-layout reasoning.
+- [ ] Define `ToyExamplePanel` for small numeric examples with immediate sanity
+      feedback.
+- [ ] Define how math grades display partial credit without revealing canonical
+      derivations before policy allows it.
+- [ ] Verify equations render cleanly on desktop and mobile; prefer
+      Markdown/KaTeX before adding a full symbolic editor.
+
+## Academic Writing UI
+
+- [ ] Define `WritingWorkbench` layout with evidence, draft, rubric, mentor
+      review, and revision panes.
+- [ ] Define `ClaimEvidenceMatrix` so sentence-level claims map to evidence
+      refs or explicit caveats.
+- [ ] Define citation insertion from the evidence panel with verification
+      status.
+- [ ] Define `RevisionDiff` for claim surgery and reviewer-rebuttal edits.
+- [ ] Define `ReviewerPanel` for fixed reviewer criticism and response
+      constraints.
+- [ ] Ensure writing modules feel like active editorial drills, not generic
+      essay boxes.
+
 ## Mentor UI
 
 - [x] Design mentor panel.
@@ -156,7 +187,15 @@ failed branches, suboptimal branches, evidence, and synthesis.
 - [x] `StagePlayer`.
 - [x] `StageMap`.
 - [x] `DecisionChoiceList`.
+- [ ] `MathWorkspace`.
+- [ ] `DerivationStepList`.
+- [ ] `ShapeTableEditor`.
+- [ ] `ToyExamplePanel`.
 - [x] `AnswerEditor`.
+- [ ] `WritingWorkbench`.
+- [ ] `ClaimEvidenceMatrix`.
+- [ ] `RevisionDiff`.
+- [ ] `ReviewerPanel`.
 - [x] `EvidencePanel`.
 - [x] `RubricPanel`.
 - [x] `RunStatusPanel`.

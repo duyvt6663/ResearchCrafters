@@ -71,6 +71,14 @@ export type {
   StageMapItemStatus,
 } from "./StageMap.js";
 
+export { DecisionGraphMobile } from "./DecisionGraphMobile.js";
+export type {
+  DecisionGraphMobileProps,
+  DecisionGraphNode,
+  DecisionGraphNodeStatus,
+  DecisionGraphBranch,
+} from "./DecisionGraphMobile.js";
+
 export { GradePanel } from "./GradePanel.js";
 export type {
   GradePanelProps,

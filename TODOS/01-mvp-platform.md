@@ -11,7 +11,8 @@ reflect that snapshot.
 - [x] Create package overview page with paper, skills, prerequisites, difficulty, time, and free-stage count.
 - [x] Create learning session page.
 - [x] Show current stage, progress, unlocked graph nodes, and next action.
-- [x] Support stage types: decision, writing, analysis, review, reflection.
+- [x] Support basic stage types: decision, math, writing, analysis, review,
+      reflection.
 - [x] Support code/experiment stages by linking to CLI instructions.
 - [x] Show expert-authored branch feedback after the policy allows it.
 - [ ] Show deterministic/evaluator grade results.
@@ -55,6 +56,17 @@ reflect that snapshot.
 - [x] Execution failures should show retry guidance, not grade failure.
 - [x] Paywall should explain what unlocks, not interrupt unexpectedly.
 
+## Learning Module Depth
+
+- [ ] Support interactive math modules beyond free-text rubric answers:
+      derivation steps, shape tables, numeric checks, and misconception repair.
+- [ ] Support academic writing modules beyond a plain answer box:
+      claim surgery, evidence mapping, reviewer rebuttal, and revision diff.
+- [ ] Treat math and writing stages as first-class graded work in progress,
+      resume, mentor, share-card, and telemetry flows.
+- [ ] Ensure the flagship package includes one polished interactive math module
+      and one academic writing module before launch.
+
 ## Error and Empty States
 
 - [x] Catalog empty state and 1-2 package early state both feel intentional, not
@@ -93,6 +105,8 @@ section 11.
 - [ ] User can submit a web-only answer and receive a structured grade.
       _(stage-attempt route returns queued attempts only; grade persistence is
       still pending.)_
+- [ ] User can complete one interactive math module and one academic writing
+      module with structured feedback.
 - [ ] User can submit a code/experiment stage through CLI and see results in web.
 - [x] Access gates are enforced through one policy function across all routes.
       _(function exists; live membership/entitlement correctness is tracked in

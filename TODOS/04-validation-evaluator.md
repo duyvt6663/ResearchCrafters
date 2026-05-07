@@ -57,6 +57,11 @@ reflect that snapshot.
 - [x] Ensure every stage has progressive hints.
 - [x] Ensure every decision branch has feedback.
 - [x] Ensure restricted feedback is hidden until policy allows it.
+- [ ] Ensure math modules include at least one checkable reasoning artifact:
+      derivation step, shape table, numeric answer, counterexample, or proof
+      critique.
+- [ ] Ensure writing modules include evidence constraints, citation policy,
+      rubric dimensions, and revision behavior.
 - [ ] Ensure first 2 stages can be completed quickly.
 
 ## Evaluator Service
@@ -76,6 +81,30 @@ reflect that snapshot.
       regenerating.
 - [ ] Persist deterministic intermediate results so a partial failure can resume
       without re-running upstream checks.
+
+## Math Evaluation
+
+- [ ] Add deterministic numeric checks with tolerance and unit/shape metadata.
+- [ ] Add shape-table and memory/complexity checks for implementation-linked
+      math stages.
+- [ ] Add per-step partial credit for derivation modules.
+- [ ] Add rubric fallback for proof outlines, counterexamples, and conceptual
+      explanations.
+- [ ] Add adversarial grader tests for math stages that try to extract
+      canonical derivations.
+
+## Academic Writing Evaluation
+
+- [ ] Add rubric dimensions for claim precision, evidence grounding, caveat
+      discipline, contribution framing, citation hygiene, reproducibility
+      detail, and concision.
+- [ ] Reject or flag unsupported claims that cite no allowed evidence ref.
+- [ ] Enforce citation policy: verified allowed citations only, or explicit
+      placeholders where the stage allows placeholders.
+- [ ] Add evaluator regression fixtures for strong, weak, overclaiming,
+      citation-missing, and prompt-injection writing submissions.
+- [ ] Emit writing-evaluator metadata for allowed evidence refs, rubric
+      version, citation policy, and redaction status.
 
 ## Human Override
 

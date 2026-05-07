@@ -184,10 +184,12 @@ agents:
   `workspace/fixtures/stage-004/training_log.json` has
   `_meta.provenance: "PLACEHOLDER"`. Needs an actual hardware run; recompute
   sha256 in `runner.yaml` after.
-- **Math node missing from ResNet curriculum graph.** PRD §5 requires 9
-  node types; ResNet covers 8 (no `math` stage). The schema allows `math`
-  (`packages/erp-schema/src/schemas/graph.ts`); the package just doesn't use
-  it.
+- **Interactive math and academic writing modules are still shallow.**
+  ResNet now has a basic `math` node (`S001M`) and a writing stage (`S006`),
+  but both are free-text/rubric prompts. They need the richer module design in
+  `TODOS/11-learning-modules-math-writing.md`: derivation/shape/numeric math
+  interactions, claim surgery, evidence mapping, reviewer rebuttal, and
+  revision feedback.
 - **S004 redaction target `"0.03"` is too short** to be a useful leak guard
   (matches `"0.038"`, `"0.030 epoch"`). Needs longer, contextualized
   phrases.
@@ -608,5 +610,5 @@ agents:
    replacing it. _(schema-completeness agent in flight)_
 9. Run the ResNet mini-experiment on real hardware once; replace the
    placeholder fixture and recompute sha256.
-10. Add a `math` node stage to the ResNet graph (PRD §5 requires 9 node
-    types; ResNet covers 8).
+10. Upgrade the ResNet `S001M` math stage and `S006` writing stage into the
+    interactive modules specified in `TODOS/11-learning-modules-math-writing.md`.

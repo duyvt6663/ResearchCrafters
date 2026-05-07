@@ -1,0 +1,24 @@
+stage_id: S001M
+hints:
+  - level: 1
+    body_md: |
+      The reformulation `H(x) = F(x) + x` is doing two jobs at once. One is
+      about *what's easier for the optimiser to learn*. The other is about
+      *what reaches the gradient*. Decide which question each part of the
+      prompt is asking before you start writing.
+  - level: 2
+    body_md: |
+      For (1): if `H(x) = x` is optimal, what value of `F(x)` makes the
+      block produce the right output? Now compare "drive `F` to that value"
+      vs. "build identity from a deep nonlinear stack from scratch." Which
+      do gradient descent and weight initialisation prefer?
+
+      For (2): differentiate `H(x) = F(x) + x` with respect to `x`. The
+      derivative has two terms; one is constant.
+  - level: 3
+    body_md: |
+      For (3): even when `H(x) ≠ x`, you can write the layer's job as
+      "learn the *delta* from identity," which is usually a smaller-norm
+      function than the full target mapping. Smaller-norm targets tend to
+      sit closer to the initialisation distribution, so optimisation
+      starts in a well-behaved region.

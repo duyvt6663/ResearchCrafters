@@ -38,6 +38,15 @@ export const inputFieldKindEnum = z.enum([
   'number',
   'select',
   'textarea',
+  // Authored ResNet vocabulary — kept as legitimate field kinds because they
+  // express richer semantics than the four-element starter set:
+  //   - `single_choice`: radio-style discrete option list (UI: radio group).
+  //   - `free_text`: long-form textarea with no structural validation.
+  //   - `structured`: opaque nested schema (the `schema` key on the field
+  //     describes the inner shape; UI builds a typed form from it).
+  'single_choice',
+  'free_text',
+  'structured',
 ]);
 
 export const mentorVisibilitySchema = z.object({
@@ -56,12 +65,25 @@ export const mentorVisibilitySchema = z.object({
  * blob. The web app (`apps/web`) renders these against `inputs.mode` when both
  * are set, falling back to a single textarea when only `mode` is present.
  */
-export const stageInputFieldSchema = z.object({
-  id: z.string().min(1),
-  label: z.string().min(1),
-  kind: inputFieldKindEnum,
-  options: z.array(z.string()).optional(),
-});
+export const stageInputFieldSchema = z
+  .object({
+    // Authors may identify the field via `id` (preferred) or `name` (legacy
+    // ResNet content). Both are accepted; downstream consumers use whichever
+    // is present.
+    id: z.string().min(1).optional(),
+    name: z.string().min(1).optional(),
+    label: z.string().min(1).optional(),
+    kind: inputFieldKindEnum,
+    // `options` is used by `select` / `single_choice` to enumerate choices.
+    options: z.array(z.string()).optional(),
+    // `structured` fields carry a nested authoring schema — opaque to the
+    // validator (the rendering layer interprets it).
+    schema: z.unknown().optional(),
+  })
+  .passthrough()
+  .refine((v) => v.id !== undefined || v.name !== undefined, {
+    message: "stage input field requires either 'id' or 'name'",
+  });
 
 /**
  * Per-attack schema for `mentor_leak_tests`.

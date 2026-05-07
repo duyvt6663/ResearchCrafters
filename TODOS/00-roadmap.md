@@ -32,6 +32,7 @@ Goal: render a package from files and validate that the ERP format works.
 - [x] Implement package/stage/branch/rubric schemas.
 - [x] Build a static package renderer in the web app.
 - [x] Build a simple session view for decision, writing, analysis, and reflection stages.
+- [x] Render the basic ResNet math stage in the session view.
 - [x] Implement `researchcrafters validate` for structural checks.
 - [x] Add basic ARA cross-link validation.
 - [ ] Validate starter/canonical workspaces manually for the first package. _(stubbed)_
@@ -59,6 +60,8 @@ Goal: support real users completing the first package.
 - [x] Add CLI for code/experiment stages.
 - [x] Add runner for `test`, `replay`, and CPU-only `mini_experiment` modes.
 - [x] Add evaluator output and structured grades.
+- [ ] Add interactive math and academic writing module primitives from
+      `11-learning-modules-math-writing.md`.
 - [ ] Add run logs and execution failure handling. _(stubbed)_
 - [ ] Add basic billing or gated manual access for alpha.
 
@@ -108,6 +111,7 @@ Goal: reduce expert authoring friction after the first package proves demand.
 - [ ] Add graph editor with React Flow.
 - [ ] Add evidence manager.
 - [ ] Add rubric editor.
+- [ ] Add reusable authoring templates for math and academic writing modules.
 - [ ] Add package release workflow: alpha, beta, live, archived.
 - [ ] Add package patch workflow with `package_version_patches`.
 

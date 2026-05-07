@@ -36,7 +36,8 @@ reflect that snapshot.
 
 - [x] Create `curriculum/graph.yaml`.
 - [x] Add 8-12 initial stages.
-- [x] Include stage types: framing, decision, implementation, experiment, analysis, writing, reflection.
+- [x] Include stage types: framing, math, decision, implementation, experiment,
+      analysis, writing, review, reflection.
 - [x] Include at least one failed branch.
 - [x] Include at least one suboptimal or ambiguous branch.
 - [x] Mark each branch support level: explicit, inferred, or expert_reconstructed.
@@ -103,7 +104,8 @@ trusted hardware before the package can ship.
 
 - [x] Package validates structurally and semantically.
 - [x] Package has at least one instructive failed or suboptimal branch.
-- [x] Package has at least one implementation stage, one experiment/evidence stage, and one writing stage.
+- [x] Package has at least one implementation stage, one experiment/evidence
+      stage, one math stage, and one writing stage.
 - [ ] A serious learner can finish the preview without setup friction.
 - [ ] The flagship package is strong enough to anchor launch messaging.
 
@@ -116,9 +118,12 @@ trusted hardware before the package can ship.
 - [ ] Assign expert reviewer; populate `review.last_reviewed_at`.
 - [ ] Run beta cohort review of the flagship package.
 - [ ] Author a second package (FlashAttention or DPO).
-- [ ] Add a `math` node stage to the ResNet curriculum (PRD §5 requires 9
-      node types; ResNet covers 8). _(schema-completeness agent in flight on
-      schema; new stage authoring still needed.)_
+- [ ] Upgrade `S001M` from a free-text math prompt into the interactive math
+      module described in `11-learning-modules-math-writing.md`.
+- [ ] Upgrade `S006` from a single claim-writing prompt into an academic
+      writing module with claim surgery, evidence mapping, and revision.
+- [ ] Add a reviewer-rebuttal micro-stage after `S007` so the writing track
+      includes argument under reviewer pressure, not only claim drafting.
 - [ ] Lengthen S004 redaction target `"0.03"` to a contextualized phrase
       (e.g. `"degradation gap of 0.03"`); add per-trajectory finals
       (`0.06`, `0.08`, `0.05`) to `mentor_redaction_targets` so the harness

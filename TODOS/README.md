@@ -24,6 +24,8 @@ Source docs:
 - `07-alpha-launch.md`: alpha cohort, pricing, GTM, and launch readiness.
 - `08-infra-foundations.md`: monorepo, environments, database, queue, storage, observability, and CI scaffolding that everything else depends on.
 - `09-frontend-design.md`: visual direction, screen layouts, stage-player UX, components, and responsive behavior.
+- `10-integration-quality-gaps.md`: current end-to-end quality gaps found by local web/API/CLI testing.
+- `11-learning-modules-math-writing.md`: interactive math modules and academic writing modules for research-skill depth.
 
 ## Execution Rule
 
@@ -38,8 +40,9 @@ and code copying do not.
 3. Implement schemas and static package rendering.
 4. Design the frontend from `09` before coding the session player.
 5. Build `researchcrafters validate`.
-6. Build the web learning loop for decision/writing/analysis stages.
+6. Build the web learning loop for decision/math/writing/analysis stages.
 7. Add CLI and runner only for code/experiment stages.
 8. Add evaluator and mentor safety gates.
-9. Add entitlements, progress, telemetry, and share cards.
-10. Run alpha with 20-50 target users.
+9. Upgrade the flagship package with one interactive math module and one academic writing module.
+10. Add entitlements, progress, telemetry, and share cards.
+11. Run alpha with 20-50 target users.

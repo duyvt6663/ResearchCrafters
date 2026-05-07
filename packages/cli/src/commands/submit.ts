@@ -24,9 +24,10 @@ const DENY_PATTERNS = [
   '**/.researchcrafters/**',
 ];
 
-const MAX_BYTES = 50 * 1024 * 1024;
-const MAX_FILES = 5000;
-const MAX_FILE_BYTES = 5 * 1024 * 1024;
+export const MAX_BYTES = 50 * 1024 * 1024;
+export const MAX_FILES = 5000;
+export const MAX_FILE_BYTES = 5 * 1024 * 1024;
+export const SUBMIT_DENY_PATTERNS = DENY_PATTERNS;
 
 export interface SubmitResult {
   submissionId: string;
@@ -49,7 +50,7 @@ interface BundleEntry {
   data: Buffer;
 }
 
-async function collectFiles(cwd: string): Promise<BundleEntry[]> {
+export async function collectFiles(cwd: string): Promise<BundleEntry[]> {
   const entries = await fg(['**/*'], {
     cwd,
     onlyFiles: true,
