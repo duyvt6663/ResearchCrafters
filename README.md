@@ -43,6 +43,12 @@ CI runs `pnpm lint`, `pnpm typecheck`, `pnpm test`, and a `researchcrafters vali
 
 Live snapshot of what's built, stubbed, and outstanding: [`TODOS/PROGRESS.md`](./TODOS/PROGRESS.md). Per-workstream plans live alongside it in `TODOS/`.
 
+## Shared Drive
+
+Team materials (references, assets, research notes) are stored in our shared Google Drive:
+
+[ResearchCrafters Shared Drive](https://drive.google.com/drive/folders/1WJHvduQbKjyLltkeJSIwVDuixdWEdqbW?usp=drive_link)
+
 ## Specs
 
 - Product brief — [`docs/PRD.md`](./docs/PRD.md)
