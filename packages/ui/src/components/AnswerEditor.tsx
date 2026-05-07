@@ -150,7 +150,6 @@ export function AnswerEditor({
       dispatch({ type: "reset", value });
     }
     // We intentionally do not depend on history.present.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   // Notify parent on internal changes (history.present is the truth).
@@ -158,7 +157,6 @@ export function AnswerEditor({
     if (onChange && history.present !== value) {
       onChange(history.present);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [history.present]);
 
   // Debounced autosave.

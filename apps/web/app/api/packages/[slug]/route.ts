@@ -14,7 +14,7 @@ export async function GET(
   if (!pkg) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const session = await getSession();
-  const access = permissions.canAccess({
+  const access = await permissions.canAccess({
     user: session,
     packageVersionId: `${pkg.slug}@stub`,
     stage: { ref: "overview", isFreePreview: true, isLocked: false },

@@ -11,6 +11,18 @@ const nextConfig = {
     "@researchcrafters/content-sdk",
     "@researchcrafters/worker",
   ],
+  // Workspace packages compile under NodeNext, which mandates .js extensions
+  // on relative imports. Webpack (via Next) doesn't resolve those out of the
+  // box for transpiled-from-source packages — alias .js to .ts/.tsx so the
+  // worker's `import './redis.js'` resolves to `./redis.ts` at bundle time.
+  webpack: (config) => {
+    config.resolve = config.resolve ?? {};
+    config.resolve.extensionAlias = {
+      ...(config.resolve.extensionAlias ?? {}),
+      ".js": [".ts", ".tsx", ".js", ".jsx"],
+    };
+    return config;
+  },
 };
 
 export default nextConfig;

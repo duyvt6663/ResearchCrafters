@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import yaml from 'js-yaml';
-import { ZodError, type ZodType } from 'zod';
+import type { ZodError} from 'zod';
+import { type ZodType } from 'zod';
 
 export class ErpParseError extends Error {
   public readonly filePath: string;

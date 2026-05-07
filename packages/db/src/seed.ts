@@ -618,13 +618,13 @@ async function main(): Promise<void> {
       },
     }));
 
-  // eslint-disable-next-line no-console
+   
   console.log(
     `seeded ${FIXTURE_PACKAGE_SLUG}@${loaded.package.version} with ` +
       `${build.stages.length} stages, ${build.branches.length} branches, ` +
       `1 enrollment`,
   );
-  // eslint-disable-next-line no-console
+   
   console.log("Seed details", {
     userId: user.id,
     membershipId: membership.id,
@@ -637,7 +637,7 @@ async function main(): Promise<void> {
 
 main()
   .catch((err: unknown) => {
-    // eslint-disable-next-line no-console
+     
     console.error("Seed failed:", err);
     process.exitCode = 1;
   })

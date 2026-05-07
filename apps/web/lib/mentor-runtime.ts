@@ -238,7 +238,7 @@ export async function runMentorRequest(
       warn: (msg: string) => {
         // The misconfig detector above should have caught this, but log
         // anything else the context builder warns about for the ops feed.
-        // eslint-disable-next-line no-console
+         
         console.warn(`[mentor-runtime] ${msg}`);
       },
     });

@@ -35,7 +35,7 @@ export async function GET(req: Request): Promise<NextResponse> {
 
   // Privacy-event telemetry fallback. See the file header for the contract
   // decision behind this structured log instead of a typed `track()` call.
-  // eslint-disable-next-line no-console
+   
   console.log(
     JSON.stringify({
       kind: "telemetry",

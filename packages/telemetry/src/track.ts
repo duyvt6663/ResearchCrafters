@@ -86,7 +86,7 @@ export async function track(
       });
     }
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.warn('[telemetry] posthog capture failed', { event: name, err });
   }
 
@@ -106,7 +106,7 @@ export async function track(
         });
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.warn('[telemetry] audit event persist failed', {
         event: name,
         err,

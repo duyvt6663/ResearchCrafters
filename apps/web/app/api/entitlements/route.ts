@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export async function GET(): Promise<NextResponse> {
   const session = await getSession();
 
-  const access = permissions.canAccess({
+  const access = await permissions.canAccess({
     user: session,
     packageVersionId: "entitlements",
     stage: { ref: "entitlements", isFreePreview: true, isLocked: false },

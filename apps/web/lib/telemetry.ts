@@ -29,7 +29,7 @@ export async function track(
 ): Promise<void> {
   // Server-side stub: structured log, no network call.
   // Replace with PostHog SDK + Postgres audit insert later.
-  // eslint-disable-next-line no-console
+   
   console.log(
     JSON.stringify({
       kind: "telemetry",

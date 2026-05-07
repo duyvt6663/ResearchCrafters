@@ -8,6 +8,15 @@ export {
   validateSandbox,
   validatePedagogy,
 } from './validator/index.js';
+export {
+  runStageLeakTests,
+  defaultLeakTestGatewayFactory,
+  collectStageRedactionTargets,
+} from './validator/leak-tests.js';
+export type {
+  StageLeakTestOutcome,
+  RunStageLeakTestsInput,
+} from './validator/leak-tests.js';
 export type {
   LoadedPackage,
   PackageMeta,

@@ -75,7 +75,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       : { userId: session.userId, reason },
   );
 
-  // eslint-disable-next-line no-console
+   
   console.log(
     JSON.stringify({
       kind: "telemetry",

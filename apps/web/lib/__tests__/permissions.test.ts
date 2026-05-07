@@ -7,17 +7,28 @@
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const packageVersionFindUnique = vi.fn();
-const stageFindUnique = vi.fn();
-const membershipFindFirst = vi.fn();
-const entitlementFindMany = vi.fn();
+// vi.mock factories are hoisted above any module-level `const`. Use
+// `vi.hoisted` so the spies are declared at the same hoist level and
+// the factory can reference them without a TDZ error.
+const mocks = vi.hoisted(() => ({
+  packageVersionFindUnique: vi.fn(),
+  stageFindUnique: vi.fn(),
+  membershipFindFirst: vi.fn(),
+  entitlementFindMany: vi.fn(),
+}));
+const {
+  packageVersionFindUnique,
+  stageFindUnique,
+  membershipFindFirst,
+  entitlementFindMany,
+} = mocks;
 
 vi.mock("@researchcrafters/db", () => ({
   prisma: {
-    packageVersion: { findUnique: packageVersionFindUnique },
-    stage: { findUnique: stageFindUnique },
-    membership: { findFirst: membershipFindFirst },
-    entitlement: { findMany: entitlementFindMany },
+    packageVersion: { findUnique: mocks.packageVersionFindUnique },
+    stage: { findUnique: mocks.stageFindUnique },
+    membership: { findFirst: mocks.membershipFindFirst },
+    entitlement: { findMany: mocks.entitlementFindMany },
   },
   withQueryTimeout: async <T>(p: PromiseLike<T>): Promise<T> => {
     return await p;

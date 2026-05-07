@@ -131,7 +131,7 @@ export async function startAllWorkers(
     try {
       installed = await installSchedules(connection);
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.warn(
         JSON.stringify({
           kind: 'worker_schedule_install_failed',
@@ -173,7 +173,7 @@ export async function startAllWorkers(
     workers.push(worker);
   }
 
-  // eslint-disable-next-line no-console
+   
   console.log(
     JSON.stringify({
       kind: 'worker_started',
@@ -199,7 +199,7 @@ export async function main(): Promise<void> {
   const { shutdown } = await startAllWorkers();
 
   const onSignal = async (signal: NodeJS.Signals): Promise<void> => {
-    // eslint-disable-next-line no-console
+     
     console.log(JSON.stringify({ kind: 'worker_shutdown', signal }));
     await shutdown();
     process.exit(0);
