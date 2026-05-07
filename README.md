@@ -49,6 +49,8 @@ Team materials (references, assets, research notes) are stored in our shared Goo
 
 [ResearchCrafters Shared Drive](https://drive.google.com/drive/folders/1WJHvduQbKjyLltkeJSIwVDuixdWEdqbW?usp=drive_link)
 
+For new team members, please request access to the shared Google Drive using the link above or by contacting an existing team member.
+
 ## Specs
 
 - Product brief — [`docs/PRD.md`](./docs/PRD.md)
