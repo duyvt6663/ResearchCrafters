@@ -1,5 +1,10 @@
 # Interactive Math and Academic Writing Modules TODO
 
+Status (2026-05-08): see `PROGRESS.md` for the snapshot. Iteration 2
+landed the basic `S001M` math node and `S006` writing stage as free-text
+rubric prompts; both still need the richer interactive modules described
+below before launch.
+
 Goal: make ResearchCrafters train mathematical reasoning and academic writing as
 active research-engineering skills, not as passive quiz or essay prompts.
 

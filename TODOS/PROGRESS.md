@@ -1,19 +1,60 @@
 # Progress Snapshot
 
-Last updated: 2026-05-08 (post Tier-1 API hygiene + Tailwind v4 migration)
+Last updated: 2026-05-08 (post iterations 1-10: Tier-1 API hygiene,
+Tailwind v4, schema completeness, mobile decision-graph fallback, OTel
+in apps/web, content polish, route-handler regression suite)
 
 What landed in the integrated build, and what's still genuinely open. Forward
 plans live in the per-workstream files in this directory; this file is a
 status mirror. The latest verified state is listed first.
 
-## Status today
+## Latest Local QA — 2026-05-08
+
+Run from the current dirty workspace after the latest internal changes:
+
+- Docker Postgres, Redis, and MinIO were healthy. DB migration was in sync.
+- Seed succeeded and now reports ResNet with 9 stages, 3 branches, and fixture
+  enrollment `cmovf11u5001dakq882p0iob3`.
+- `pnpm test` passed: 18 tasks, 378 passing tests + 9 skipped.
+- ResNet package validation passed when the CLI was invoked with an absolute
+  package path.
+- Web app ran on `http://localhost:3003` because ports `3000` and `3001` were
+  occupied by unrelated local Next apps.
+- CLI device-token auth, `start resnet`, `submit`, and `status` worked. The
+  submitted run id was persisted to `.researchcrafters/config.json`, but the
+  run stayed `queued`.
+
+New blockers found:
+
+- `pnpm install --frozen-lockfile` fails: `packages/db/package.json` and
+  `pnpm-lock.yaml` are out of sync on `vitest`.
+- `pnpm turbo run typecheck --force` fails in `@researchcrafters/db` on the new
+  encryption / Prisma-extension typing work (`src/crypto.ts`,
+  `src/encrypted-fields.ts`, `src/seed.ts`).
+- `pnpm --filter @researchcrafters/web build` fails because the web bundle pulls
+  `node:crypto` through `@researchcrafters/db`'s top-level export path.
+- `pnpm --filter @researchcrafters/worker dev` crashes on the current install
+  before it can process `submission_run`, so submitted runs remain queued.
+- `pnpm test:e2e` is improved but not green: 15 passed, 5 skipped, 3 failed
+  against the running app. Remaining failures are empty NextAuth providers when
+  GitHub env is blank, anonymous entitlements now returning 401, and stale
+  StagePlayer CSS selectors in the test.
+- The documented `pnpm --filter @researchcrafters/cli exec researchcrafters
+  validate ./content/packages/resnet` smoke command resolves the relative path
+  under `packages/cli`; use an absolute path or root-executed CLI command.
+
+## Prior Integrated Snapshot
+
+This is the earlier cached-suite snapshot. The "Latest Local QA" section above
+is authoritative where the two sections conflict.
 
 - `pnpm lint` — green across all 11 tasks.
 - `pnpm typecheck` — green across all 19 tasks.
-- `pnpm test` — green across all 18 tasks. **Workspace total: 372 tests
-  passing + 9 skipped.** Per-package: web 133+9, cli 43, runner 42,
+- `pnpm test` — green across all 18 tasks. **Workspace total: 378 tests
+  passing + 9 skipped.** Per-package: web 139+9, cli 43, runner 42,
   erp-schema 41, worker 28, content-sdk 23, ai 22, ui 19, evaluator-sdk 14,
-  telemetry 7.
+  telemetry 7. (Web went 133 → 139 with the iteration-10 `tracing.test.ts`
+  6-case suite.)
 - `@researchcrafters/web` production build — green with local dev env
   (`DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`,
   `RESEARCHCRAFTERS_API_URL`).
@@ -72,12 +113,76 @@ status mirror. The latest verified state is listed first.
   finalize, the worker, callback persistence with service-token auth) is
   _(in flight)_ behind a sibling agent.
 
-## Closed since the prior review
+## Closed since prior review
 
-- **Tier-1 API hygiene landed.** `/api/packages` now `await`s `listPackages()`
-  (was the unresolved-promise `{ "packages": {} }` bug) and
-  `/api/enrollments/:id/graph` now `await`s `getDecisionGraph(id)` (was the
-  unresolved-promise `{ "graph": {} }` bug).
+Crediting iterations 1-10 of the autonomous loop:
+
+- **Iteration 1 — Tier-1 API hygiene.** `/api/packages` now `await`s
+  `listPackages()` (was the unresolved-promise `{ "packages": {} }` bug);
+  `/api/enrollments/:id/graph` now `await`s `getDecisionGraph(id)` (was
+  the unresolved-promise `{ "graph": {} }` bug). 10 routes are
+  Bearer-aware via `getSessionFromRequest` (from 4 to all 14 server
+  routes that use auth). Body-validation 400 guards landed on
+  `/api/stage-attempts`, `/api/share-cards`, and `/api/node-traversals`.
+- **Iteration 2 — Content polish.** Math node `S001M` added to the
+  ResNet curriculum graph (`content/packages/resnet/curriculum/graph.yaml`
+  + `stages/001m-residual-math.yaml`); canonical-branch solution
+  authored at
+  `content/packages/resnet/solutions/branches/branch-residual-canonical.md`;
+  S004 redaction targets tightened — bare `"0.03"` replaced with 11
+  longer, contextualized phrases (`"degradation gap"`, per-trajectory
+  finals such as `"residual-56: 0.030"`, `"depth 56 degradation"`,
+  `"0.080 - 0.060 = 0.020"`).
+- **Iterations 3 / 6 / 8 — 60+ route handler tests across 9 files.**
+  `route-packages`, `route-stage-attempts`, `route-share-cards`,
+  `route-node-traversals`, `route-runs-callback`, `route-mentor-messages`,
+  `route-auth-device-code`, `route-auth-device-token`, `route-runs-id`
+  pin Bearer auth, body-validation 400 paths, the four-state device-code
+  polling protocol, `developer_force_approve` NODE_ENV gating,
+  `mentor_policy` denial → authored-refusal-attached responses, the
+  runner callback `X-Runner-Secret` constant-time gate, and the
+  synthesized `queued` Run row that lets the CLI's poll-loop survive
+  missing rows.
+- **Iteration 3 — CLI submit bundle policy tests.** 10 cases in
+  `packages/cli/test/submit-bundle.test.ts` pin every `.env` /
+  `node_modules` / `.git` / `.next` / `.turbo` / `dist` / `*.pem` /
+  `*.key` exclusion, the 50 MiB total cap, the 5 MiB per-file cap, the
+  5000-file cap (with the at-cap edge case held), and the sorted-output
+  sha256 determinism.
+- **Iterations 4 + 5 — Mobile DecisionGraphMobile.** New
+  `packages/ui/src/components/DecisionGraphMobile.tsx` ships a
+  tree/list fallback for the decision graph. Wired into the package
+  overview page (`apps/web/app/packages/[slug]/page.tsx`) with spoiler
+  discipline (no canonical-branch labels visible until policy allows).
+  Pinned by `packages/ui/test/decision-graph-mobile.test.tsx` (5 cases).
+- **Iteration 5 — Schema completeness.** `package.safety.redaction_targets`
+  now declared on `packageSchema` (`packages/erp-schema/src/schemas/package.ts`)
+  and unioned with each stage's `mentor_redaction_targets`.
+  `mentor_leak_tests[*].must_not_contain` now captured on the stage
+  schema (`packages/erp-schema/src/schemas/stage.ts`); the leak-test
+  harness checks each authored attack against its own list. The
+  leak-test battery now composes as `[...DEFAULT_ATTACKS, ...authored]`
+  with id-dedupe (`packages/content-sdk/src/validator/leak-tests.ts`,
+  fixing the prior `authored ?? DEFAULT_ATTACKS` OR-not-union bug). 6
+  previously dropped stage fields (`node_id`, `source_refs`,
+  `evidence_refs`, `validation.test_path`, `inputs.fields`,
+  `runner.fixtures`) surfaced via schema extension or structural
+  warnings.
+- **Iteration 7 — Failed-branch label redaction at the catalog spoiler
+  boundary.** `apps/web/lib/data/packages.ts` `redactSampleDecision`
+  now strips canonical-branch labels from public catalog payloads;
+  `packages/db/src/seed.ts` `buildFailedBranchLesson` writes a
+  non-spoiler title (was leaking via `failedBranchLesson.title`).
+- **Iteration 10 — OpenTelemetry SDK in apps/web.** `@vercel/otel` wired
+  via `apps/web/instrumentation.ts`; `apps/web/lib/tracing.ts` provides
+  `withSpan` and `setActiveSpanAttributes` helpers with a transparent
+  test path. Pinned by `apps/web/lib/__tests__/tracing.test.ts` (6
+  cases). Worker/runner extension is _(in flight)_.
+- **Cleanup.** Dead `eslint-disable no-control-regex` removed; inline
+  `import('...').T` annotations stripped; Prisma update typing fixed.
+
+### Carry-over context (still relevant)
+
 - **10 routes are Bearer-aware via `getSessionFromRequest`** (from 4 to all
   14 server routes that use auth): `grades/[id]`, `node-traversals`,
   `enrollments/[id]/graph`, `enrollments/[id]/state`, `stage-attempts`,
@@ -166,76 +271,66 @@ end-to-end is:
 
 ## Open today
 
-Genuinely-open items not currently being closed by the in-flight sibling
-agents:
+Genuinely-open items, with `_(in flight)_` annotations for work that
+sibling agents are actively closing in this run:
 
-- ~~`/api/runs/[id]/callback` still unauthenticated end-to-end.~~ **Closed.**
-  The route now requires `X-Runner-Secret`, validated with a constant-time
-  compare; anonymous callers get 401 with a `WWW-Authenticate` hint and
-  zero DB writes. Pinned by `route-runs-callback.test.ts` (7 cases).
-- ~~No API route handler tests.~~ **Closed.** 9 route-handler test files
-  cover the highest-risk surface; 60+ tests pin contract shapes, auth
-  gates, body validation, and known regression vectors. Routes still
-  uncovered (lower-risk read-only endpoints): `/api/packages/[slug]`,
-  `/api/packages/[slug]/enroll`, `/api/enrollments/[id]/state`,
-  `/api/enrollments/[id]/graph`, `/api/grades/[id]`, `/api/entitlements`,
-  `/api/runs/[id]/logs`, `/api/cli/version`, `/api/auth/revoke`,
-  `/api/health`, `/api/admin/*`, `/api/account/*`, `/api/submissions`,
-  `/api/submissions/[id]/finalize`. Worth filing as a follow-up rather
-  than blocking MVP.
-- ~~CLI submit bundle policy untested.~~ **Closed.** 10 cases in
-  `packages/cli/test/submit-bundle.test.ts` pin every `.env` /
-  `node_modules` / `.git` / `.next` / `.turbo` / `dist` / `*.pem` /
-  `*.key` exclusion, the 50 MiB total cap, the 5 MiB per-file cap, the
-  5000-file cap (with the at-cap edge case held), and the sorted-output
-  sha256 determinism. A regression here would now break CI.
 - **`AnthropicGateway` real-provider path is mock-only.** Every mentor and
   grader test runs through `MockLLMGateway`; the wire shape, error handling
   (`rate_limit_error`, `overloaded_error`), and token-counting glue have
-  never been exercised against a real key. Defer until budget cap is wired.
-- **Redis port conflict (`6379` already allocated)** blocks live BullMQ /
-  worker testing. Make local docker-compose ports configurable; the
-  runner-loop agent may retarget the port as part of its work.
-- **Next.js 15.5.16 dev cache flake** (`Cannot find module './3879.js'`,
-  vendor-chunk MODULE_NOT_FOUND under parallel Playwright load). Workaround
-  is `rm -rf apps/web/.next && pnpm --filter @researchcrafters/web dev`.
-  Document in the dev-loop runbook; either pin Next or move dev cache
-  in-memory / per-Playwright-worker.
-- **Real ResNet fixture** still a placeholder.
-  `workspace/fixtures/stage-004/training_log.json` has
-  `_meta.provenance: "PLACEHOLDER"`. Needs an actual hardware run; recompute
-  sha256 in `runner.yaml` after.
-- **Interactive math and academic writing modules are still shallow.**
-  ResNet now has a basic `math` node (`S001M`) and a writing stage (`S006`),
-  but both are free-text/rubric prompts. They need the richer module design in
-  `TODOS/11-learning-modules-math-writing.md`: derivation/shape/numeric math
-  interactions, claim surgery, evidence mapping, reviewer rebuttal, and
-  revision feedback.
-- **S004 redaction target `"0.03"` is too short** to be a useful leak guard
-  (matches `"0.038"`, `"0.030 epoch"`). Needs longer, contextualized
-  phrases.
-- **Mobile fallbacks** for decision graph and code/experiment stages —
-  skeleton only.
-- **OpenTelemetry SDK** still not installed in web/worker/runner; no
-  dashboards yet for submission latency, runner queue depth, mentor
-  latency, validate duration.
+  never been exercised against a real key. Defer until budget cap is wired
+  and an `ANTHROPIC_API_KEY` is provisioned.
 - **Encryption-at-rest for PII fields** still not implemented. The
   `/// PII:` JSDoc inventory is in `schema.prisma`; column-level
-  encryption is the next step.
+  encryption helper is _(in flight)_ via a sibling agent in this run.
+- **Performance budget not instrumented** (Lighthouse / TTI in CI).
+  Sibling agent in this run is wiring the CI step. _(in flight)_
+- **OpenTelemetry tracing extension to worker / runner.** `apps/web` is
+  wired (iteration 10); sibling agent in this run is extending the same
+  pattern to `apps/worker` and `apps/runner`. _(in flight)_
 - **Wireframe set** still not captured (catalog, overview, stage player
   desktop/mobile, decision/writing/analysis/code/experiment/reflection,
   mentor panel, grade panel, execution failure panel, paywall modal,
-  share-card preview).
-- **Performance budget not instrumented** (Lighthouse / TTI in CI).
+  share-card preview). Process item — defer or assign.
+- **Real ResNet fixture** still a placeholder.
+  `workspace/fixtures/stage-004/training_log.json` has
+  `_meta.provenance: "PLACEHOLDER"`. Needs an actual hardware run;
+  recompute sha256 in `runner.yaml` after. Defer (needs hardware).
+- **Second package authoring** (FlashAttention or DPO). Bigger task —
+  schedule separately.
+- **Marketing/alpha launch artifacts** (waitlist page, landing copy,
+  decision-challenge posts, founder pricing offer, intake form). Content
+  workstream.
+- **Lower-risk read-only route handler tests** (residual coverage):
+  `/api/packages/[slug]`, `/api/packages/[slug]/enroll`,
+  `/api/enrollments/[id]/state`, `/api/enrollments/[id]/graph`,
+  `/api/grades/[id]`, `/api/entitlements`, `/api/runs/[id]/logs`,
+  `/api/cli/version`, `/api/auth/revoke`, `/api/health`,
+  `/api/admin/*`, `/api/account/*`, `/api/submissions`,
+  `/api/submissions/[id]/finalize`. Worth filing as follow-up; not
+  blocking MVP.
+- **Redis port conflict on host `6379`** blocks live BullMQ / worker
+  testing. Small fix — make local docker-compose ports configurable.
+- **Next.js 15.5.16 dev cache flake** (`Cannot find module './3879.js'`,
+  vendor-chunk MODULE_NOT_FOUND under parallel Playwright load).
+  Workaround is `rm -rf apps/web/.next && pnpm --filter @researchcrafters/web dev`.
+  Either pin Next or accept the workaround in the runbook.
+- **Mobile code/experiment stage fallbacks** — the decision-graph
+  fallback shipped in iterations 4+5 (`DecisionGraphMobile`), but the
+  stage-player still does not wire a mobile sheet/tab UI for code or
+  experiment stages.
+- **Interactive math + academic writing modules** still shallow. ResNet
+  has a basic `math` node (`S001M`) and a writing stage (`S006`), both
+  free-text/rubric prompts. The richer module design lives in
+  `TODOS/11-learning-modules-math-writing.md`: derivation/shape/numeric
+  math interactions, claim surgery, evidence mapping, reviewer rebuttal,
+  and revision feedback.
 - **Branch reveal transition** design — pick inline expansion vs.
   dedicated reveal vs. graph repaint and document the rationale.
-- **Second package authoring** (FlashAttention or DPO).
-- **Marketing/alpha launch artifacts** (waitlist page, landing copy,
-  decision-challenge posts, founder pricing offer, intake form).
 - **Trace/experiment-tree** validation for `branch_id`, `parents`,
   `edges`; compiled web payload plumbing.
 - **Persisted `node_traversals` and `share_card` rows.** Both routes still
-  return synthesized IDs.
+  return synthesized IDs (Bearer-aware and 400-validating now, but no
+  durable rows).
 
 ---
 

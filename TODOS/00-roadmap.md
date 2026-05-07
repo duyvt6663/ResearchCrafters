@@ -32,7 +32,9 @@ Goal: render a package from files and validate that the ERP format works.
 - [x] Implement package/stage/branch/rubric schemas.
 - [x] Build a static package renderer in the web app.
 - [x] Build a simple session view for decision, writing, analysis, and reflection stages.
-- [x] Render the basic ResNet math stage in the session view.
+- [x] Render the basic ResNet math stage in the session view. _(S001M math
+      node landed in iteration 2 — `content/packages/resnet/curriculum/graph.yaml`
+      + `stages/001m-residual-math.yaml`.)_
 - [x] Implement `researchcrafters validate` for structural checks.
 - [x] Add basic ARA cross-link validation.
 - [ ] Validate starter/canonical workspaces manually for the first package. _(stubbed)_

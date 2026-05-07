@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma, withQueryTimeout } from "@researchcrafters/db";
 import { track } from "@/lib/telemetry";
+import { setActiveSpanAttributes, withSpan } from "@/lib/tracing";
 
 export const runtime = "nodejs";
 
@@ -110,7 +111,11 @@ export async function POST(
 ): Promise<NextResponse> {
   const { id } = await params;
 
+  return withSpan("api.runs.callback", async () => {
+  setActiveSpanAttributes({ "rc.run.id": id });
+
   if (!authorize(req)) {
+    setActiveSpanAttributes({ "rc.callback.unauthorized": true });
     return NextResponse.json(
       { error: "unauthorized" },
       {
@@ -137,6 +142,13 @@ export async function POST(
       { status: 400 },
     );
   }
+
+  setActiveSpanAttributes({
+    "rc.callback.status": body.status,
+    ...(body.executionStatus
+      ? { "rc.callback.exec_status": body.executionStatus }
+      : {}),
+  });
 
   // Pull the existing Run row so we can merge metrics rather than clobber
   // anything the worker already wrote.
@@ -243,4 +255,5 @@ export async function POST(
   });
 
   return NextResponse.json({ ok: true, runId: id });
+  });
 }

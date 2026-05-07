@@ -491,4 +491,41 @@ describe('runSubmissionRun', () => {
     const finalRun = world.state.runs.get('run_1')!;
     expect(finalRun.status).toBe('crash');
   });
+
+  it('does not throw when invoked with a traceparent in the payload (tracing wrapper smoke check)', async () => {
+    // The producer side (`/api/submissions/[id]/finalize`) injects a W3C
+    // traceparent into the BullMQ job payload so the worker can re-attach
+    // the parent context. The wrapper must be transparent: a job with a
+    // traceparent should produce the same result shape as one without,
+    // and must NOT throw when no exporter is wired (the no-op tracer is
+    // the dev/test default).
+    const world = makeWorld({
+      run: baseRun(),
+      submission: baseSubmission('S003'),
+      stages: [stage({ rubricRef: null })],
+    });
+
+    const jobWithTrace: SubmissionRunJob = {
+      ...job(),
+      // A spec-shaped traceparent string. Format:
+      //   version-traceId(32hex)-parentSpanId(16hex)-flags(2hex)
+      traceparent:
+        '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
+    };
+
+    const result = await runSubmissionRun(jobWithTrace, world.prisma, {
+      runnerExecutor: fakeExecutor({
+        executionStatus: 'ok',
+        logs: [],
+      }),
+      grader: fakeGrader(),
+      now: fixedClock,
+      log: noopLog,
+    });
+
+    // Same shape as the equivalent traceparent-less call — the wrapper is
+    // additive, behaviour is unchanged.
+    expect(result.executionStatus).toBe('ok');
+    expect(result.gradedSkipped).toBe(true);
+  });
 });

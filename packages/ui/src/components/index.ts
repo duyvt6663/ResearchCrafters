@@ -11,7 +11,21 @@ export { StatusBadge } from "./StatusBadge.js";
 export type { StatusBadgeProps } from "./StatusBadge.js";
 
 export { CommandBlock } from "./CommandBlock.js";
-export type { CommandBlockProps } from "./CommandBlock.js";
+export type {
+  CommandBlockProps,
+  CommandBlockOutput,
+} from "./CommandBlock.js";
+
+export { CodeBlock } from "./CodeBlock.js";
+export type { CodeBlockProps } from "./CodeBlock.js";
+
+export { EvidenceCard } from "./EvidenceCard.js";
+export type {
+  EvidenceCardKind,
+  EvidenceCardProps,
+  EvidenceCardData,
+  EvidenceTrajectory,
+} from "./EvidenceCard.js";
 
 export { Card, CardHeader, CardBody, CardFooter } from "./Card.js";
 export type {

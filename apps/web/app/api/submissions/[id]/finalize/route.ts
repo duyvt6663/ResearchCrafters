@@ -15,6 +15,8 @@ import {
 } from "@/lib/storage";
 import { getProducerQueue } from "@researchcrafters/worker/admin";
 import { SUBMISSION_RUN_QUEUE } from "@researchcrafters/worker";
+import { context, propagation } from "@opentelemetry/api";
+import { setActiveSpanAttributes, withSpan } from "@/lib/tracing";
 
 export const runtime = "nodejs";
 
@@ -33,6 +35,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   const { id } = await params;
+
+  return withSpan("api.submissions.finalize", async () => {
+  setActiveSpanAttributes({ "rc.submission.id": id });
 
   let raw: unknown;
   try {
@@ -223,6 +228,14 @@ export async function POST(
   // Enqueue the submission_run job. The job id is pinned to `runId` so a
   // retry of the enqueue (e.g. transient Redis failure) cannot double-execute
   // — BullMQ deduplicates on jobId at the queue layer.
+  //
+  // We also inject the active span's W3C `traceparent` into the BullMQ
+  // payload so the worker can re-attach the parent context and produce a
+  // single trace tree across the web → BullMQ → worker → callback hop. The
+  // worker treats `traceparent` as an OPTIONAL field — older payloads
+  // without it remain valid.
+  const traceCarrier: { traceparent?: string } = {};
+  propagation.inject(context.active(), traceCarrier);
   let queueDeferred = false;
   if (submission) {
     try {
@@ -236,6 +249,9 @@ export async function POST(
             submission.stageAttempt.enrollment.packageVersionId,
           stageRef: submission.stageAttempt.stageRef,
           runnerMode,
+          ...(traceCarrier.traceparent
+            ? { traceparent: traceCarrier.traceparent }
+            : {}),
         },
         { jobId: runId },
       );
@@ -263,6 +279,11 @@ export async function POST(
     queueDeferred,
   });
 
+  setActiveSpanAttributes({
+    "rc.run.id": runId,
+    "rc.queue_deferred": queueDeferred,
+  });
+
   const body = submissionFinalizeResponseSchema.parse({ runId });
   // Surface the queue degradation flag as an extra field. The contract schema
   // is `.strict()` so we wrap it to keep the canonical fields intact while
@@ -271,4 +292,5 @@ export async function POST(
     return NextResponse.json({ ...body, queueDeferred: true });
   }
   return NextResponse.json(body);
+  });
 }

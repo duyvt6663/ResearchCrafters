@@ -10,6 +10,7 @@ import {
   mentorMessageResponseSchema,
 } from "@/lib/api-contract";
 import { runMentorRequest } from "@/lib/mentor-runtime";
+import { setActiveSpanAttributes, withSpan } from "@/lib/tracing";
 
 export const runtime = "nodejs";
 
@@ -38,130 +39,143 @@ export const runtime = "nodejs";
  * mutate from this workstream.
  */
 export async function POST(req: Request): Promise<NextResponse> {
-  let raw: unknown;
-  try {
-    raw = await req.json();
-  } catch {
-    raw = {};
-  }
-  const parsed = mentorMessageRequestSchema.safeParse(raw ?? {});
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "bad_request", reason: parsed.error.issues },
-      { status: 400 },
-    );
-  }
-  const body = parsed.data;
-
-  const session = await getSessionFromRequest(req);
-  if (!session.userId) {
-    return NextResponse.json(
-      { error: "not_authenticated" },
-      { status: 401 },
-    );
-  }
-
-  const enr = await getEnrollment(body.enrollmentId);
-  const stage = await getStage(body.enrollmentId, body.stageRef);
-  if (!enr || !stage) {
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
-  }
-
-  const action =
-    body.mode === "hint" || body.mode === "explain_branch"
-      ? "request_mentor_hint"
-      : "request_mentor_feedback";
-
-  const access = await permissions.canAccess({
-    user: session,
-    packageVersionId: enr.packageVersionId,
-    stage: {
-      ref: stage.ref,
-      isFreePreview: stage.isFreePreview,
-      isLocked: stage.isLocked,
-    },
-    action,
-  });
-  if (!access.allowed) {
-    // Pass through the authored refusal whenever the policy module signals
-    // that the mentor itself blocked the request (vs an entitlement / lock
-    // failure). The reason name `mentor_policy` is reserved by TODOS/05 —
-    // when the policy module surfaces it, the body carries copy the client
-    // can render verbatim without inventing strings.
-    const refusal: { error: string; reason: typeof access.reason; refusal?: unknown } = {
-      error: "forbidden",
-      reason: access.reason,
-    };
-    if ((access.reason as string) === "mentor_policy") {
-      refusal.refusal = mentorRefusal({ scope: "policy_block" });
+  return withSpan("api.mentor.messages.post", async () => {
+    let raw: unknown;
+    try {
+      raw = await req.json();
+    } catch {
+      raw = {};
     }
-    return NextResponse.json(refusal, {
-      status: denialHttpStatus(access.reason),
-    });
-  }
+    const parsed = mentorMessageRequestSchema.safeParse(raw ?? {});
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "bad_request", reason: parsed.error.issues },
+        { status: 400 },
+      );
+    }
+    const body = parsed.data;
 
-  if (body.mode === "hint" || body.mode === "explain_branch") {
-    await track("mentor_hint_requested", {
-      enrollmentId: enr.id,
-      stageRef: stage.ref,
+    const session = await getSessionFromRequest(req);
+    setActiveSpanAttributes({
+      "rc.actor": session.userId ?? "anon",
+      "rc.mentor.mode": body.mode,
     });
-  } else {
-    await track("mentor_feedback_requested", {
-      enrollmentId: enr.id,
-      stageRef: stage.ref,
-    });
-  }
+    if (!session.userId) {
+      return NextResponse.json(
+        { error: "not_authenticated" },
+        { status: 401 },
+      );
+    }
 
-  // Hand off to the runtime. The runtime owns gateway construction (lazy —
-  // degrades to a mock when ANTHROPIC_API_KEY is unset), leak-test +
-  // redaction, and persistence with full model telemetry.
-  const stageRow = await withQueryTimeout(
-    prisma.stage.findUnique({
-      where: {
-        packageVersionId_stageId: {
-          packageVersionId: enr.packageVersionId,
-          stageId: stage.ref,
+    const enr = await getEnrollment(body.enrollmentId);
+    const stage = await getStage(body.enrollmentId, body.stageRef);
+    if (!enr || !stage) {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+    setActiveSpanAttributes({
+      "rc.enrollment": enr.id,
+      "rc.stage": stage.ref,
+    });
+
+    const action =
+      body.mode === "hint" || body.mode === "explain_branch"
+        ? "request_mentor_hint"
+        : "request_mentor_feedback";
+
+    const access = await permissions.canAccess({
+      user: session,
+      packageVersionId: enr.packageVersionId,
+      stage: {
+        ref: stage.ref,
+        isFreePreview: stage.isFreePreview,
+        isLocked: stage.isLocked,
+      },
+      action,
+    });
+    if (!access.allowed) {
+      // Pass through the authored refusal whenever the policy module signals
+      // that the mentor itself blocked the request (vs an entitlement / lock
+      // failure). The reason name `mentor_policy` is reserved by TODOS/05 —
+      // when the policy module surfaces it, the body carries copy the client
+      // can render verbatim without inventing strings.
+      setActiveSpanAttributes({ "rc.access.denied": access.reason });
+      const refusal: { error: string; reason: typeof access.reason; refusal?: unknown } = {
+        error: "forbidden",
+        reason: access.reason,
+      };
+      if ((access.reason as string) === "mentor_policy") {
+        refusal.refusal = mentorRefusal({ scope: "policy_block" });
+      }
+      return NextResponse.json(refusal, {
+        status: denialHttpStatus(access.reason),
+      });
+    }
+
+    if (body.mode === "hint" || body.mode === "explain_branch") {
+      await track("mentor_hint_requested", {
+        enrollmentId: enr.id,
+        stageRef: stage.ref,
+      });
+    } else {
+      await track("mentor_feedback_requested", {
+        enrollmentId: enr.id,
+        stageRef: stage.ref,
+      });
+    }
+
+    // Hand off to the runtime. The runtime owns gateway construction (lazy —
+    // degrades to a mock when ANTHROPIC_API_KEY is unset), leak-test +
+    // redaction, and persistence with full model telemetry.
+    const stageRow = await withQueryTimeout(
+      prisma.stage.findUnique({
+        where: {
+          packageVersionId_stageId: {
+            packageVersionId: enr.packageVersionId,
+            stageId: stage.ref,
+          },
         },
-      },
-      select: { stagePolicy: true },
-    }),
-  );
-  const stagePolicy = stageRow?.stagePolicy ?? null;
-  if (stagePolicy === null) {
-    return NextResponse.json(
-      { error: "stage_policy_missing" },
-      { status: 500 },
+        select: { stagePolicy: true },
+      }),
     );
-  }
+    const stagePolicy = stageRow?.stagePolicy ?? null;
+    if (stagePolicy === null) {
+      return NextResponse.json(
+        { error: "stage_policy_missing" },
+        { status: 500 },
+      );
+    }
 
-  const outcome = await runMentorRequest({
-    enrollment: { id: enr.id, packageVersionId: enr.packageVersionId },
-    stage: { ref: stage.ref, stagePolicy },
-    mode: body.mode,
-    message: body.message,
-    track,
-  });
-
-  if (outcome.kind === "policy_misconfig") {
-    return NextResponse.json(
-      {
-        error: "stage_policy_misconfigured",
-        reason: outcome.reason,
-      },
-      { status: 500 },
-    );
-  }
-
-  const responseBody = mentorMessageResponseSchema.parse({
-    message: {
-      id: outcome.messageId,
-      enrollmentId: enr.id,
-      stageRef: stage.ref,
+    const outcome = await runMentorRequest({
+      enrollment: { id: enr.id, packageVersionId: enr.packageVersionId },
+      stage: { ref: stage.ref, stagePolicy },
       mode: body.mode,
-      role: "mentor",
-      content: outcome.assistantText,
-      createdAt: new Date().toISOString(),
-    },
+      message: body.message,
+      track,
+    });
+
+    if (outcome.kind === "policy_misconfig") {
+      return NextResponse.json(
+        {
+          error: "stage_policy_misconfigured",
+          reason: outcome.reason,
+        },
+        { status: 500 },
+      );
+    }
+
+    setActiveSpanAttributes({ "rc.mentor.message_id": outcome.messageId });
+
+    const responseBody = mentorMessageResponseSchema.parse({
+      message: {
+        id: outcome.messageId,
+        enrollmentId: enr.id,
+        stageRef: stage.ref,
+        mode: body.mode,
+        role: "mentor",
+        content: outcome.assistantText,
+        createdAt: new Date().toISOString(),
+      },
+    });
+    return NextResponse.json(responseBody);
   });
-  return NextResponse.json(responseBody);
 }

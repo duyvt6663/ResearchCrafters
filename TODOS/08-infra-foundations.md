@@ -79,6 +79,11 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 ## Observability
 
 - [ ] Add OpenTelemetry SDK to web, API, worker, and runner.
+      _(Iteration 10 landed for `apps/web`: `@vercel/otel` wired via
+      `apps/web/instrumentation.ts`; `apps/web/lib/tracing.ts` exposes
+      `withSpan` + `setActiveSpanAttributes` helpers with a transparent
+      test path; pinned by `apps/web/lib/__tests__/tracing.test.ts` (6
+      cases). Worker / runner extension is **in flight** in this run.)_
 - [ ] Emit structured JSON logs with request id and user id.
 - [ ] Wire traces to a backend (Tempo, Honeycomb, or Datadog).
 - [ ] Wire metrics to Prometheus or vendor equivalent.
@@ -139,18 +144,27 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 
 ## Open gaps from snapshot
 
+- [ ] Restore fresh-clone installability: `pnpm install --frozen-lockfile`
+      currently fails because `packages/db/package.json` and `pnpm-lock.yaml`
+      are out of sync.
+- [ ] Keep server-only Node modules out of web bundles. The web production
+      build currently imports `node:crypto` via `@researchcrafters/db`'s
+      top-level export path after the DB encryption work.
 - [ ] Define `dev` / `preview` / `staging` / `prod` environments and Terraform.
 - [ ] Provision Postgres, Redis, and S3 across environments.
 - [ ] Choose and wire a secrets manager (Doppler / Vault / AWS Secrets Manager).
 - [ ] Add OpenTelemetry SDK to web, worker, and runner; expose dashboards for
       submission latency, runner queue depth, mentor latency, and validate
-      duration.
+      duration. _(Iteration 10 landed in `apps/web`; worker / runner
+      extension **in flight** this run; current worker dev crashes until the
+      dependency/lockfile state is repaired; dashboards still pending.)_
 - [x] Stand up CI workflow that runs typecheck, test, Playwright smoke, and
       `researchcrafters validate` on every PR. _(`.github/workflows/ci.yml`)_
 - [ ] Add container image scans and digest pinning for runner base images.
 - [ ] Land privacy foundations: PII inventory, encryption-at-rest, data export,
       deletion cascade. _(PII inventory, data export, and deletion cascade have
-      landed; encryption-at-rest remains.)_
+      landed; encryption-at-rest column-level helper is **in flight** in
+      this run.)_
 - [ ] Codify SLO target dashboards in a single observability surface.
 - [x] Pick an auth provider and wire it through the web app. _(NextAuth v5 +
       Prisma adapter)_

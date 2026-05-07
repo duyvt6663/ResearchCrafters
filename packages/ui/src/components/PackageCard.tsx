@@ -1,13 +1,27 @@
 import * as React from "react";
+import { Sparkles } from "lucide-react";
 import { cn } from "../lib/cn.js";
-import { Card, CardBody } from "./Card.js";
 import { StatusBadge } from "./StatusBadge.js";
 import type { StatusKey } from "../tokens.js";
 
 /**
- * PackageCard — catalog tile. The catalog is one of the few places where
- * cards are appropriate (per `docs/FRONTEND.md` section 4: cards for
- * repeated items). Do NOT nest other cards inside.
+ * PackageCard — catalog tile.
+ *
+ * The catalog is one of the few places where cards are appropriate (per
+ * `docs/FRONTEND.md` section 4: cards for repeated items). Do NOT nest other
+ * cards inside.
+ *
+ * Visual contract (refresh, 2026-05):
+ *  - 4px top border tinted by `releaseStatus` (alpha = warning, beta =
+ *    accent, live = success, archived = muted) so the catalog grid reads at
+ *    a glance.
+ *  - Hero area: title in display-md (40px), paper title above in mono
+ *    eyebrow tone.
+ *  - Skills as chip pills with a leading `Sparkles` icon.
+ *  - Hover (when `href` is set): border shifts to accent + 1px translate
+ *    upward, gated by `prefers-reduced-motion: no-preference` via the
+ *    shared `[data-hover-lift]` rule in styles.css.
+ *  - Focus-visible: accent ring on the wrapper.
  */
 export type PackageCardState =
   | "not_started"
@@ -70,6 +84,14 @@ const STATE_LABEL: Record<PackageCardState, string> = {
   locked: "Locked",
 };
 
+const RELEASE_TINT: Record<string, string> = {
+  alpha: "var(--color-rc-warning)",
+  beta: "var(--color-rc-accent)",
+  live: "var(--color-rc-success)",
+  stable: "var(--color-rc-success)",
+  archived: "var(--color-rc-locked)",
+};
+
 export function PackageCard({
   title,
   promise,
@@ -95,119 +117,148 @@ export function PackageCard({
     estimatedTime ??
     (estimatedMinutes !== undefined ? `${estimatedMinutes} min` : "");
   const previewBudget = freePreviewCount ?? freeStageCount;
+  const topBorder = releaseStatus
+    ? (RELEASE_TINT[releaseStatus] ?? "var(--color-rc-border-strong)")
+    : "var(--color-rc-border-strong)";
+
   return (
-    <Card
-      as="article"
+    <article
+      data-card="true"
+      data-hover-lift={href ? "true" : undefined}
       className={cn(
-        "group h-full overflow-hidden transition-colors duration-[--duration-rc-fast]",
-        // Border-color shift only — no scale/translate motion (FRONTEND.md §4).
-        href && "hover:border-[--color-rc-border-strong]",
+        "group relative flex h-full flex-col overflow-hidden",
+        "rounded-[--radius-rc-lg] border border-[--color-rc-border]",
+        "bg-[--color-rc-surface] text-[--color-rc-text]",
         className,
       )}
     >
-      <CardBody className="flex h-full flex-col gap-3 p-5">
-        <Wrapper
-          href={href}
-          onClick={onClick}
-          className="flex h-full flex-col gap-3 focus-visible:outline-none"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <h3 className="text-[--text-rc-lg] font-semibold leading-snug text-[--color-rc-text]">
-              {title}
-            </h3>
-            {releaseStatus &&
-            releaseStatus !== "stable" &&
-            releaseStatus !== "live" ? (
-              <span
-                className={cn(
-                  "flex-none rounded-[--radius-rc-sm] border border-[--color-rc-border]",
-                  "px-1.5 py-0.5 text-[--text-rc-xs] uppercase tracking-wide",
-                  "text-[--color-rc-text-muted]",
-                )}
-              >
-                {releaseStatus}
-              </span>
-            ) : null}
-          </div>
-          {paperTitle ? (
-            <p className="font-[--font-rc-mono] text-[--text-rc-xs] text-[--color-rc-text-subtle]">
-              {paperTitle}
-            </p>
-          ) : null}
-          {pitch ? (
-            <p className="text-[--text-rc-sm] leading-relaxed text-[--color-rc-text-muted]">
-              {pitch}
-            </p>
-          ) : null}
+      {/* Status-tinted top border — a 4px hairline, status-coded. */}
+      <span
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-1"
+        style={{ backgroundColor: topBorder }}
+      />
 
-          {skills.length > 0 ? (
-            <ul className="flex flex-wrap gap-1.5">
-              {skills.map((s) => (
-                <li
-                  key={s}
-                  className={cn(
-                    "inline-flex items-center rounded-[--radius-rc-sm]",
-                    "border border-[--color-rc-border] bg-[--color-rc-bg]",
-                    "px-2 py-0.5 text-[--text-rc-xs] text-[--color-rc-text-muted]",
-                  )}
-                >
-                  {s}
-                </li>
-              ))}
-            </ul>
-          ) : null}
+      <Wrapper
+        href={href}
+        onClick={onClick}
+        className={cn(
+          "flex h-full flex-col gap-3 p-5 pt-6",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-rc-accent] focus-visible:ring-offset-2 focus-visible:ring-offset-[--color-rc-bg]",
+        )}
+      >
+        {paperTitle ? (
+          <p className="font-[--font-rc-mono] text-[10px] uppercase tracking-[0.12em] text-[--color-rc-text-subtle]">
+            {paperTitle}
+          </p>
+        ) : null}
 
-          {/* Footer pinned to bottom so cards line up in the grid. */}
-          <div
+        <div className="flex items-start justify-between gap-3">
+          <h3
             className={cn(
-              "mt-auto flex items-center justify-between gap-2 pt-2",
-              "border-t border-[--color-rc-border] text-[--text-rc-xs]",
-              "text-[--color-rc-text-muted]",
+              "text-[--text-rc-2xl] font-bold leading-[1.15] tracking-[-0.01em]",
+              "text-[--color-rc-text] transition-colors duration-[--duration-rc-fast]",
+              href && "group-hover:text-[--color-rc-accent]",
             )}
           >
-            <span className="inline-flex items-center gap-1.5">
-              <span className="font-medium text-[--color-rc-text]">
-                {difficulty}
-              </span>
-              {timeLabel ? (
-                <>
-                  <span aria-hidden>·</span>
-                  <span>{timeLabel}</span>
-                </>
-              ) : null}
-              {previewBudget !== undefined && previewBudget > 0 ? (
-                <>
-                  <span aria-hidden>·</span>
-                  <span>{previewBudget} free</span>
-                </>
-              ) : null}
+            {title}
+          </h3>
+          {releaseStatus &&
+          releaseStatus !== "stable" &&
+          releaseStatus !== "live" ? (
+            <span
+              className={cn(
+                "flex-none rounded-[--radius-rc-sm] border px-1.5 py-0.5",
+                "text-[10px] font-[--font-rc-mono] uppercase tracking-[0.08em]",
+              )}
+              style={{
+                color: RELEASE_TINT[releaseStatus],
+                borderColor: RELEASE_TINT[releaseStatus],
+              }}
+            >
+              {releaseStatus}
             </span>
-            {status ? (
-              <StatusBadge
-                status={status}
-                size="sm"
-                label={STATE_LABEL[state]}
-              />
-            ) : (
-              <span className="text-[--color-rc-text-subtle]">
-                {STATE_LABEL[state]}
-              </span>
-            )}
-          </div>
-
-          {state === "in_progress" && progress !== undefined ? (
-            <div className="h-1 w-full overflow-hidden rounded-[--radius-rc-sm] bg-[--color-rc-surface-muted]">
-              <div
-                className="h-full bg-[--color-rc-accent]"
-                style={{
-                  width: `${Math.max(0, Math.min(100, progress))}%`,
-                }}
-                aria-hidden
-              />
-            </div>
           ) : null}
-        </Wrapper>
-      </CardBody>
-    </Card>
+        </div>
+
+        {pitch ? (
+          <p className="text-[--text-rc-sm] leading-[1.6] text-[--color-rc-text-muted]">
+            {pitch}
+          </p>
+        ) : null}
+
+        {skills.length > 0 ? (
+          <ul className="flex flex-wrap gap-1.5">
+            {skills.map((s) => (
+              <li
+                key={s}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-[--radius-rc-sm]",
+                  "border border-[--color-rc-border] bg-[--color-rc-bg]",
+                  "px-2 py-0.5 text-[--text-rc-xs] text-[--color-rc-text-muted]",
+                )}
+              >
+                <Sparkles
+                  size={10}
+                  aria-hidden
+                  className="text-[--color-rc-accent]"
+                />
+                {s}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {/* Footer pinned to bottom — difficulty / time / free, separated by `·`. */}
+        <div
+          className={cn(
+            "mt-auto flex items-center justify-between gap-2 pt-3",
+            "border-t border-[--color-rc-border] text-[--text-rc-xs]",
+            "text-[--color-rc-text-muted]",
+          )}
+        >
+          <span className="inline-flex items-center gap-1.5 font-[--font-rc-mono]">
+            <span className="font-medium uppercase tracking-wide text-[--color-rc-text]">
+              {difficulty}
+            </span>
+            {timeLabel ? (
+              <>
+                <span aria-hidden>·</span>
+                <span>{timeLabel}</span>
+              </>
+            ) : null}
+            {previewBudget !== undefined && previewBudget > 0 ? (
+              <>
+                <span aria-hidden>·</span>
+                <span>{previewBudget} free</span>
+              </>
+            ) : null}
+          </span>
+          {status ? (
+            <StatusBadge
+              status={status}
+              size="sm"
+              label={STATE_LABEL[state]}
+            />
+          ) : (
+            <span className="text-[--color-rc-text-subtle]">
+              {STATE_LABEL[state]}
+            </span>
+          )}
+        </div>
+
+        {state === "in_progress" && progress !== undefined ? (
+          <div className="h-1 w-full overflow-hidden rounded-[--radius-rc-sm] bg-[--color-rc-surface-muted]">
+            <div
+              className="h-full bg-[--color-rc-accent]"
+              style={{
+                width: `${Math.max(0, Math.min(100, progress))}%`,
+              }}
+              aria-hidden
+            />
+          </div>
+        ) : null}
+      </Wrapper>
+    </article>
   );
 }

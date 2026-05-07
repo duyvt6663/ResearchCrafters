@@ -43,12 +43,20 @@ export default async function SharePage({
 
   return (
     <main className="rc-page rc-page--share">
-      <header className="rc-band">
-        <h1>{copy.share.captureTitle}</h1>
-        <p>{copy.share.captureBody}</p>
+      <header className="relative overflow-hidden border-b border-[--color-rc-border] bg-[--color-rc-surface]">
+        <div className="rc-hero-grid absolute inset-0 opacity-50" aria-hidden />
+        <div className="relative mx-auto w-full max-w-[1280px] px-6 py-14 lg:px-8 lg:py-16">
+          <span className="rc-eyebrow">Share card</span>
+          <h1 className="rc-display mt-3 max-w-3xl text-[--color-rc-text]">
+            {copy.share.captureTitle}
+          </h1>
+          <p className="mt-4 max-w-2xl text-[--text-rc-md] leading-[1.6] text-[--color-rc-text-muted]">
+            {copy.share.captureBody}
+          </p>
+        </div>
       </header>
 
-      <section className="rc-band">
+      <section className="mx-auto w-full max-w-[1280px] px-6 py-12 lg:px-8">
         <ShareCardPreview
           payload={payload}
           captureLabel={copy.share.insightLabel}

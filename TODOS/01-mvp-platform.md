@@ -131,6 +131,13 @@ section 11.
       _(Tier-1 fix landed: `apps/web/app/globals.css` migrated to v4
       `@import "tailwindcss"` + `@source ../../../packages/ui/src/...`; dead
       `apps/web/tailwind.config.ts` removed; CSS payload 109 → ~1328 lines.)_
+- [x] Ship a mobile decision-graph fallback so the package overview is
+      usable on small screens without a pannable canvas.
+      _(Iterations 4+5: `packages/ui/src/components/DecisionGraphMobile.tsx`
+      shipped with spoiler discipline; wired into
+      `apps/web/app/packages/[slug]/page.tsx`; pinned by
+      `packages/ui/test/decision-graph-mobile.test.tsx` (5 cases). Mobile
+      sheet/tab UI for code/experiment stage-player still open — see `09`.)_
 - [ ] Generate real share-card public URLs and image assets.
 - [ ] Review the static prototype with target users.
 - [ ] UI polish for catalog/overview/stage layouts, AppShell, dark-mode

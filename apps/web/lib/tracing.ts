@@ -20,18 +20,33 @@ import { trace, SpanStatusCode } from "@opentelemetry/api";
 
 const TRACER_NAME = "researchcrafters/web";
 
-export type SpanAttributes = Record<string, string | number | boolean>;
+/**
+ * Attribute values mirror the OTel semconv contract: scalars, plus
+ * homogeneous arrays of scalars. We accept arrays of `string | number |
+ * boolean` so handlers can record list-shaped facts (e.g. an array of stage
+ * refs or a vector of byte sizes) without first stringifying them — that
+ * lets the backend keep the values queryable.
+ */
+export type SpanAttributeValue =
+  | string
+  | number
+  | boolean
+  | ReadonlyArray<string>
+  | ReadonlyArray<number>
+  | ReadonlyArray<boolean>;
+
+export type SpanAttributes = Record<string, SpanAttributeValue>;
 
 export async function withSpan<T>(
   name: string,
-  fn: () => Promise<T>,
+  fn: () => Promise<T> | T,
   attributes: SpanAttributes = {},
 ): Promise<T> {
   const tracer = trace.getTracer(TRACER_NAME);
   return tracer.startActiveSpan(name, async (span) => {
     try {
       for (const [k, v] of Object.entries(attributes)) {
-        span.setAttribute(k, v);
+        span.setAttribute(k, v as never);
       }
       const out = await fn();
       span.setStatus({ code: SpanStatusCode.OK });
@@ -60,6 +75,6 @@ export function setActiveSpanAttributes(attributes: SpanAttributes): void {
   const span = trace.getActiveSpan();
   if (!span) return;
   for (const [k, v] of Object.entries(attributes)) {
-    span.setAttribute(k, v);
+    span.setAttribute(k, v as never);
   }
 }

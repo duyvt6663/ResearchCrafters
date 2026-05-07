@@ -62,8 +62,14 @@ Common:
 - [x] Upload to signed object-storage URL.
 - [x] Record submission metadata.
 - [ ] Honor all API-returned `uploadHeaders` when uploading to the signed URL.
-- [ ] Persist/display the `runId` returned by finalize so `status` and `logs`
-      work without manual DB lookup. _(CLI/entitlements agent in flight)_
+- [x] Persist/display the `runId` returned by finalize so `status` and `logs`
+      work without manual DB lookup. _(Iteration: `submit` now writes
+      `lastRunId` via `setProjectConfig` (`packages/cli/src/commands/submit.ts:119`),
+      and `status` reads it from `.researchcrafters/config.json` and renders
+      the run details via `getRunStatus`. The `slug@slug@stub` rendering
+      bug fixed via `formatPackageDisplay` in
+      `packages/cli/src/lib/config.ts`. Pinned by
+      `packages/cli/test/status-render.test.ts`.)_
 
 ## Runner Modes
 
@@ -127,7 +133,8 @@ Common:
 - [ ] Wire `AnthropicGateway` to a real `ANTHROPIC_API_KEY` once a budget cap is
       in place.
 - [ ] Plug BullMQ workers into a live Redis broker. _(runner-loop agent in
-      flight)_
+      flight; latest local smoke had Redis healthy, but the worker crashed on
+      tracing dependency resolution before processing `submission_run`.)_
 - [x] Replace the development-only device-code force-approve path with the real
       `/auth/device` browser approval flow.
 - [ ] Enqueue `submission_run` from finalize and persist runner callback state
@@ -135,8 +142,14 @@ Common:
 - [ ] Return starter bundle URLs and smoke commands from enroll/start.
       _(CLI/entitlements agent in flight on the `EnrollResponse` cleanup —
       starter URL itself depends on storage seeding.)_
-- [ ] Update CLI `submit` to persist `lastRunId` and pass signed upload headers.
-      _(CLI/entitlements agent in flight)_
+- [ ] Fix the documented local validation command. `pnpm --filter
+      @researchcrafters/cli exec researchcrafters validate
+      ./content/packages/resnet` resolves the path under `packages/cli`; docs
+      and smoke scripts should use an absolute package path or invoke the CLI
+      from the repo root.
+- [ ] Update CLI `submit` to pass signed upload headers (the
+      `lastRunId` persistence half landed; `uploadHeaders` honoring
+      remains).
 - [ ] Evaluate gVisor / Modal / E2B integration once Docker isolation is solid.
 - [ ] Publish CLI to npm with a release channel and versioning policy.
 - [ ] Decide per-stage GPU policy beyond the MVP CPU-only stance.

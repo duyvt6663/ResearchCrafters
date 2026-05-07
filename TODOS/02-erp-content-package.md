@@ -52,9 +52,10 @@ reflect that snapshot.
 - [x] Add `stage_policy` for every stage.
 - [x] Add runner mode for every executable stage.
 - [x] Add `safety.redaction_targets` for LLM mentor or grading stages.
-      _(authored in `package.yaml`; **schema-completeness agent in flight**
-      to surface `package.safety.redaction_targets` through `packageSchema`
-      so the runtime actually sees them.)_
+      _(Iteration 5 landed: `packageSchema` now declares `safety` with
+      `redaction_targets`, and the leak-test harness unions
+      `package.safety.redaction_targets` with each stage's
+      `mentor_redaction_targets`.)_
 - [x] Write expert branch feedback for every decision branch.
 - [x] Write canonical feedback and common misconception notes.
 
@@ -124,9 +125,15 @@ trusted hardware before the package can ship.
       writing module with claim surgery, evidence mapping, and revision.
 - [ ] Add a reviewer-rebuttal micro-stage after `S007` so the writing track
       includes argument under reviewer pressure, not only claim drafting.
-- [ ] Lengthen S004 redaction target `"0.03"` to a contextualized phrase
+- [x] Lengthen S004 redaction target `"0.03"` to a contextualized phrase
       (e.g. `"degradation gap of 0.03"`); add per-trajectory finals
       (`0.06`, `0.08`, `0.05`) to `mentor_redaction_targets` so the harness
       can catch fixture leaks today instead of only via the dropped
-      per-attack `must_not_contain` lists. _(schema-completeness agent in
-      flight on `must_not_contain` capture.)_
+      per-attack `must_not_contain` lists. _(Iteration 2 + iteration 5:
+      bare `"0.03"` removed; 11 contextualized phrases now in
+      `content/packages/resnet/curriculum/stages/004-cifar10-replay.yaml`
+      including per-trajectory finals (`"residual-56: 0.030"`,
+      `"plain-56: 0.080"` etc.), `"degradation gap"`, `"depth 56
+      degradation"`, and the arithmetic identity
+      `"0.080 - 0.060 = 0.020"`. `must_not_contain` per-attack lists are
+      now plumbed through the schema and harness.)_

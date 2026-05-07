@@ -123,6 +123,7 @@ export default async function StagePage({
             {copy.stagePlayer.openOnDesktop}
           </p>
           <CommandBlock
+            title={`~/research/${enrollment.packageSlug}`}
             commands={[
               cliCommands.start(stage.ref),
               cliCommands.test,
@@ -146,11 +147,13 @@ export default async function StagePage({
     return null;
   })();
 
-  // Comfortable padding + max-width on prose. StagePlayer's center column
-  // already provides p-4; we add a bounded prose container so reading does
-  // not stretch edge-to-edge on ultrawide monitors.
+  // Comfortable padding + bounded prose. The stage player is a workbench
+  // surface, but the writing/reading lines deserve real prose typography:
+  // line-height 1.6 (`prose-rc`) so longer prompts and rubric notes don't
+  // feel cramped. Width caps at `max-w-prose` (~65ch) which keeps the line
+  // length comfortable on ultrawide monitors.
   const workspace: ReactNode = (
-    <div className="mx-auto w-full max-w-3xl">{workspaceInner}</div>
+    <div className="mx-auto w-full max-w-prose prose-rc">{workspaceInner}</div>
   );
 
   const contextPanel: ReactNode = (

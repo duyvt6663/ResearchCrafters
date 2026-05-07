@@ -1,8 +1,31 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactElement, ReactNode } from "react";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { AppShell, TopNav } from "@researchcrafters/ui/components";
 import { copy } from "@researchcrafters/ui/copy";
 import "./globals.css";
+
+/**
+ * Display + UI font: Inter (variable). Loaded via `next/font/google` so the
+ * font binary is fingerprinted and self-hosted — no FOUT and no third-party
+ * runtime fetch from `fonts.gstatic.com`. We also load JetBrains Mono for
+ * code/CLI surfaces.
+ *
+ * The CSS variables (`--rc-font-sans-runtime`, `--rc-font-mono-runtime`) are
+ * the runtime hooks the UI tokens fall back through — `--font-rc-sans` first
+ * tries the runtime variable, then drops to its system stack default.
+ */
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--rc-font-sans-runtime",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--rc-font-mono-runtime",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "ResearchCrafters",
@@ -11,7 +34,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#111111",
+  themeColor: "#1B2433",
   width: "device-width",
   initialScale: 1,
 };
@@ -22,10 +45,7 @@ export default function RootLayout({
   children: ReactNode;
 }): ReactElement {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      </head>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body>
         <AppShell
           topNav={

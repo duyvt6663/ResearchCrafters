@@ -14,6 +14,15 @@ describe("withSpan", () => {
     expect(out).toBe(42);
   });
 
+  it("propagates the return value of a synchronous (non-Promise) arrow", async () => {
+    // Some call sites prefer to write `withSpan(name, () => syncResult)`
+    // rather than wrapping a body in `async` for one trivial expression.
+    // The helper must accept either; if it ever stops awaiting the value
+    // we'd silently start returning a Promise<unknown> here.
+    const out = await withSpan("test.sync", () => "sync-value");
+    expect(out).toBe("sync-value");
+  });
+
   it("re-throws errors from the wrapped function unchanged", async () => {
     const err = new Error("boom");
     await expect(
@@ -56,6 +65,20 @@ describe("setActiveSpanAttributes", () => {
         "rc.string": "value",
         "rc.number": 42,
         "rc.bool": true,
+      }),
+    ).not.toThrow();
+  });
+
+  it("accepts arrays of strings / numbers / booleans", () => {
+    // Some attributes (e.g. an array of stage refs traversed in a session,
+    // or a vector of byte sizes per uploaded file) are list-shaped. The
+    // OTel spec allows homogeneous arrays of scalars, so the helper has to
+    // pass them through to `setAttribute` as-is rather than stringifying.
+    expect(() =>
+      setActiveSpanAttributes({
+        "rc.stage_refs": ["S001", "S002", "S003"],
+        "rc.byte_sizes": [128, 256, 512],
+        "rc.flags": [true, false, true],
       }),
     ).not.toThrow();
   });

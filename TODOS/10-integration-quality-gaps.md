@@ -3,23 +3,85 @@
 Goal: turn the scaffolded app into a verified end-to-end learner loop before
 adding more product surface.
 
-Status (verified 2026-05-08, post Tier-1 API hygiene + Tailwind v4
-migration): static quality is green (`pnpm lint`, `pnpm typecheck`,
-`pnpm test`, and the web production build all pass; lint still reports one
-cached UI warning). Local Postgres + MinIO are healthy, and CLI
-device-token, `start`, and `submit` can round-trip against the local app.
-The two unresolved-promise API contract bugs are fixed (`/api/packages` and
-`/api/enrollments/:id/graph` now `await`); 10 routes now accept Bearer auth
-via `getSessionFromRequest`; `/api/stage-attempts`, `/api/share-cards`, and
-`/api/node-traversals` return structured 400 on bad bodies; Tailwind v4
-utility generation in `apps/web` is fixed and `packages/ui` classes are
-emitted. The app is still not end-to-end complete: submission runs never
-reach a real runner/evaluator, Redis cannot start on the default local
-port, the Next.js 15.5.16 dev cache flake (`Cannot find module './3879.js'`)
-still destabilises Playwright under parallel load, and persistent rows for
-node traversals / share cards / stage attempts are still synthesized.
+Earlier integrated-build snapshot (2026-05-08, post iterations 1-10 of the
+autonomous loop; superseded by "Latest Verification" below where they
+conflict): static quality was green in the cached suite (`pnpm lint`,
+`pnpm typecheck`, `pnpm test`, and the web production build all passed; lint
+still reported one cached UI warning). `pnpm test` is **378 passing + 9 skipped
+across 18 tasks**.
+Local Postgres + MinIO are healthy, and CLI device-token, `start`, and
+`submit` can round-trip against the local app. The two unresolved-promise
+API contract bugs are fixed (`/api/packages` and
+`/api/enrollments/:id/graph` now `await`); 10 routes now accept Bearer
+auth via `getSessionFromRequest`; `/api/stage-attempts`,
+`/api/share-cards`, and `/api/node-traversals` return structured 400 on
+bad bodies; Tailwind v4 utility generation in `apps/web` is fixed and
+`packages/ui` classes are emitted. **60+ route handler tests across 9
+files** pin the highest-risk routes including the runner-callback
+`X-Runner-Secret` constant-time gate, mentor denial → authored-refusal
+attachment, and the four-state device-code polling protocol. **CLI
+submit bundle policy** (deny-list / size caps / determinism) is now
+covered by 10 tests. **Schema completeness** landed
+(`package.safety.redaction_targets`, `mentor_leak_tests[*].must_not_contain`,
+union-not-OR battery composition, 6 surfaced dropped stage fields).
+**OpenTelemetry SDK** is wired in `apps/web` via `@vercel/otel` +
+`withSpan` helpers (worker / runner extension in flight). **Mobile
+decision-graph fallback** (`DecisionGraphMobile`) shipped and wired to
+the package overview. **Failed-branch label redaction** at the catalog
+spoiler boundary fixed. The app is still not end-to-end complete:
+submission runs never reach a real runner/evaluator, Redis cannot start
+on the default local port, the Next.js 15.5.16 dev cache flake (`Cannot
+find module './3879.js'`) still destabilises Playwright under parallel
+load, and persistent rows for node traversals / share cards / stage
+attempts are still synthesized.
 
 Depends on: 01, 02, 03, 04, 06, 08, 09. Blocks: calling the app end-to-end.
+
+## Latest Verification — 2026-05-08
+
+Commands were run against the current dirty workspace with Docker Postgres,
+Redis, and MinIO healthy. Port `3000` and `3001` were already occupied by other
+local Next apps, so the web app was tested on `http://localhost:3003`.
+
+- [x] `pnpm --filter @researchcrafters/db db:migrate` is in sync.
+- [x] `pnpm --filter @researchcrafters/db db:seed` succeeds and loads ResNet
+      with 9 stages, 3 branches, and seeded enrollment
+      `cmovf11u5001dakq882p0iob3`.
+- [x] `pnpm test` passes: 18 tasks, web 139 passed + 9 skipped, 378 total
+      passing tests across the workspace.
+- [x] `researchcrafters validate` passes for
+      `content/packages/resnet` when invoked with an absolute package path.
+- [x] CLI device-token auth, `start resnet`, `submit`, and `status` round-trip
+      against the local API. `submit` persists `lastRunId`, and `status` shows
+      the returned run id.
+- [ ] `pnpm install --frozen-lockfile` fails because `pnpm-lock.yaml` is out of
+      sync with `packages/db/package.json` (`vitest` was added to the package
+      manifest but not the lockfile). This blocks fresh-clone and CI installs.
+- [ ] `pnpm turbo run typecheck --force` fails in `@researchcrafters/db`:
+      `src/crypto.ts` has `{}` length typing errors,
+      `src/encrypted-fields.ts` has Prisma extension typing errors, and
+      `src/seed.ts` sees extended Prisma models as `unknown`.
+- [ ] `pnpm --filter @researchcrafters/worker typecheck` and
+      `pnpm --filter @researchcrafters/worker dev` fail in the current install:
+      worker tracing imports `@opentelemetry/api`, but the dependency is not
+      linked until the lockfile/install state is repaired. The live worker
+      crashes before processing `submission_run`, leaving CLI-submitted runs
+      queued.
+- [ ] `pnpm --filter @researchcrafters/web build` fails: Next tries to bundle
+      `node:crypto` through `../../packages/db/dist/crypto.js` →
+      `../../packages/db/dist/index.js` → `apps/web/auth.ts` and errors with
+      `UnhandledSchemeError`. Split server-only DB encryption exports or stop
+      re-exporting them from the web-imported DB entrypoint.
+- [ ] `pnpm test:e2e` against the running app is down to 3 failures:
+      15 passed, 5 skipped, 3 failed. The remaining failures are
+      `/api/auth/providers` returning `{}` when GitHub OAuth env vars are
+      blank, `/api/entitlements` returning 401 for anonymous callers while the
+      test still expects 200, and a stale StagePlayer selector
+      (`h1.rc-stage-header`) even though the page renders a visible `h1`.
+- [ ] The README-style CLI validation command
+      `pnpm --filter @researchcrafters/cli exec researchcrafters validate ./content/packages/resnet`
+      resolves the package path relative to `packages/cli` and fails. Use an
+      absolute path or a root-executed CLI command in docs and smoke scripts.
 
 ## P0: Browser Route Health
 
@@ -150,10 +212,13 @@ Acceptance criteria:
       CPU, memory, wall-clock, network, and writable-mount constraints.
 - [ ] Persist runner output artifacts and scrubbed logs. _(runner-loop
       agent in flight)_
-- [ ] Send runner callbacks with service authentication, not user cookies.
-      _(route is now Bearer-aware via `getSessionFromRequest`, but a service
-      token / `X-Runner-Secret` gate is still missing — runner-loop agent
-      in flight.)_
+- [x] Send runner callbacks with service authentication, not user cookies.
+      _(Iteration: `/api/runs/[id]/callback` now requires
+      `X-Runner-Secret`, validated with constant-time compare; anonymous
+      callers get 401 with `WWW-Authenticate: X-Runner-Secret realm="runner"`
+      and zero DB writes. Pinned by `route-runs-callback.test.ts`
+      (7 cases). Run persistence (status / logs / metrics) once auth
+      passes is still in flight.)_
 - [ ] Invoke evaluator only when `execution_status=ok`. _(runner-loop
       agent in flight)_
 - [ ] Persist structured grades and expose them through web and CLI.
@@ -208,16 +273,43 @@ Acceptance criteria:
 
 - [x] `pnpm lint` passes non-interactively. _(passes with one cached UI
       warning about an unused eslint-disable.)_
-- [x] `pnpm typecheck` remains green.
+- [ ] `pnpm typecheck` remains green.
+      _(not true under `pnpm turbo run typecheck --force`; `@researchcrafters/db`
+      currently fails on the new encryption / Prisma-extension typings.)_
 - [x] `pnpm test` remains green.
-- [x] `@researchcrafters/web` production build remains green with local dev env.
+- [ ] `@researchcrafters/web` production build remains green with local dev env.
+      _(currently fails because the web build bundles `node:crypto` through
+      `@researchcrafters/db`'s top-level export path.)_
 - [x] Package validation passes locally for ResNet and the ERP template.
 - [ ] Playwright happy path passes before merge.
-      _(the original tracked smoke passed; the current expanded workspace suite
-      fails under parallel execution.)_
+      _(latest run: 15 passed, 5 skipped, 3 failed against
+      `http://localhost:3003`; failures are auth-provider fixture/env mismatch,
+      anonymous entitlement contract drift, and stale StagePlayer selectors.)_
 
 ## Current Verified Failures
 
+- [ ] Fresh install is broken: `pnpm install --frozen-lockfile` fails because
+      `packages/db/package.json` and `pnpm-lock.yaml` disagree on `vitest`.
+- [ ] Forced typecheck/build is not green for `@researchcrafters/db`. Fix the
+      encryption helper typings and extended-Prisma client typing so Turbo cache
+      cannot mask a real compile failure.
+- [ ] Web production build fails on `node:crypto` pulled from
+      `packages/db/dist/crypto.js` through `packages/db/dist/index.js` into
+      `apps/web/auth.ts`. DB encryption helpers need a server-only export path
+      or the public DB index must avoid exporting Node-only modules.
+- [ ] Worker tracing integration is not runnable in the current install.
+      `apps/worker/src/jobs/submission-run.ts` imports `@opentelemetry/api`;
+      until dependency/lockfile state is repaired, `pnpm --filter
+      @researchcrafters/worker dev` crashes and no submitted run can progress
+      past `queued`.
+- [ ] Expanded Playwright suite now fails 3/23, not 15/23. Update or fix the
+      remaining contracts:
+      `/api/auth/providers` is empty with blank GitHub env,
+      `/api/entitlements` is now 401 for anon, and StagePlayer smoke should use
+      stable `data-testid` / role selectors instead of removed CSS classes.
+- [ ] The docs/smoke command for package validation uses `pnpm --filter ... exec`
+      with a relative path, causing `./content/packages/resnet` to resolve under
+      `packages/cli`. Replace with an absolute path or root-executed CLI call.
 - [x] `/api/packages` returns `{ "packages": {} }`; route handler returns the
       unresolved `listPackages()` promise. _(Tier-1 fix landed: now
       `await listPackages()`.)_
@@ -238,15 +330,20 @@ Acceptance criteria:
       vendor-chunk MODULE_NOT_FOUND under parallel test execution), so the
       E2E harness also needs server/cache isolation. Workaround:
       `rm -rf apps/web/.next && pnpm --filter @researchcrafters/web dev`.
-- [ ] CLI `submit` uploads and finalizes, but does not surface or persist the
+      _(Superseded by the latest 2026-05-08 run above: after clearing `.next`
+      and reusing the running server on port 3003, only 3/23 fail.)_
+- [x] CLI `submit` uploads and finalizes, but does not surface or persist the
       returned run id; `researchcrafters status` still prints "No runs yet."
-      _(CLI/entitlements agent in flight)_
+      _(Iteration: `submit` writes `lastRunId` to
+      `.researchcrafters/config.json`; `status` reads it and renders run
+      details via `getRunStatus`. Pinned by
+      `packages/cli/test/status-render.test.ts`.)_
 - [ ] Submission finalize creates a queued `Run` row but does not enqueue the
       BullMQ `submission_run` job, so the run remains queued with empty logs.
       _(runner-loop agent in flight)_
-- [ ] Runner callback does not persist status, logs, metrics, or timestamps and
-      still lacks service-token authentication. _(route is Bearer-aware now;
-      service-token / `X-Runner-Secret` gate is in flight via runner-loop
+- [ ] Runner callback does not persist status, logs, metrics, or timestamps.
+      _(`X-Runner-Secret` service-token gate **landed** with constant-time
+      compare; the persistence half is still in flight via the runner-loop
       agent.)_
 - [ ] `researchcrafters start resnet` creates an effectively empty workspace
       because the enroll/start response has no starter URL or smoke command.
@@ -266,12 +363,23 @@ Acceptance criteria:
 - [ ] `docker compose up` can fail on Redis when host port `6379` is already in
       use; make local ports configurable. _(runner-loop agent may retarget
       the port.)_
-- [ ] No API route handler tests anywhere — every `apps/web/app/api/**/route.ts`
+- [x] No API route handler tests anywhere — every `apps/web/app/api/**/route.ts`
       lacks Request → Response tests. test-coverage QA listed top-10
       candidates (denial-status mapping, anonymized-email, stage-attempt
       4xx, mentor messages 4xx, submission-init bad sha256 propagation).
-- [ ] CLI `submit` bundle deny-list (`.env`, `node_modules`, `.git`, `*.pem`),
+      _(Iterations 3/6/8: 9 route-handler test files / 60+ tests landed —
+      `route-packages`, `route-stage-attempts`, `route-share-cards`,
+      `route-node-traversals`, `route-runs-callback`,
+      `route-mentor-messages`, `route-auth-device-code`,
+      `route-auth-device-token`, `route-runs-id`. Lower-risk read-only
+      routes still uncovered; see PROGRESS.md "Open today".)_
+- [x] CLI `submit` bundle deny-list (`.env`, `node_modules`, `.git`, `*.pem`),
       50 MiB total cap, 5 MiB per-file cap, and 5000-file cap are
       uncovered by tests; a regression could leak `.env` to the server.
+      _(Iteration 3: 10 cases in
+      `packages/cli/test/submit-bundle.test.ts` pin the full deny-list
+      (`.env` / `node_modules` / `.git` / `.next` / `.turbo` / `dist` /
+      `*.pem` / `*.key`), the 50 MiB / 5 MiB / 5000-file caps with the
+      at-cap edge case, and sorted-output sha256 determinism.)_
 - [ ] `AnthropicGateway` real-provider path is mock-only — wire shape and
       error handling never exercised against a real key.

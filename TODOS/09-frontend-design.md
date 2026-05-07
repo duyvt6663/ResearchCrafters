@@ -71,7 +71,9 @@ branch-stats suppression), 03 (CLI surface).
 - [x] Design right context panel.
 - [x] Define tabs for evidence, feedback, mentor, and logs.
 - [x] Define sticky primary action behavior.
-- [ ] Define mobile sheet/tab behavior.
+- [ ] Define mobile sheet/tab behavior. _(decision-graph fallback
+      shipped via `DecisionGraphMobile` in iterations 4+5; stage-player
+      sheet/tab UI for code/experiment stages still open.)_
 - [x] Define locked-stage behavior.
 - [x] Define completed-stage review behavior.
 - [x] Define stage map navigation policy: free jump within unlocked stages,
@@ -279,8 +281,13 @@ CLI surface in `03-cli-runner.md`.
 
 ## Mobile Fallbacks
 
-- [ ] Mobile decision graph falls back to a tree/list view rather than a
-      pannable canvas.
+- [x] Mobile decision graph falls back to a tree/list view rather than a
+      pannable canvas. _(Iterations 4+5: `DecisionGraphMobile`
+      (`packages/ui/src/components/DecisionGraphMobile.tsx`) shipped with
+      spoiler discipline as a second line of defense (no canonical-branch
+      labels until policy allows). Wired into
+      `apps/web/app/packages/[slug]/page.tsx`. Pinned by
+      `packages/ui/test/decision-graph-mobile.test.tsx` (5 cases).)_
 - [x] Mobile code stage shows "open this stage on desktop" guidance with the
       relevant CLI command for handoff.
 - [ ] Mobile experiment stage shows a read-only run status view.
@@ -343,8 +350,10 @@ A single design-review checklist consolidating "do not" rules from
 
 - [ ] Review the static prototype with one engineer and one target user.
 - [ ] Capture the wireframe set called for in `Wireframes`.
-- [ ] Define mobile fallbacks for decision graph and code/experiment stages
-      beyond the current skeleton.
+- [ ] Define mobile fallbacks for code/experiment stages beyond the
+      current skeleton. _(Decision-graph fallback shipped — see
+      `DecisionGraphMobile`. Stage-player sheet UI for code/experiment
+      stages still open.)_
 - [ ] Instrument a performance budget (Lighthouse / TTI in CI).
 - [ ] Formalize the Anti-Patterns Checklist sign-off process.
 - [ ] Pick the branch reveal transition (inline expansion / dedicated reveal /

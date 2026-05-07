@@ -20,6 +20,11 @@
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import {
+  setActiveSpanAttributes,
+  withSpan,
+  withTraceparentContext,
+} from '../lib/tracing.js';
 
 // -----------------------------------------------------------------------------
 // Public payload + dep types
@@ -55,6 +60,14 @@ export interface SubmissionRunJob {
   /** YAML stage id (e.g. "S004"). */
   stageRef: string;
   runnerMode: RunnerMode;
+  /**
+   * Optional W3C traceparent injected by `/api/submissions/[id]/finalize`
+   * when it enqueues this job. When present, the worker re-attaches it as
+   * the parent context for the `worker.submission_run` span so the trace
+   * tree spans web → BullMQ → worker → callback. Older payloads without
+   * this field still produce a valid (root) span.
+   */
+  traceparent?: string;
 }
 
 export interface SubmissionRunResult {
@@ -285,6 +298,32 @@ export async function runSubmissionRun(
   prisma: SubmissionRunPrisma,
   deps: SubmissionRunDeps,
 ): Promise<SubmissionRunResult> {
+  // Re-attach the parent context if the producer injected a `traceparent`.
+  // The web `/api/submissions/[id]/finalize` route stamps the outgoing
+  // BullMQ payload with the active span's W3C traceparent so the worker
+  // span here is a child of the originating finalize span — that's what
+  // stitches the web → queue → worker hop into a single trace tree.
+  //
+  // When `traceparent` is absent (older payloads / direct invocations
+  // from tests), `withTraceparentContext` runs the body without
+  // re-parenting; behaviour is unchanged.
+  return withTraceparentContext(job.traceparent, () =>
+    withSpan(
+      'worker.submission_run',
+      () => runSubmissionRunInner(job, prisma, deps),
+      {
+        'rc.run.id': job.runId,
+        'rc.runner.mode': job.runnerMode,
+      },
+    ),
+  );
+}
+
+async function runSubmissionRunInner(
+  job: SubmissionRunJob,
+  prisma: SubmissionRunPrisma,
+  deps: SubmissionRunDeps,
+): Promise<SubmissionRunResult> {
   const now = deps.now ?? (() => new Date());
   const log =
     deps.log ??
@@ -323,6 +362,10 @@ export async function runSubmissionRun(
   });
   if (!submission) {
     await failRun(prisma, job.runId, 'crash', now);
+    setActiveSpanAttributes({
+      'rc.run.status': 'crash',
+      'rc.execution.status': 'crash',
+    });
     log('submission_run_missing_submission', { runId: job.runId, submissionId: job.submissionId });
     return {
       runId: job.runId,
@@ -411,10 +454,16 @@ export async function runSubmissionRun(
     metricsBody['exitCode'] = artifacts.exitCode;
   }
 
+  const finalRunStatus = executionToRunStatus(artifacts.executionStatus);
+  setActiveSpanAttributes({
+    'rc.run.status': finalRunStatus,
+    'rc.execution.status': artifacts.executionStatus,
+  });
+
   await prisma.run.update({
     where: { id: job.runId },
     data: {
-      status: executionToRunStatus(artifacts.executionStatus),
+      status: finalRunStatus,
       metricsJson: metricsBody,
       ...(isTerminalExecution(artifacts.executionStatus)
         ? { finishedAt: now() }

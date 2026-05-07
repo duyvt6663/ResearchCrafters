@@ -5,7 +5,26 @@ export {
   QueryTimeoutError,
   DEFAULT_QUERY_TIMEOUT_MS,
 } from "./client.js";
-export type { PrismaClient } from "./client.js";
+export type { PrismaClient, ExtendedPrismaClient } from "./client.js";
+
+// Application-level at-rest encryption. The `prisma` singleton above already
+// has the extension applied; these named exports are for tests, scripts, and
+// any consumer that needs to introspect the policy or call the leaf crypto
+// helpers directly (e.g. backfill scripts that encrypt rows in place).
+export {
+  encrypt,
+  decrypt,
+  isEncrypted,
+  DecryptError,
+  MissingKeyError,
+} from "./crypto.js";
+export type { EncryptedEnvelope } from "./crypto.js";
+export {
+  ENCRYPTED_FIELDS,
+  withEncryption,
+  isEncryptionDisabled,
+} from "./encrypted-fields.js";
+export type { EncryptedFieldPolicy } from "./encrypted-fields.js";
 
 // Re-export generated Prisma types so consumers don't need a direct
 // dependency on @prisma/client. Add named re-exports here as the schema

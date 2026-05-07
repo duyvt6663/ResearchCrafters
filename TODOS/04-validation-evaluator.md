@@ -16,11 +16,11 @@ reflect that snapshot.
 - [x] Validate hint schemas.
 - [x] Validate `workspace/runner.yaml`.
 - [x] Validate `safety.redaction_targets` when LLM mentor or LLM grading is enabled.
-      _(stage-level `mentor_redaction_targets` validates today; the
-      `package.safety.redaction_targets` block is silently dropped at parse
-      because `packageSchema` does not declare `safety`. **Schema-completeness
-      agent in flight** to add `safetySchema` to `packageSchema` and union
-      its targets with the per-stage list.)_
+      _(Iteration 5 landed: `packageSchema` now declares
+      `safety.redaction_targets`
+      (`packages/erp-schema/src/schemas/package.ts`); leak-test harness
+      unions package-level + per-stage `mentor_redaction_targets`
+      (`packages/content-sdk/src/validator/leak-tests.ts`).)_
 
 ## ARA Cross-Link Validation
 
@@ -154,18 +154,20 @@ reflect that snapshot.
 - [ ] Define a typed trace graph schema and build output so
       `buildPackageManifest` can expose a compiled experiment tree payload for
       the web UI.
-- [ ] Add `package.safety` (`safetySchema`) to `packageSchema` and union
+- [x] Add `package.safety` (`safetySchema`) to `packageSchema` and union
       `package.safety.redaction_targets` with `stage_policy.mentor_redaction_targets`
-      when collecting leak-test targets. _(schema-completeness agent in
-      flight)_
-- [ ] Capture `mentor_leak_tests[*].must_not_contain` (and optional `id` /
+      when collecting leak-test targets. _(Iteration 5 landed.)_
+- [x] Capture `mentor_leak_tests[*].must_not_contain` (and optional `id` /
       `category`) on the stage schema; have the leak-test harness check
-      each authored attack against its own list. _(in flight)_
-- [ ] Compose authored leak-test attacks as a UNION with the default
-      battery, not OR (today `authoredAttacks(stage) ?? DEFAULT_ATTACKS`
-      replaces the 5 defaults; should `[...authored, ...DEFAULT_ATTACKS]`
-      with id-dedupe). _(in flight)_
-- [ ] Surface dropped stage fields (`node_id`, `source_refs`,
+      each authored attack against its own list. _(Iteration 5 landed —
+      `packages/erp-schema/src/schemas/stage.ts` declares
+      `must_not_contain`; harness consumes per-attack lists.)_
+- [x] Compose authored leak-test attacks as a UNION with the default
+      battery, not OR (was `authoredAttacks(stage) ?? DEFAULT_ATTACKS`,
+      replacing the 5 defaults; now
+      `[...DEFAULT_ATTACKS, ...authored]` with id-dedupe at
+      `packages/content-sdk/src/validator/leak-tests.ts`). _(Iteration 5.)_
+- [x] Surface dropped stage fields (`node_id`, `source_refs`,
       `evidence_refs`, `validation.test_path`, `inputs.fields`,
       `runner.fixtures`) either via schema extension or structural warnings.
-      _(in flight)_
+      _(Iteration 5: 6 fields surfaced.)_

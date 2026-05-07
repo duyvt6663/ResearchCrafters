@@ -5,6 +5,7 @@ import {
   deviceTokenRequestSchema,
   deviceTokenResponseSchema,
 } from "@/lib/api-contract";
+import { setActiveSpanAttributes, withSpan } from "@/lib/tracing";
 
 export const runtime = "nodejs";
 
@@ -43,6 +44,7 @@ function urlSafeRandom(bytes: number): string {
  * any other NODE_ENV the flag is ignored.
  */
 export async function POST(req: Request): Promise<NextResponse> {
+  return withSpan("api.auth.device-token", async () => {
   let raw: unknown = {};
   try {
     raw = await req.json();
@@ -78,6 +80,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     }),
   );
   if (!flow) {
+    setActiveSpanAttributes({ "rc.device_flow.state": "missing" });
     return NextResponse.json(
       deviceTokenResponseSchema.parse({ error: "expired_token" }),
       { status: 400 },
@@ -85,9 +88,16 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   // Dev-only: force the flow to `approved` against the seed fixture user.
+  const isDev = process.env["NODE_ENV"] === "development";
+  if (isDev) {
+    setActiveSpanAttributes({
+      "rc.dev_force_approve":
+        parsed.data.developer_force_approve === true,
+    });
+  }
   if (
     parsed.data.developer_force_approve === true &&
-    process.env["NODE_ENV"] === "development" &&
+    isDev &&
     flow.state === "pending" &&
     flow.expiresAt.getTime() > Date.now()
   ) {
@@ -113,6 +123,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   const isExpired = flow.expiresAt.getTime() <= now;
 
   if (isExpired && flow.state !== "approved") {
+    setActiveSpanAttributes({ "rc.device_flow.state": "expired" });
     if (flow.state !== "expired") {
       await withQueryTimeout(
         prisma.deviceCodeFlow.update({
@@ -128,6 +139,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   if (flow.state === "denied") {
+    setActiveSpanAttributes({ "rc.device_flow.state": "denied" });
     return NextResponse.json(
       deviceTokenResponseSchema.parse({ error: "access_denied" }),
       { status: 400 },
@@ -135,6 +147,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   if (flow.state === "expired") {
+    setActiveSpanAttributes({ "rc.device_flow.state": "expired" });
     return NextResponse.json(
       deviceTokenResponseSchema.parse({ error: "expired_token" }),
       { status: 400 },
@@ -142,6 +155,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   if (flow.state === "pending") {
+    setActiveSpanAttributes({ "rc.device_flow.state": "pending" });
     return NextResponse.json(
       deviceTokenResponseSchema.parse({ error: "authorization_pending" }),
       { status: 202 },
@@ -150,6 +164,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   // approved
   if (!flow.userId) {
+    setActiveSpanAttributes({ "rc.device_flow.state": "approved_no_user" });
     return NextResponse.json(
       deviceTokenResponseSchema.parse({ error: "access_denied" }),
       { status: 400 },
@@ -157,6 +172,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   if (flow.consumedAt) {
+    setActiveSpanAttributes({ "rc.device_flow.state": "consumed" });
     // The same deviceCode was already exchanged for a session; refuse a
     // second mint. The CLI should treat this as expired and re-run login.
     return NextResponse.json(
@@ -164,6 +180,8 @@ export async function POST(req: Request): Promise<NextResponse> {
       { status: 400 },
     );
   }
+
+  setActiveSpanAttributes({ "rc.device_flow.state": "approved" });
 
   const expires = new Date(now + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
   const sessionToken = urlSafeRandom(32);
@@ -197,4 +215,5 @@ export async function POST(req: Request): Promise<NextResponse> {
     email: user?.email ?? null,
   });
   return NextResponse.json(body);
+  });
 }

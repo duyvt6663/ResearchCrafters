@@ -87,6 +87,11 @@ reflect that snapshot.
 - [x] Add tests for minimum-N suppression at both node and branch granularity.
 - [x] Round displayed percentages to the nearest 5% to reduce identifiability in
       small cohorts.
+- [x] Redact failed-branch labels at the catalog spoiler boundary.
+      _(Iteration 7: `apps/web/lib/data/packages.ts` `redactSampleDecision`
+      now strips canonical-branch labels from public catalog payloads;
+      `packages/db/src/seed.ts` `buildFailedBranchLesson` writes a
+      non-spoiler title.)_
 
 ## Telemetry
 

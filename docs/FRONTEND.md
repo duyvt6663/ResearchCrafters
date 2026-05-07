@@ -92,6 +92,36 @@ Shape:
 - Use lucide icons for common actions: play, check, alert, terminal, file, graph, message,
   lock, unlock, copy, external link, refresh.
 
+### 4.1 Workbench vs marketing surfaces
+
+The visual rules above remain the default. We split surfaces into two contexts so the
+catalog and package overview can be memorable without compromising the deep-work pages.
+
+**Workbench surfaces** — the stage player, mentor panel, evidence panel, run logs, the
+right-rail in the package overview. These keep the original restraint:
+
+- Body sizes only (`--text-rc-base` / `--text-rc-md`); no display tokens.
+- Motion budget: state-change transitions only, durations `fast` / `base`.
+- No decorative gradients, no inline-SVG illustrations, no hover-lift on interactive
+  cards beyond a border-color shift.
+
+**Marketing surfaces** — the catalog landing, the package overview hero + left column,
+the share card capture page, the login page. These are allowed:
+
+- Hero typography in `--text-rc-display-xl` / `--text-rc-display-2xl`.
+- Purposeful entrance animations (max `--duration-rc-entrance` = 300ms) gated on
+  `prefers-reduced-motion`. Use the `.rc-anim-fade-up` helper.
+- Terminal `CommandBlock` as a hero element (window chrome with traffic-light dots,
+  optional `typing` animation).
+- Subtle hover-lift on cards via `data-hover-lift` (1px translate + accent border).
+- Inline SVG decoration: dot grids (`.rc-hero-grid`), training-curve previews
+  (`EvidenceCard` with `kind: 'training-curve'`), small geometric step glyphs.
+- Mono `.rc-eyebrow` label above every display headline.
+
+The dividing line is mode of attention. Workbench surfaces are read by users who already
+know what they want; they should disappear into the work. Marketing surfaces are read by
+users deciding whether to engage; they earn a stronger visual voice.
+
 ## 5. App Shell
 
 Desktop structure:
