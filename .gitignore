@@ -1,4 +1,10 @@
-.claude/
+.claude/*
+!.claude/settings.json
+!.claude/hooks
+.claude/hooks/*
+!.claude/hooks/*.py
+!.claude/hooks/*.sh
+!.claude/hooks/README.md
 .codex/
 AGENTS.md
 CLAUDE.md
