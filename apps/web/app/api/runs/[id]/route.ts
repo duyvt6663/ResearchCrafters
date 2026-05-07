@@ -6,6 +6,7 @@ import {
   runStatusResponseSchema,
   type RunStatus,
 } from "@/lib/api-contract";
+import { getStorageEnv, signDownloadUrl } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -122,15 +123,29 @@ export async function GET(
     ? coerceStatus(run.submission.stageAttempt.executionStatus)
     : undefined;
 
+  let logUrl: string | null = null;
+  if (run.logObjectKey) {
+    try {
+      const storageEnv = getStorageEnv();
+      logUrl = await signDownloadUrl({
+        bucket: storageEnv.buckets.runs,
+        key: run.logObjectKey,
+        expiresIn: 300,
+      });
+    } catch {
+      // Storage unavailable: surface a null URL so the CLI falls back to
+      // the inline /logs endpoint. We don't fail the whole status response.
+      logUrl = null;
+    }
+  }
+
   const body = runStatusResponseSchema.parse({
     id: run.id,
     status,
     startedAt: run.startedAt ? run.startedAt.toISOString() : null,
     finishedAt: run.finishedAt ? run.finishedAt.toISOString() : null,
     ...(executionStatus ? { executionStatus } : {}),
-    logUrl: run.logObjectKey
-      ? `https://stub-storage.local/logs/${run.logObjectKey}`
-      : null,
+    logUrl,
   });
   return NextResponse.json(body);
 }

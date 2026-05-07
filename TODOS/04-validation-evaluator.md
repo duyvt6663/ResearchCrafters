@@ -2,7 +2,7 @@
 
 Goal: make ERP quality and learner grading testable, auditable, and safe.
 
-Status (2026-05-07): see `PROGRESS.md` for the snapshot. Checkboxes below
+Status (2026-05-08): see `PROGRESS.md` for the snapshot. Checkboxes below
 reflect that snapshot.
 
 ## Package Validator
@@ -92,7 +92,7 @@ reflect that snapshot.
 
 ## Acceptance Criteria
 
-- [ ] Package cannot publish unless validation layers 1-4 pass.
+- [x] Package cannot publish unless validation layers 1-4 pass.
 - [x] Evaluator and runner ownership is clearly separated in code.
 - [x] LLM grading cannot reveal hidden answers through learner prompt injection.
 - [x] Grades are explainable and tied to rubric dimensions.
@@ -100,9 +100,16 @@ reflect that snapshot.
 ## Open gaps from snapshot
 
 - [ ] Add a CI workflow that runs `researchcrafters validate` against every
-      package under `content/packages/` on every PR.
+      package under `content/packages/` on every PR. _(in flight — base CI
+      workflow exists at `.github/workflows/ci.yml`; per-package validate
+      sweep step pending)_
 - [ ] Wire layer-3 sandbox execution to the real runner once Docker is online,
       replacing the current stub that only verifies fixture sha256.
 - [ ] Plug the mentor leak-test battery from `packages/ai` into per-package CI.
+      _(harness exists in `packages/ai` and
+      `packages/content-sdk/src/validator/leak-tests.ts`; CI wiring pending)_
+- [ ] Export `runStageLeakTests` and `defaultLeakTestGatewayFactory` from
+      `packages/content-sdk/src/index.ts` so the leak-test regression suite and
+      downstream package CI can call the harness.
 - [ ] Persist evaluator grades through `packages/db` instead of the in-memory
       grade store.

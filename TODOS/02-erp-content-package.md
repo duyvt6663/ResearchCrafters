@@ -2,7 +2,7 @@
 
 Goal: produce one excellent flagship Executable Research Package.
 
-Status (2026-05-07): see `PROGRESS.md` for the snapshot. Checkboxes below
+Status (2026-05-08): see `PROGRESS.md` for the snapshot. Checkboxes below
 reflect that snapshot.
 
 ## Paper Selection
@@ -98,9 +98,9 @@ trusted hardware before the package can ship.
 
 ## Acceptance Criteria
 
-- [ ] Package validates structurally and semantically.
-- [ ] Package has at least one instructive failed or suboptimal branch.
-- [ ] Package has at least one implementation stage, one experiment/evidence stage, and one writing stage.
+- [x] Package validates structurally and semantically.
+- [x] Package has at least one instructive failed or suboptimal branch.
+- [x] Package has at least one implementation stage, one experiment/evidence stage, and one writing stage.
 - [ ] A serious learner can finish the preview without setup friction.
 - [ ] The flagship package is strong enough to anchor launch messaging.
 

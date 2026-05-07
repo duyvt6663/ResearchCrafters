@@ -7,6 +7,12 @@ import {
   submissionFinalizeResponseSchema,
 } from "@/lib/api-contract";
 import { track } from "@/lib/telemetry";
+import {
+  checkUploadIntegrity,
+  getStorageEnv,
+  headObject,
+  type HeadObjectResult,
+} from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -47,6 +53,7 @@ export async function POST(
   let submission:
     | {
         id: string;
+        bundleObjectKey: string;
         bundleSha: string;
         byteSize: number;
         stageAttempt: {
@@ -62,6 +69,7 @@ export async function POST(
         where: { id },
         select: {
           id: true,
+          bundleObjectKey: true,
           bundleSha: true,
           byteSize: true,
           stageAttempt: {
@@ -99,32 +107,50 @@ export async function POST(
   }
 
   // When the submission row exists, verify the upload matches what was
-  // recorded at init time. Treat empty / zero placeholders as "unknown" and
-  // backfill them with the finalised values.
+  // recorded at init time AND what MinIO actually has on disk. The S3
+  // headObject is the load-bearing check — the recorded values are only
+  // useful as a tiebreaker / fast path.
   if (submission) {
-    const recordedSha = submission.bundleSha;
-    const recordedBytes = submission.byteSize;
-    if (
-      recordedSha &&
-      recordedSha.length > 0 &&
-      recordedSha.toLowerCase() !== parsed.data.uploadedSha256.toLowerCase()
-    ) {
-      return NextResponse.json(
-        { error: "sha256_mismatch", expected: recordedSha },
-        { status: 409 },
-      );
+    const storageEnv = getStorageEnv();
+    let head: HeadObjectResult = { exists: false };
+    try {
+      head = await headObject({
+        bucket: storageEnv.buckets.submissions,
+        key: submission.bundleObjectKey,
+      });
+    } catch {
+      // Storage unreachable: fall back to the recorded-row check below.
+      // We synthesize an "exists: true, no metadata" result so the helper
+      // doesn't reject a row when MinIO is just briefly down.
+      head = { exists: true };
     }
-    if (
-      recordedBytes &&
-      recordedBytes !== parsed.data.uploadedBytes &&
-      recordedBytes !== 0
-    ) {
-      return NextResponse.json(
-        { error: "byte_size_mismatch", expected: recordedBytes },
-        { status: 409 },
-      );
+
+    const mismatch = checkUploadIntegrity({
+      reported: {
+        sha256: parsed.data.uploadedSha256,
+        bytes: parsed.data.uploadedBytes,
+      },
+      recorded: {
+        sha256: submission.bundleSha?.length ? submission.bundleSha : null,
+        bytes:
+          typeof submission.byteSize === "number" && submission.byteSize > 0
+            ? submission.byteSize
+            : null,
+      },
+      head,
+    });
+    if (mismatch) {
+      const payload: Record<string, string | number> = {
+        error: mismatch.error,
+      };
+      if (typeof mismatch.expected !== "undefined") {
+        payload["expected"] = mismatch.expected;
+      }
+      return NextResponse.json(payload, { status: mismatch.status });
     }
-    if (!recordedSha || recordedBytes === 0) {
+
+    // Backfill empty / zero placeholders with the finalised values.
+    if (!submission.bundleSha || submission.byteSize === 0) {
       try {
         await withQueryTimeout(
           prisma.submission.update({

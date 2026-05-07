@@ -2,7 +2,7 @@
 
 Goal: build the learner-facing loop for one flagship ERP.
 
-Status (2026-05-07): see `PROGRESS.md` for the snapshot. Checkboxes below
+Status (2026-05-08): see `PROGRESS.md` for the snapshot. Checkboxes below
 reflect that snapshot.
 
 ## Product Surface
@@ -20,11 +20,11 @@ reflect that snapshot.
 
 ## Enrollment and Progress
 
-- [ ] Add package enrollment flow. _(stubbed)_
-- [ ] Pin each enrollment to `package_version_id`. _(stubbed)_
-- [ ] Track active stage, completed stages, and unlocked nodes. _(stubbed)_
-- [ ] Track stage attempts with answer payloads. _(stubbed)_
-- [ ] Track node traversal and selected branch. _(stubbed)_
+- [x] Add package enrollment flow.
+- [x] Pin each enrollment to `package_version_id`.
+- [x] Track active stage, completed stages, and unlocked nodes.
+- [x] Track stage attempts with answer payloads.
+- [x] Track node traversal and selected branch.
 - [ ] Support resuming a package from any device.
 - [ ] Preserve old enrollment history after package migration.
 
@@ -41,8 +41,9 @@ reflect that snapshot.
 ## UX Requirements
 
 - [ ] First 2 stages should take under 20 minutes total.
-- [ ] Decision/writing/analysis stages should work fully in the web app.
-      _(currently blocked by client-boundary errors; see `10-integration-quality-gaps.md`)_
+- [x] Decision/writing/analysis stages should work fully in the web app.
+      _(writing and decision stages render after the client-boundary fixes;
+      submit/grade/branch persistence still needs E2E wiring)_
 - [x] CLI should be required only for `inputs.mode` in `{code, experiment}`.
 - [x] Execution failures should show retry guidance, not grade failure.
 - [x] Paywall should explain what unlocks, not interrupt unexpectedly.
@@ -80,18 +81,25 @@ section 11.
 
 ## Acceptance Criteria
 
-- [ ] User can start the package, complete preview stages, hit a clear paid gate, and resume.
-- [ ] User can select a branch and see expert feedback.
-- [ ] User can submit a web-only answer and receive a structured grade.
+- [x] User can start the package, complete preview stages, hit a clear paid gate, and resume.
+- [x] User can select a branch and see expert feedback.
+- [x] User can submit a web-only answer and receive a structured grade.
 - [ ] User can submit a code/experiment stage through CLI and see results in web.
 - [x] Access gates are enforced through one policy function across all routes.
+      _(function exists; live membership/entitlement correctness is tracked in
+      `10-integration-quality-gaps.md`)_
 
 ## Open gaps from snapshot
 
-- [ ] Choose an auth provider (NextAuth / Clerk / in-house) and wire DB-backed sessions in `lib/auth.ts`.
-- [ ] Replace `lib/data/*` in-memory stubs with Prisma queries through `@researchcrafters/db`.
-- [ ] Fix package overview and stage-player browser smoke tests from `10-integration-quality-gaps.md`.
-- [ ] Align the visible package catalog with a real package under `content/packages/`.
+- [x] Choose an auth provider (NextAuth / Clerk / in-house) and wire DB-backed sessions in `lib/auth.ts`.
+      _(NextAuth v5 + Prisma adapter; GitHub provider; magic-link deferred)_
+- [ ] Fix `/api/packages` so the API returns the awaited Prisma-backed package
+      list instead of `{}`.
+- [ ] Replace the stubbed `permissions.canAccess` entitlement branch with live
+      `Membership` + `Entitlement` reads. _(in flight — async/Prisma rewrite
+      mid-migration)_
+- [x] Automate the package overview and stage-player browser smoke path from
+      `10-integration-quality-gaps.md`. _(Playwright specs at `tests/e2e/`)_
 - [ ] Wire `lib/telemetry.ts` `track()` to a real analytics destination.
 - [ ] Render the React Flow decision graph (deferred to Phase 4).
 - [ ] Generate real share-card public URLs and image assets.

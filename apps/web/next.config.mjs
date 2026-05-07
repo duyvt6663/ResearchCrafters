@@ -9,6 +9,7 @@ const nextConfig = {
     "@researchcrafters/db",
     "@researchcrafters/erp-schema",
     "@researchcrafters/content-sdk",
+    "@researchcrafters/worker",
   ],
 };
 

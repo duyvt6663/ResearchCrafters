@@ -20,6 +20,14 @@ import { track } from "@/lib/telemetry";
 
 type Params = { id: string; stageRef: string };
 
+/**
+ * Opt out of static prerender: this page reads enrollment, stage, and session
+ * state from Prisma + NextAuth. Static prerender would try to query the DB at
+ * build time without a `DATABASE_URL`; force-dynamic defers it to request
+ * time.
+ */
+export const dynamic = "force-dynamic";
+
 export default async function StagePage({
   params,
 }: {
@@ -31,7 +39,7 @@ export default async function StagePage({
   if (!enrollment || !stage) notFound();
 
   const session = await getSession();
-  const access = permissions.canAccess({
+  const access = await permissions.canAccess({
     user: session,
     packageVersionId: enrollment.packageVersionId,
     stage: { ref: stage.ref, isFreePreview: stage.isFreePreview, isLocked: stage.isLocked },

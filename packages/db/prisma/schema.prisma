@@ -14,6 +14,36 @@
 // - Cascading deletes are conservative: enabled for clear ownership chains
 //   (Membership -> User, Enrollment -> User, MentorMessage -> Thread, etc.)
 //   and disabled for grading/audit chains where we want a paper trail.
+//
+// PII inventory convention (see TODOS/08 §Privacy and Compliance Foundations):
+//   Every field that stores personally identifying information, an auth secret,
+//   or free-text user-authored content carries a triple-slash JSDoc comment
+//   immediately above its declaration in the form:
+//
+//     /// PII: <category>. Subject to <strategy> on User deletion. <notes>.
+//
+//   Categories:
+//     - "contact identity"      → email, display name, avatar URL.
+//     - "auth secret"           → session tokens, OAuth refresh/access tokens.
+//     - "provider identifier"   → opaque ids issued by GitHub / OIDC providers.
+//     - "user-authored content" → free-text the learner wrote (mentor messages,
+//                                 stage answers, share-card insights, review
+//                                 notes).
+//     - "user-authored artifact pointer" → object-store keys whose target object
+//                                 contains user-authored code, logs, or media.
+//     - "quasi-PII"             → behavioural rows that, if joined to a userId,
+//                                 reconstruct individual activity (events,
+//                                 traversals, mentor threads).
+//
+//   Strategies (formalized in apps/web/lib/account-cascade.ts):
+//     - delete    → row is removed when the owning User is deleted.
+//     - anonymize → row stays for product/audit reasons; PII fields are nulled
+//                   or replaced with `anonymized-${userId}`.
+//     - retain    → row stays as part of the audit trail; the userId FK is
+//                   nulled where the column is nullable.
+//
+//   When you add a new column, decide its category up-front and tag it here.
+//   Future authors should never have to re-derive the inventory by code search.
 
 generator client {
   provider        = "prisma-client-js"
@@ -31,14 +61,20 @@ datasource db {
 
 model User {
   id            String   @id @default(cuid())
+  /// PII: contact identity. Subject to anonymize on User deletion (set to `anonymized-${userId}@deleted.invalid`). Right-to-erasure target.
   email         String   @unique
+  /// PII: contact identity. Subject to anonymize on User deletion (set to null).
   githubHandle  String?
+  /// PII: contact identity. Subject to anonymize on User deletion (set to null).
   displayName   String?
   // Auth.js extension: optional display name surfaced by OAuth providers.
+  /// PII: contact identity. Subject to anonymize on User deletion (set to null).
   name          String?
   // Auth.js extension: optional avatar URL surfaced by OAuth providers.
+  /// PII: contact identity. Subject to anonymize on User deletion (set to null).
   image         String?
   // Auth.js extension: timestamp set when an email magic-link is verified.
+  /// PII: contact identity (proof of email control). Subject to anonymize on User deletion (set to null).
   emailVerified DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -67,10 +103,13 @@ model Account {
   // Auth.js standard: provider id, e.g. 'github'.
   provider          String
   // Auth.js standard: opaque provider-side account id.
+  /// PII: provider identifier. Sometimes a username (GitHub login) and therefore directly identifying. Subject to delete on User deletion (Account row cascades).
   providerAccountId String
   // OAuth refresh token (when issued).
+  /// PII: auth secret. Subject to delete on User deletion (Account row cascades). Encryption-at-rest tracked in TODOS/08 §Privacy.
   refresh_token     String?
   // OAuth access token (when issued).
+  /// PII: auth secret. Subject to delete on User deletion (Account row cascades). Encryption-at-rest tracked in TODOS/08 §Privacy.
   access_token      String?
   // OAuth access-token expiry as Unix epoch seconds.
   expires_at        Int?
@@ -79,6 +118,7 @@ model Account {
   // OAuth scope string, space-delimited.
   scope             String?
   // OIDC id_token when the provider issues one.
+  /// PII: auth secret. Carries identity claims about the user. Subject to delete on User deletion (Account row cascades). Encryption-at-rest tracked in TODOS/08 §Privacy.
   id_token          String?
   // OAuth session_state for OpenID Connect session management.
   session_state     String?
@@ -97,6 +137,7 @@ model Account {
 model Session {
   id           String   @id @default(cuid())
   // Auth.js standard: opaque session token stored in the user's cookie.
+  /// PII: auth secret. Doubles as the CLI bearer token (see lib/auth.ts). Subject to delete on User deletion (Session row cascades). Anyone holding this string can act as the user until expiry.
   sessionToken String   @unique
   userId       String
   expires      DateTime
@@ -109,8 +150,10 @@ model Session {
 // Auth.js: pending email magic-link / verification token.
 model VerificationToken {
   // Auth.js standard: identifier is typically the email address.
+  /// PII: contact identity. Identifier is the user's email for magic-link flows. No User FK on this row, so the cascade plan must look up by `identifier == user.email` and delete matching rows during account deletion.
   identifier String
   // Auth.js standard: opaque verification token.
+  /// PII: auth secret. Anyone holding this token can mint a session for `identifier` until `expires`. Subject to delete on User deletion (matched via identifier).
   token      String   @unique
   expires    DateTime
 
@@ -128,9 +171,11 @@ model DeviceCodeFlow {
   id         String    @id @default(cuid())
   // The CLI-side opaque token. Returned to the CLI from /api/auth/device-code
   // and presented back via /api/auth/device-token.
+  /// PII: auth secret. Mints a session for the approving user once consumed. Subject to delete on User deletion (cascade by SetNull on userId then explicit purge of pending flows).
   deviceCode String    @unique
   // The human-readable code shown to the learner (e.g. "ABCD-EFGH"). Entered
   // on the verification page to bind the flow to the active browser session.
+  /// PII: auth secret (short-lived pairing code). Subject to delete on User deletion alongside its parent flow row.
   userCode   String    @unique
   // Set when the flow is approved (or denied — we still record who acted).
   userId     String?
@@ -152,6 +197,7 @@ model Membership {
   plan       String
   // Allowed values: 'active' | 'past_due' | 'canceled' | 'paused' | 'trialing'
   status     String
+  /// PII: provider identifier. Opaque billing-provider reference (Stripe customer or subscription id). Subject to delete on User deletion (Membership row cascades); upstream billing record must also be canceled out-of-band.
   billingRef String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -351,6 +397,9 @@ model Enrollment {
   @@index([status])
 }
 
+// Quasi-PII: each NodeTraversal row records "this learner picked this branch at this time" —
+// joined to a userId via Enrollment the sequence is individually identifying.
+// Subject to delete on User deletion (cascades through Enrollment).
 model NodeTraversal {
   id             String   @id @default(cuid())
   enrollmentId   String
@@ -371,6 +420,7 @@ model StageAttempt {
   enrollmentId    String
   // The YAML stage id this attempt targets.
   stageRef        String
+  /// PII: user-authored content. Free-text learner answers (writing stages, decision rationale, reflection prose). Subject to delete on User deletion (cascades through Enrollment).
   answer          Json
   branchId        String?
   score           Float?
@@ -393,6 +443,7 @@ model StageAttempt {
 model Submission {
   id              String   @id @default(cuid())
   stageAttemptId  String
+  /// PII: user-authored artifact pointer. References an S3 object containing the learner's code bundle. Submissions are an audit artifact — DB row is retained on User deletion with the parent enrollment torn down via Restrict, but the underlying S3 object is purged out-of-band per TODOS/06 retention. Cascade strategy: retain (FK to attempt is Restrict); the deletion plan removes the Submission row explicitly after dependent Run/Grade rows are cleared.
   bundleObjectKey String
   bundleSha       String
   byteSize        Int
@@ -417,6 +468,7 @@ model Run {
   status       String
   // Allowed values: 'test' | 'replay' | 'mini_experiment' | 'none'
   runnerMode   String
+  /// PII: user-authored artifact pointer. References the S3 log of the run; logs may include user-authored print statements / stack traces that mention learner identifiers. Subject to delete on User deletion (cascades when the Submission is removed via the explicit cascade plan); S3 object purged out-of-band.
   logObjectKey String?
   metricsJson  Json?
   startedAt    DateTime?
@@ -457,6 +509,9 @@ model Grade {
 // Mentor
 // ---------------------------------------------------------------------------
 
+// Quasi-PII: a MentorThread row indicates that a specific learner sought mentor
+// help on a specific stage. Subject to delete on User deletion (cascades
+// through Enrollment); messages cascade through the thread.
 model MentorThread {
   id           String   @id @default(cuid())
   enrollmentId String
@@ -477,6 +532,7 @@ model MentorMessage {
   role                String
   // NOTE: bodyText is sensitive (mentor transcripts) — encryption-at-rest is
   // tracked in TODOS/08 §Privacy. Stored as plaintext in dev for now.
+  /// PII: user-authored content. Free-text mentor transcripts (user role) and the model-generated coaching response (assistant role) referencing the user's prose. Subject to delete on User deletion (cascades through MentorThread → Enrollment).
   bodyText            String
   // Free-form tier label (e.g. 'fast' | 'deep' | 'guard').
   modelTier           String?
@@ -525,8 +581,10 @@ model ShareCard {
   enrollmentId     String
   packageVersionId String
   // Immutable snapshot of ShareCardPayload from docs/TECHNICAL.md §5.
+  /// PII: user-authored content. May embed the learner's hand-written insight and other identifying fields (display name, hardest decision phrasing). Subject to delete on User deletion (cascades through ShareCard → User).
   payload          Json
   // Set when the share card has a public URL; unique only when present.
+  /// PII: indirectly identifying. A public slug, once published, becomes a URL the learner may have shared externally; we delete the row on account deletion so the URL 404s.
   publicSlug       String?  @unique
   createdAt        DateTime @default(now())
 
@@ -545,6 +603,7 @@ model Review {
   reviewerId       String?
   // Allowed values: 'pending' | 'approved' | 'rejected'
   status           String
+  /// PII: user-authored content (reviewer prose). Subject to retain on reviewer deletion (Review row stays; reviewerId nulls via SetNull) so package moderation history is preserved; the prose itself rarely names the reviewer but may be quoted in audit reviews.
   notes            String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -556,15 +615,23 @@ model Review {
   @@index([status])
 }
 
+// Quasi-PII when joined to userId. Audit-grade rows (auditGrade=true) are
+// retained indefinitely per TODOS/06 §Events Storage; non-audit rows are
+// scrubbed to anonymized aggregates after 24 months. On User deletion the
+// strategy is `retain` — events stay but the userId FK is nulled (SetNull)
+// so the audit trail of grading / payments / moderation actions survives
+// without a back-reference to the deleted account.
 model Event {
   id               String   @id @default(cuid())
   // Telemetry name (e.g. 'grade_created'). See docs/TECHNICAL.md §5
   // taxonomy and TODOS/06 §Events Storage for audit-grade rules.
   name             String
+  /// PII: foreign key to a deleted user is kept as null after account deletion (SetNull). The row itself remains for the audit retention window.
   userId           String?
   packageVersionId String?
   // YAML stage id, when relevant.
   stageRef         String?
+  /// PII: variable. Payload may carry user-authored snippets for some event types; emitters MUST avoid embedding raw PII here. The deletion plan does not scrub historical payloads — owners of new event types are responsible for keeping payloads PII-free.
   payload          Json
   // True for events that affect entitlement, grading, mentor policy,
   // payments, or moderation. Retained indefinitely.

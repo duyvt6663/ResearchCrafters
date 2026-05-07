@@ -6,6 +6,10 @@ import {
 } from './queues.js';
 import { getRedisConnection } from './redis.js';
 import {
+  installSchedules,
+  type InstalledSchedule,
+} from './scheduler.js';
+import {
   runBranchStatsRollup,
   type BranchStatsRollupJob,
 } from './jobs/branch-stats-rollup.js';
@@ -20,6 +24,15 @@ import {
 
 export * from './queues.js';
 export * from './redis.js';
+export {
+  installSchedules,
+  removeAllSchedules,
+  BRANCH_STATS_ROLLUP_CRON,
+  SCHEDULED_BRANCH_STATS_COHORTS,
+  type InstalledSchedule,
+  type SchedulerConnection,
+  type ScheduledCohort,
+} from './scheduler.js';
 export {
   runBranchStatsRollup,
   aggregateTraversals,
@@ -105,6 +118,29 @@ export async function startAllWorkers(
   };
   const workers: BullWorker[] = [];
 
+  // Install recurring schedules before mounting consumers so jobs that fire
+  // immediately have a worker to pick them up.
+  // Default-on outside test; default-off in tests so unit suites don't open
+  // a real Redis socket on import.
+  const scheduleEnvDefault =
+    process.env['NODE_ENV'] === 'test' ? 'false' : 'true';
+  const schedulesEnabled =
+    (process.env['WORKER_SCHEDULES_ENABLED'] ?? scheduleEnvDefault) === 'true';
+  let installed: InstalledSchedule[] = [];
+  if (schedulesEnabled) {
+    try {
+      installed = await installSchedules(connection);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        JSON.stringify({
+          kind: 'worker_schedule_install_failed',
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      );
+    }
+  }
+
   for (const queueName of queues) {
     let processor: (data: unknown) => Promise<unknown>;
     switch (queueName) {
@@ -143,6 +179,12 @@ export async function startAllWorkers(
       kind: 'worker_started',
       queues,
       concurrency,
+      schedulesEnabled,
+      schedules: installed.map((s) => ({
+        queue: s.queueName,
+        jobId: s.jobId,
+        pattern: s.pattern,
+      })),
     }),
   );
 

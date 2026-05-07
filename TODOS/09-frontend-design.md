@@ -2,7 +2,7 @@
 
 Goal: design the learner-facing UI before building the MVP web app.
 
-Status (2026-05-07): see `PROGRESS.md` for the snapshot. Checkboxes below
+Status (2026-05-08): see `PROGRESS.md` for the snapshot. Checkboxes below
 reflect that snapshot.
 
 Depends on: 08 (UI primitives infra). Consumed by: 01. Reads schemas from 04
