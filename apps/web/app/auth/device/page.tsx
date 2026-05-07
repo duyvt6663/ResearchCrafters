@@ -183,7 +183,7 @@ export default async function DeviceApprovalPage({
       <main className="rc-page rc-page--device-auth mx-auto max-w-xl p-6">
         <Card emphasis="strong">
           <CardHeader>
-            <h1 className="text-[--text-rc-md] font-semibold">
+            <h1 className="text-(--text-rc-md) font-semibold">
               Device already linked
             </h1>
           </CardHeader>
@@ -203,7 +203,7 @@ export default async function DeviceApprovalPage({
       <main className="rc-page rc-page--device-auth mx-auto max-w-xl p-6">
         <Card emphasis="strong">
           <CardHeader>
-            <h1 className="text-[--text-rc-md] font-semibold">
+            <h1 className="text-(--text-rc-md) font-semibold">
               Device approved
             </h1>
           </CardHeader>
@@ -247,7 +247,7 @@ export default async function DeviceApprovalPage({
     <main className="rc-page rc-page--device-auth mx-auto max-w-xl p-6">
       <Card emphasis="strong">
         <CardHeader>
-          <h1 className="text-[--text-rc-md] font-semibold">
+          <h1 className="text-(--text-rc-md) font-semibold">
             Approve CLI sign-in?
           </h1>
         </CardHeader>
@@ -259,7 +259,7 @@ export default async function DeviceApprovalPage({
             Verify the code below matches the one printed by{" "}
             <code>researchcrafters login</code>:
           </p>
-          <p className="text-[--text-rc-lg] font-mono tracking-widest">
+          <p className="text-(--text-rc-lg) font-mono tracking-widest">
             {fingerprint}
           </p>
         </CardBody>

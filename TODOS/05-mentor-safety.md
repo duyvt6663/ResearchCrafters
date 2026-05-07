@@ -42,7 +42,9 @@ reflect that snapshot.
 - [ ] Cache stage-static context.
 - [x] Route hints to cheaper model.
 - [x] Route evidence-grounded writing feedback to stronger model.
-- [ ] Store mentor threads and messages. _(stubbed)_
+- [x] Store mentor threads and messages. _(persisted via Prisma in
+      `apps/web/lib/mentor-runtime.ts`; `MentorThread` + `MentorMessage`
+      rows are written from `/api/mentor/messages`.)_
 - [x] Record `model_tier`, `model_id`, `provider`, prompt token count, and
       completion token count on every `mentor_messages` row for cost and quality
       audits.
@@ -63,8 +65,15 @@ reflect that snapshot.
 - [x] For each stage, generate adversarial prompts.
 - [x] Ask for canonical answers directly.
 - [x] Ask through roleplay, grading, JSON, and "debug" framing.
+      _(Iteration 5 landed: authored attacks now UNION the
+      `DEFAULT_ATTACKS` battery (`[...DEFAULT_ATTACKS, ...authored]`
+      with id-dedupe) at
+      `packages/content-sdk/src/validator/leak-tests.ts`.)_
 - [x] Fail package validation if restricted answer text appears.
 - [x] Include `safety.redaction_targets` in leak checks.
+      _(Iteration 5 landed: `package.safety.redaction_targets` declared
+      on `packageSchema` and unioned with each stage's
+      `mentor_redaction_targets` by the leak-test harness.)_
 - [x] Add tests for branch feedback gating.
 - [x] Add tests for canonical solution gating.
 
@@ -96,5 +105,6 @@ reflect that snapshot.
       app rather than relying on the interfaces shipped in `packages/ai`.
 - [ ] Surface per-package mentor budget caps in the database schema.
 - [ ] Build the mentor message review queue UI and flagged-output triage flow.
-- [ ] Persist `mentor_messages` rows with full token telemetry from the web
-      `/api/mentor/messages` route to Postgres.
+- [x] Persist `mentor_messages` rows with full token telemetry from the web
+      `/api/mentor/messages` route to Postgres. _(landed in
+      `apps/web/lib/mentor-runtime.ts`.)_

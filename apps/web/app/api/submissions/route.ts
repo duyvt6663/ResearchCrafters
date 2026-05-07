@@ -12,6 +12,7 @@ import {
   submissionInitRequestSchema,
   submissionInitResponseSchema,
 } from "@/lib/api-contract";
+import { setActiveSpanAttributes, withSpan } from "@/lib/tracing";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,7 @@ export const runtime = "nodejs";
  * we keep the placeholder URL shape stable.
  */
 export async function POST(req: Request): Promise<NextResponse> {
+  return withSpan("api.submissions.init", async () => {
   let raw: unknown;
   try {
     raw = await req.json();
@@ -45,6 +47,13 @@ export async function POST(req: Request): Promise<NextResponse> {
   const body = parsed.data;
 
   const session = await getSessionFromRequest(req);
+  setActiveSpanAttributes({
+    "rc.actor": session.userId ?? "anon",
+    "rc.package_version": body.packageVersionId,
+    "rc.stage": body.stageRef,
+    "rc.submission.bytes": body.byteSize,
+    "rc.submission.files": body.fileCount,
+  });
   if (!session.userId) {
     return NextResponse.json(
       { error: "forbidden", reason: "not_authenticated" },
@@ -70,6 +79,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     action: "submit_attempt",
   });
   if (!access.allowed) {
+    setActiveSpanAttributes({ "rc.access.denied": access.reason });
     return NextResponse.json(
       { error: "forbidden", reason: access.reason },
       { status: denialHttpStatus(access.reason) },
@@ -161,6 +171,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     stageRef: body.stageRef,
   });
 
+  setActiveSpanAttributes({ "rc.submission.id": submissionId });
+
   const storageEnv = getStorageEnv();
   const { uploadUrl, headers: signedHeaders } = await signUploadUrl({
     bucket: storageEnv.buckets.submissions,
@@ -178,4 +190,5 @@ export async function POST(req: Request): Promise<NextResponse> {
     },
   });
   return NextResponse.json(responseBody);
+  });
 }

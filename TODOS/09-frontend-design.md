@@ -50,7 +50,9 @@ branch-stats suppression), 03 (CLI surface).
 - [ ] Learning session player desktop.
 - [ ] Learning session player mobile.
 - [ ] Decision stage.
-- [ ] Writing stage.
+- [x] Interactive math stage.
+- [x] Writing stage.
+- [x] Academic writing workshop stage.
 - [ ] Analysis stage.
 - [ ] Code stage with CLI commands.
 - [ ] Experiment stage with run status.
@@ -69,7 +71,9 @@ branch-stats suppression), 03 (CLI surface).
 - [x] Design right context panel.
 - [x] Define tabs for evidence, feedback, mentor, and logs.
 - [x] Define sticky primary action behavior.
-- [ ] Define mobile sheet/tab behavior.
+- [ ] Define mobile sheet/tab behavior. _(decision-graph fallback
+      shipped via `DecisionGraphMobile` in iterations 4+5; stage-player
+      sheet/tab UI for code/experiment stages still open.)_
 - [x] Define locked-stage behavior.
 - [x] Define completed-stage review behavior.
 - [x] Define stage map navigation policy: free jump within unlocked stages,
@@ -80,6 +84,11 @@ branch-stats suppression), 03 (CLI surface).
       without access).
 
 ## Decision Graph
+
+Implementation note: the items in this section are design-spec coverage, not
+React Flow implementation completion. The current web app still renders a graph
+placeholder. `/api/enrollments/:id/graph` now returns the awaited graph
+(Tier-1 fix landed); React Flow rendering itself is deferred to Phase 4.
 
 - [x] Define graph node visual states.
 - [x] Define branch visual states.
@@ -94,6 +103,30 @@ branch-stats suppression), 03 (CLI surface).
       dedicated reveal view, or graph repaint and document the rationale.
 - [x] Define rare-branch suppression copy for the hidden-percentage state.
 
+## Experiment Tree Visualization
+
+The ERP/ARA trace tree is distinct from the learner-facing curriculum graph.
+`artifact/trace/exploration_tree.yaml` should become a first-class visual surface
+for understanding the research process: observations, hypotheses, decisions,
+failed branches, suboptimal branches, evidence, and synthesis.
+
+- [ ] Define the experiment-tree UI model from `artifact/trace/exploration_tree.yaml`
+      nodes and edges.
+- [ ] Preserve the distinction between curriculum nodes (`curriculum/graph.yaml`)
+      and trace nodes (`artifact/trace/exploration_tree.yaml`) in labels, copy,
+      and API payloads.
+- [ ] Link trace branch nodes back to authored curriculum branches through
+      `branch_id` so learner decisions can be compared with the reconstructed
+      research path.
+- [ ] Add a learner-facing `ExperimentTree` / `ResearchTraceGraph` component,
+      likely React Flow on desktop with a mobile tree/list fallback.
+- [ ] Show artifact references on trace nodes: logic claims, evidence tables,
+      source refs, and cached experiment outputs.
+- [ ] Add a package or enrollment API endpoint that returns a compiled trace
+      graph payload suitable for the web UI.
+- [ ] Add Playwright smoke coverage for opening the experiment tree on the
+      package overview or stage context panel.
+
 ## Feedback and Results
 
 - [x] Design pass state.
@@ -104,6 +137,57 @@ branch-stats suppression), 03 (CLI surface).
 - [x] Design rubric-dimension scoring.
 - [x] Design evidence refs in feedback.
 - [x] Design next-action guidance.
+
+## Interactive Math UI
+
+- [x] Define `MathWorkspace` layout for derivation, shape, numeric, and
+      explanation inputs.
+- [x] Define `DerivationStepList` with locked givens, editable blanks, per-step
+      validation, and per-step hints.
+- [x] Define `ShapeTableEditor` for tensor dimensions, parameter counts, and
+      memory-layout reasoning.
+- [x] Define `ToyExamplePanel` for small numeric examples with immediate sanity
+      feedback.
+- [x] Define how math grades display partial credit without revealing canonical
+      derivations before policy allows it.
+- [x] Verify equations render cleanly on desktop and mobile; prefer
+      Markdown/KaTeX before adding a full symbolic editor.
+
+_Iteration: math+rich-text agent (2026-05-08) — `packages/ui/src/components/MathWorkspace.tsx`,
+`DerivationStepList.tsx`, `ShapeTableEditor.tsx`, `ToyExamplePanel.tsx`,
+`packages/ui/src/lib/math.tsx`. KaTeX (`react-katex`) wrapped behind a runtime
+resolver so the surface degrades to a `<code>` fallback when the dep is not
+yet installed; `katex/dist/katex.min.css` documented as a host-app import in
+`packages/ui/src/styles.css`. Validation chips never reveal canonical answers —
+the public step shape carries no `expectedLatex` slot for the wrong-answer
+diff. Stage-player wiring: data layer currently maps "math" stage type onto
+the "code" mode (see `apps/web/lib/data/enrollment.ts:84`); follow-up =
+expose a richer "math" mode + per-stage derivation/shape/toy seeds before the
+host page can swap in `MathWorkspace`._
+
+## Academic Writing UI
+
+- [x] Define `WritingWorkbench` layout with evidence, draft, rubric, mentor
+      review, and revision panes.
+- [ ] Define `ClaimEvidenceMatrix` so sentence-level claims map to evidence
+      refs or explicit caveats.
+- [x] Define citation insertion from the evidence panel with verification
+      status.
+- [ ] Define `RevisionDiff` for claim surgery and reviewer-rebuttal edits.
+- [ ] Define `ReviewerPanel` for fixed reviewer criticism and response
+      constraints.
+- [x] Ensure writing modules feel like active editorial drills, not generic
+      essay boxes.
+
+_Iteration: math+rich-text agent (2026-05-08) — `packages/ui/src/components/WritingWorkbench.tsx`,
+`RichAnswerEditor.tsx`, `RichTextToolbar.tsx`. The 4-pane workbench wraps
+`EvidencePanel` + `RichAnswerEditor` + `RubricPanel` + `MentorPanel`. The
+"Insert ref" affordance from the evidence panel injects `[ref:<id>]` into
+the draft at the textarea caret, satisfying the citation-insertion row
+above and the corresponding `AnswerEditor` checkbox below. ClaimEvidenceMatrix
+and RevisionDiff are intentionally NOT shipped — the TODO calls them out as
+separate components and they need a sentence-level claim parsing model
+that's out of scope for this iteration._
 
 ## Mentor UI
 
@@ -127,7 +211,15 @@ branch-stats suppression), 03 (CLI surface).
 - [x] `StagePlayer`.
 - [x] `StageMap`.
 - [x] `DecisionChoiceList`.
+- [x] `MathWorkspace`.
+- [x] `DerivationStepList`.
+- [x] `ShapeTableEditor`.
+- [x] `ToyExamplePanel`.
 - [x] `AnswerEditor`.
+- [x] `WritingWorkbench`.
+- [ ] `ClaimEvidenceMatrix`.
+- [ ] `RevisionDiff`.
+- [ ] `ReviewerPanel`.
 - [x] `EvidencePanel`.
 - [x] `RubricPanel`.
 - [x] `RunStatusPanel`.
@@ -147,11 +239,19 @@ The named components above need explicit interaction specs.
 `AnswerEditor`:
 
 - [x] Draft autosave to backend with debounce.
-- [ ] Insert evidence/citation refs from the evidence panel.
+- [x] Insert evidence/citation refs from the evidence panel.
 - [ ] Word count and rubric-criterion live indicator.
 - [x] Sanitize paste-from-clipboard.
 - [x] Undo/redo and keyboard shortcuts.
 - [x] Restore drafts on reload.
+
+_Iteration: math+rich-text agent (2026-05-08) — citation insertion is wired
+through the `WritingWorkbench` host: `EvidencePanel.onInsertRef` triggers
+`WritingWorkbench`'s default callback, which writes `[ref:<id>]` at the
+textarea caret of the wrapped `RichAnswerEditor`. The autosave path
+(`AnswerEditor`'s `onAutoSave`) is unchanged and continues to fire
+debounced — see `packages/ui/src/components/RichAnswerEditor.tsx` and
+`WritingWorkbench.tsx`._
 
 `RunStatusPanel`:
 
@@ -211,8 +311,13 @@ CLI surface in `03-cli-runner.md`.
 
 ## Mobile Fallbacks
 
-- [ ] Mobile decision graph falls back to a tree/list view rather than a
-      pannable canvas.
+- [x] Mobile decision graph falls back to a tree/list view rather than a
+      pannable canvas. _(Iterations 4+5: `DecisionGraphMobile`
+      (`packages/ui/src/components/DecisionGraphMobile.tsx`) shipped with
+      spoiler discipline as a second line of defense (no canonical-branch
+      labels until policy allows). Wired into
+      `apps/web/app/packages/[slug]/page.tsx`. Pinned by
+      `packages/ui/test/decision-graph-mobile.test.tsx` (5 cases).)_
 - [x] Mobile code stage shows "open this stage on desktop" guidance with the
       relevant CLI command for handoff.
 - [ ] Mobile experiment stage shows a read-only run status view.
@@ -242,7 +347,12 @@ A single design-review checklist consolidating "do not" rules from
 - [x] Define focus states.
 - [x] Define tooltip behavior for icon-only controls.
 - [x] Verify color is not the only branch-status indicator.
-- [x] Verify text fits in buttons, tabs, cards, and graph nodes.
+- [ ] Verify text fits in buttons, tabs, cards, and graph nodes.
+      _(Tailwind v4 utility generation is fixed in `apps/web` (Tier-1 fix);
+      `globals.css` now `@import "tailwindcss"` + `@source
+      ../../../packages/ui/src/...` so `packages/ui` classes are emitted.
+      Add Playwright visual / overflow assertions to confirm desktop and
+      mobile.)_
 
 ## Static Prototype
 
@@ -270,9 +380,16 @@ A single design-review checklist consolidating "do not" rules from
 
 - [ ] Review the static prototype with one engineer and one target user.
 - [ ] Capture the wireframe set called for in `Wireframes`.
-- [ ] Define mobile fallbacks for decision graph and code/experiment stages
-      beyond the current skeleton.
+- [ ] Define mobile fallbacks for code/experiment stages beyond the
+      current skeleton. _(Decision-graph fallback shipped — see
+      `DecisionGraphMobile`. Stage-player sheet UI for code/experiment
+      stages still open.)_
 - [ ] Instrument a performance budget (Lighthouse / TTI in CI).
 - [ ] Formalize the Anti-Patterns Checklist sign-off process.
 - [ ] Pick the branch reveal transition (inline expansion / dedicated reveal /
       graph repaint) and document the rationale.
+- [ ] Add automated visual assertions for page overflow and mobile layout.
+      _(Tailwind v4 utility scanning fix landed; visual assertions now
+      meaningful.)_
+- [ ] UI polish for catalog/overview/stage layouts, AppShell, dark-mode
+      toggle. _(in flight)_

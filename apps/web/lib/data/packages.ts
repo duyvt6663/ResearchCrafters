@@ -305,13 +305,24 @@ export async function getPackageBySlug(
  * stripped to a non-spoiler placeholder and `revealed` is forced to false.
  * Canonical and suboptimal branches are surfaced as authored.
  */
+/**
+ * Failed-branch redaction is the catalog's spoiler boundary. The previous
+ * pass only redacted `summary`, but the original `label` IS the failed
+ * choice description (e.g. "Just keep stacking plain blocks; trust
+ * BatchNorm to handle depth") — exposing it pre-completion still leaks
+ * the wrong-but-plausible answer the package wants the learner to consider
+ * on their own. Replace BOTH fields with non-spoiler placeholders for
+ * `failed` branches, and force `revealed: false`. Canonical and suboptimal
+ * branches surface as authored — those are the answers the catalog wants
+ * to advertise.
+ */
 function redactSampleDecision(decision: DecisionPreview): DecisionPreview {
   return {
     prompt: decision.prompt,
     branches: decision.branches.map((b) =>
       b.type === "failed"
         ? {
-            label: b.label,
+            label: "Hidden until completion",
             summary: "(hidden — completed-stage lesson)",
             type: "failed",
             revealed: false,

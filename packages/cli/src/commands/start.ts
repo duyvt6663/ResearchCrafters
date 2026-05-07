@@ -17,31 +17,23 @@ export async function startCommand(slug: string, opts: StartOptions = {}): Promi
   process.stdout.write(`Resolving package ${kleur.cyan(slug)}...\n`);
   const pkg = await api.startPackage(slug);
 
-  // Stub: download starter via signed URL.
-  let starterBuffer: Buffer | null = null;
-  if (pkg.starterUrl) {
-    try {
-      starterBuffer = await api.downloadSignedUrl(pkg.starterUrl);
-    } catch {
-      // Stubbed: tolerate no starter in offline/dev mode.
-      starterBuffer = null;
-    }
-  }
+  // TODO(workspace-provisioning): the enroll route does not yet return a
+  // signed `starterUrl` / `smokeCommand`. When the dedicated
+  // `/api/packages/<slug>/starter-url` endpoint lands, fetch the bundle
+  // here and unpack it into `projectDir`. Until then we materialize an
+  // empty workspace; learners can copy in their own scaffolding from the
+  // package's `content/` README.
 
   const projectDir = path.join(cwd, slug);
   await fs.mkdir(projectDir, { recursive: true });
-  if (starterBuffer) {
-    await fs.writeFile(path.join(projectDir, 'starter.bundle'), starterBuffer);
-  }
 
   const cfgDir = path.join(projectDir, '.researchcrafters');
   await fs.mkdir(cfgDir, { recursive: true });
   const cfg: LocalProjectConfig = {
-    apiUrl: pkg.apiUrl ?? apiUrl(),
+    apiUrl: apiUrl(),
     packageSlug: pkg.packageSlug,
     packageVersionId: pkg.packageVersionId,
     stageRef: pkg.stageRef,
-    ...(pkg.smokeCommand !== undefined ? { smokeCommand: pkg.smokeCommand } : {}),
   };
   await fs.writeFile(path.join(cfgDir, 'config.json'), JSON.stringify(cfg, null, 2) + '\n');
 

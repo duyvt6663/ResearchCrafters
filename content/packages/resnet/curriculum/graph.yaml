@@ -10,6 +10,16 @@ nodes:
       - artifact/logic/problem.md
       - artifact/logic/claims.md#degradation
       - artifact/logic/claims.md#not-overfitting
+    unlocks: [N001M]
+
+  - id: N001M
+    type: math
+    title: "The math behind identity mapping."
+    stage: stages/001m-residual-math.yaml
+    artifact_refs:
+      - artifact/logic/concepts.md
+      - artifact/logic/claims.md#identity-is-the-trick
+      - artifact/logic/solution/algorithm.md
     unlocks: [N002]
 
   - id: N002

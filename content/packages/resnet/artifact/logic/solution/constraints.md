@@ -5,7 +5,7 @@ should be able to recognize when reading or writing residual code.
 
 ## Shape invariants
 
-- `F(x)` and the shortcut path must produce tensors of identical shape before
+- $F(x)$ and the shortcut path must produce tensors of identical shape before
   the addition. Mismatch is an error, not something the framework will paper
   over.
 - The shortcut is identity when `F(x).shape == x.shape`. Otherwise it is the
@@ -17,12 +17,12 @@ should be able to recognize when reading or writing residual code.
 - The addition of `x` happens *before* the post-addition activation, not
   after. Adding after the final activation is a different architecture
   (and was empirically worse in follow-up work).
-- BatchNorm is applied to `F(x)` only, not to the shortcut path.
+- BatchNorm is applied to $F(x)$ only, not to the shortcut path.
 
 ## Optimization invariants
 
 - The identity mapping must remain reachable: the optimizer should be able to
-  drive `F(x) → 0` and recover identity. This is the invariant the
+  drive $F(x) → 0$ and recover identity. This is the invariant the
   re-parameterization is designed to preserve.
 - Weight decay is applied to convolution weights; biases and BN parameters
   follow project conventions. The package follows the original paper and

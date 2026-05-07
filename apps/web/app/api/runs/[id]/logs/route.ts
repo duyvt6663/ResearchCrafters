@@ -7,6 +7,7 @@ import {
   type RunLogLine,
 } from "@/lib/api-contract";
 import { getObject, getStorageEnv } from "@/lib/storage";
+import { setActiveSpanAttributes, withSpan } from "@/lib/tracing";
 
 const DEFAULT_LIMIT = 200;
 const MAX_LIMIT = 1000;
@@ -37,6 +38,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   const { id } = await params;
+  return withSpan("api.runs.logs", async () => {
+  setActiveSpanAttributes({ "rc.run.id": id });
   const session = await getSessionFromRequest(req);
 
   let run:
@@ -104,6 +107,7 @@ export async function GET(
       ? Number.parseInt(limitParam, 10)
       : DEFAULT_LIMIT;
   const limit = Math.max(1, Math.min(MAX_LIMIT, requestedLimit));
+  setActiveSpanAttributes({ "rc.logs.cursor": offset });
 
   // Storage strategy: prefer the inline `metricsJson.logs` array (short
   // runs); fall back to fetching the line-delimited JSON object referenced
@@ -129,11 +133,14 @@ export async function GET(
   const hasMore = consumed < stored.length;
   const nextCursor = hasMore ? String(consumed) : undefined;
 
+  setActiveSpanAttributes({ "rc.logs.line_count": page.length });
+
   const body = runLogsResponseSchema.parse({
     lines: page,
     ...(nextCursor ? { nextCursor } : {}),
   });
   return NextResponse.json(body);
+  });
 }
 
 function readStoredLogs(metrics: unknown): StoredLogLine[] {

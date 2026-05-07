@@ -24,7 +24,7 @@ global average pool
 fully connected (10 classes)
 ```
 
-For ResNet-20, `N = 3` so the network has `1 + 6N + 1 = 20` weighted layers
+For ResNet-20, `N = 3` so the network has $1 + 6N + 1 = 20$ weighted layers
 (the 6N counts two convs per basic block across three stages).
 
 ## Basic block

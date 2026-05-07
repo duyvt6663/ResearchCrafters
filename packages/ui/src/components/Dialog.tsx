@@ -25,7 +25,7 @@ export const DialogOverlay = React.forwardRef<
     <RadixDialog.Overlay
       ref={ref}
       className={cn(
-        "fixed inset-0 bg-black/40 transition-opacity duration-[--duration-rc-base]",
+        "fixed inset-0 bg-black/40 transition-opacity duration-(--duration-rc-base)",
         className,
       )}
       {...rest}
@@ -57,19 +57,19 @@ export const DialogContent = React.forwardRef<
         className={cn(
           "fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
           "w-[min(92vw,520px)] max-h-[85vh] overflow-auto",
-          "rounded-[--radius-rc-lg] border border-[--color-rc-border] bg-[--color-rc-bg] text-[--color-rc-text]",
-          "shadow-lg p-5",
+          "rounded-(--radius-rc-lg) border border-(--color-rc-border) bg-(--color-rc-bg) text-(--color-rc-text)",
+          "shadow-lg p-7",
           className,
         )}
         {...rest}
       >
         {title ? (
-          <RadixDialog.Title className="text-[--text-rc-lg] font-semibold mb-1">
+          <RadixDialog.Title className="text-(--text-rc-xl) font-semibold leading-tight mb-2">
             {title}
           </RadixDialog.Title>
         ) : null}
         {description ? (
-          <RadixDialog.Description className="text-[--text-rc-sm] text-[--color-rc-text-muted] mb-3">
+          <RadixDialog.Description className="text-(--text-rc-sm) leading-relaxed text-(--color-rc-text-muted) mb-3">
             {description}
           </RadixDialog.Description>
         ) : null}
@@ -77,7 +77,7 @@ export const DialogContent = React.forwardRef<
         {showCloseButton ? (
           <RadixDialog.Close
             aria-label="Close"
-            className="absolute top-3 right-3 inline-flex h-7 w-7 items-center justify-center rounded-[--radius-rc-sm] text-[--color-rc-text-muted] hover:bg-[--color-rc-surface-muted]"
+            className="absolute top-3 right-3 inline-flex h-7 w-7 items-center justify-center rounded-(--radius-rc-sm) text-(--color-rc-text-muted) hover:bg-(--color-rc-surface-muted)"
           >
             <X size={16} aria-hidden />
           </RadixDialog.Close>

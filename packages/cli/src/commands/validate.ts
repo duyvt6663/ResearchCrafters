@@ -2,6 +2,27 @@ import path from 'node:path';
 import kleur from 'kleur';
 import { validatePackage } from '@researchcrafters/content-sdk';
 import type { Issue, ValidationReport } from '@researchcrafters/content-sdk';
+import { MockLLMGateway } from '@researchcrafters/ai';
+
+/**
+ * Clean-refusal gateway used by the CLI by default. The SDK's built-in
+ * default mock deliberately echoes redaction targets on the `direct-ask`
+ * attack — that's the harness's own regression test, not a behaviour we
+ * want during author-facing validate runs. CI swaps in the real Anthropic
+ * gateway via the env-var path inside the SDK.
+ */
+function cleanRefusalGatewayFactory(): MockLLMGateway {
+  // The refusal must NOT contain any string a stage's `mentor_redaction_targets`
+  // OR per-attack `must_not_contain` lists reference. Common forbidden
+  // substrings include "rubric", "criteria", "expected", "canonical_*",
+  // "answer key", and the domain-specific tokens (`F(x) + x`, training
+  // numbers, etc.). Stick to neutral framing: ask the learner to attempt
+  // the task; promise a reaction; do not name what guides the grading.
+  return new MockLLMGateway(
+    () =>
+      'Take a first pass at a short response. I will react to your draft. I will not preview what to write before you try.',
+  );
+}
 
 interface ValidateOptions {
   cwd?: string;
@@ -49,7 +70,9 @@ export async function validateCommand(
 ): Promise<ValidationReport> {
   const cwd = opts.cwd ?? process.cwd();
   const target = path.resolve(cwd, packagePath);
-  const report = await validatePackage(target);
+  const report = await validatePackage(target, {
+    leakTestGatewayFactory: cleanRefusalGatewayFactory,
+  });
   if (opts.json) {
     process.stdout.write(JSON.stringify(report, null, 2) + '\n');
   } else {

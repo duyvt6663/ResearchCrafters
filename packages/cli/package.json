@@ -25,6 +25,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@researchcrafters/ai": "workspace:*",
     "@researchcrafters/content-sdk": "workspace:*",
     "@researchcrafters/erp-schema": "workspace:*",
     "commander": "^12.1.0",

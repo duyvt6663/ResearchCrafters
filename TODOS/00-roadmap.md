@@ -32,6 +32,9 @@ Goal: render a package from files and validate that the ERP format works.
 - [x] Implement package/stage/branch/rubric schemas.
 - [x] Build a static package renderer in the web app.
 - [x] Build a simple session view for decision, writing, analysis, and reflection stages.
+- [x] Render the basic ResNet math stage in the session view. _(S001M math
+      node landed in iteration 2 — `content/packages/resnet/curriculum/graph.yaml`
+      + `stages/001m-residual-math.yaml`.)_
 - [x] Implement `researchcrafters validate` for structural checks.
 - [x] Add basic ARA cross-link validation.
 - [ ] Validate starter/canonical workspaces manually for the first package. _(stubbed)_
@@ -59,6 +62,8 @@ Goal: support real users completing the first package.
 - [x] Add CLI for code/experiment stages.
 - [x] Add runner for `test`, `replay`, and CPU-only `mini_experiment` modes.
 - [x] Add evaluator output and structured grades.
+- [ ] Add interactive math and academic writing module primitives from
+      `11-learning-modules-math-writing.md`.
 - [ ] Add run logs and execution failure handling. _(stubbed)_
 - [ ] Add basic billing or gated manual access for alpha.
 
@@ -73,13 +78,24 @@ Acceptance criteria:
 
 Goal: add AI mentor safely and produce shareable proof of learning.
 
-- [ ] Add mentor context builder with `stage_policy`.
-- [ ] Add mentor leak tests in package CI.
-- [ ] Add evaluator leak tests and redaction checks.
-- [ ] Add prompt caching and per-user rate limits.
-- [ ] Add share-card payload generation.
+- [x] Add mentor context builder with `stage_policy`.
+- [ ] Add mentor leak tests in package CI. _(harness exists; explicit CI
+      step still pending — see `04-validation-evaluator.md`.)_
+- [x] Add evaluator leak tests and redaction checks.
+- [ ] Add prompt caching and per-user rate limits. _(rate-limit interface
+      shipped in `packages/ai`; production wiring + caching still pending.)_
+- [ ] Add share-card payload generation. _(preview component exists;
+      `/api/share-cards` now validates body and returns 400 on malformed
+      input but still emits a synthesized payload — durable share-card
+      rows are still pending; see `06`.)_
 - [ ] Add `branch_stats` rollups with minimum-N suppression.
-- [ ] Add telemetry for branch selection, feedback unlock, mentor requests, and share cards.
+      _(schema, suppression copy, and admin trigger
+      `/api/admin/rollup-branch-stats` exist; live execution depends on
+      bringing up the local Redis container — runner-loop agent may
+      retarget the port. **In flight.**)_
+- [x] Add telemetry for branch selection, feedback unlock, mentor requests, and share cards.
+      _(events emitted via `lib/telemetry.ts` `track()`; vendor/audit
+      dual-write still pending.)_
 - [ ] Add internal review queue for flagged mentor/evaluator outputs.
 
 Acceptance criteria:
@@ -97,6 +113,7 @@ Goal: reduce expert authoring friction after the first package proves demand.
 - [ ] Add graph editor with React Flow.
 - [ ] Add evidence manager.
 - [ ] Add rubric editor.
+- [ ] Add reusable authoring templates for math and academic writing modules.
 - [ ] Add package release workflow: alpha, beta, live, archived.
 - [ ] Add package patch workflow with `package_version_patches`.
 

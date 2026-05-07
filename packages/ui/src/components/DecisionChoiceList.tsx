@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "../lib/cn.js";
+import { Prose } from "./Prose.js";
 
 /**
  * DecisionChoiceList — row-based list of choices for a decision stage.
@@ -80,11 +81,11 @@ export function DecisionChoiceList({
           <li key={c.id}>
             <label
               className={cn(
-                "flex items-start gap-2 rounded-[--radius-rc-sm] border p-3",
+                "flex items-start gap-2 rounded-(--radius-rc-sm) border p-3",
                 disabled ? "cursor-not-allowed" : "cursor-pointer",
                 checked
-                  ? "border-[--color-rc-accent] bg-[--color-rc-accent-subtle]"
-                  : "border-[--color-rc-border] hover:bg-[--color-rc-surface-muted]",
+                  ? "border-(--color-rc-accent) bg-(--color-rc-accent-subtle)"
+                  : "border-(--color-rc-border) hover:bg-(--color-rc-surface-muted)",
                 c.disabled ? "opacity-50" : "",
                 !revealed ? "opacity-70" : "",
               )}
@@ -99,10 +100,12 @@ export function DecisionChoiceList({
                 className="mt-0.5"
               />
               <div className="flex-1">
-                <div className="text-[--text-rc-sm] font-medium">{label}</div>
+                <div className="text-(--text-rc-sm) font-medium">
+                  <Prose inline>{label}</Prose>
+                </div>
                 {tradeoff && revealed ? (
-                  <div className="text-[--text-rc-xs] text-[--color-rc-text-muted] mt-0.5">
-                    {tradeoff}
+                  <div className="text-(--text-rc-xs) text-(--color-rc-text-muted) mt-0.5">
+                    <Prose inline>{tradeoff}</Prose>
                   </div>
                 ) : null}
               </div>

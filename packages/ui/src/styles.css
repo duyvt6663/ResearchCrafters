@@ -5,28 +5,51 @@
  *   import "@researchcrafters/ui/styles.css";
  *
  * Tokens are exposed as CSS variables via `@theme` so Tailwind utilities pick
- * them up (e.g. `bg-[--color-surface]` or `text-rc-accent`).
+ * them up (e.g. `bg-(--color-surface)` or `text-rc-accent`).
  *
  * Light mode is the default; switching to `[data-theme="dark"]` flips the
  * variables. Do not override these directly; modify packages/ui/src/tokens.ts.
  */
 
+/*
+ * KaTeX styles — required for `BlockMath` / `InlineMath` from `react-katex`.
+ *
+ * After `pnpm install` once `katex` is on disk, the host app should add
+ *   import "katex/dist/katex.min.css";
+ * to its root layout (Next: `app/layout.tsx`) so the math primitives in
+ * `MathWorkspace` / `DerivationStepList` / `ShapeTableEditor` render with
+ * proper formula glyph metrics. We deliberately do NOT `@import` it here
+ * because the bundler resolves CSS imports at compile-time even before
+ * the workspace install completes, which would crash the dev server in a
+ * pre-install state. The `react-katex` JS itself is loaded via the
+ * runtime resolver in `lib/math.tsx`, so the components fall back
+ * gracefully to mono `<code>` until both packages are installed.
+ */
+
 @theme {
-  /* ---------- Color (light) ---------- */
+  /* ---------- Color (light) — Lab notebook palette ---------- */
   --color-rc-bg: #ffffff;
-  --color-rc-surface: #f7f8fa;
-  --color-rc-surface-muted: #eef0f4;
-  --color-rc-border: #dcdfe6;
-  --color-rc-border-strong: #c2c7d1;
-  --color-rc-text: #0f1115;
-  --color-rc-text-muted: #5b6473;
-  --color-rc-text-subtle: #828b99;
-  --color-rc-accent: #1f5fff;
-  --color-rc-accent-hover: #1a4fd6;
-  --color-rc-accent-subtle: #e7eeff;
+  --color-rc-surface: #faf6ee;
+  --color-rc-surface-muted: #f1ecdf;
+  --color-rc-border: #e2dacb;
+  --color-rc-border-strong: #c9bfaa;
+  --color-rc-text: #1b2433;
+  --color-rc-text-muted: #4a5468;
+  --color-rc-text-subtle: #7c8597;
+
+  /* Accent ramp — coral. Use the ramp stops for hover/focus/pressed states. */
+  --color-rc-accent: #e76f51;
+  --color-rc-accent-hover: #d85a3a;
+  --color-rc-accent-subtle: #fbe6dd;
+  --color-rc-accent-foreground: #ffffff;
+  --color-rc-accent-50: #fbe6dd;
+  --color-rc-accent-200: #f4b7a1;
+  --color-rc-accent-400: #e76f51;
+  --color-rc-accent-700: #a23e22;
   --color-rc-on-accent: #ffffff;
-  --color-rc-success: #1f9d55;
-  --color-rc-success-subtle: #e3f5ea;
+
+  --color-rc-success: #2ea567;
+  --color-rc-success-subtle: #dcf1e5;
   --color-rc-warning: #b45f00;
   --color-rc-warning-subtle: #fbeed0;
   --color-rc-danger: #c0362c;
@@ -38,11 +61,58 @@
   --color-rc-locked: #9aa3b2;
   --color-rc-locked-subtle: #eceff5;
 
+  /* Code surface — distinct from `surface` so terminal blocks always read as
+     "this is code", not "this is a card". Used by CommandBlock and CodeBlock. */
+  --color-rc-code-bg: #1b2433;
+  --color-rc-code-text: #f1e8da;
+  --color-rc-code-muted: #7c8597;
+
+  /* ---------- Icon signal accent (emerald/mint) ----------
+   * The complementary tint to coral. Coral remains the brand primary (CTAs,
+   * focus rings); this green is for lucide icons that mean
+   * "runnable / passed / next / available / completed".
+   * Pairs as `text-(--color-rc-icon-accent)` and `bg-(--color-rc-icon-accent-soft)`.
+   */
+  --color-rc-icon-accent: #2ec27e;
+  --color-rc-icon-accent-soft: rgba(46, 194, 126, 0.12);
+
+  /* ---------- Language palette (CodeBlock chrome) ----------
+   * Each language's brand hue. Used as the CodeBlock left edge stripe and the
+   * lang chip color. Authors should not invent new lang colors — extend
+   * `tokens.ts#langColor` and add the matching CSS var here.
+   */
+  --color-rc-lang-python: #3776ab;
+  --color-rc-lang-typescript: #3178c6;
+  --color-rc-lang-javascript: #f7df1e;
+  --color-rc-lang-bash: #4eaa25;
+  --color-rc-lang-shell: #4eaa25;
+  --color-rc-lang-rust: #dea584;
+  --color-rc-lang-go: #00add8;
+  --color-rc-lang-markdown: #519aba;
+  --color-rc-lang-yaml: #cb171e;
+  --color-rc-lang-sql: #e48e00;
+  --color-rc-lang-json: #5c6bc0;
+
   /* ---------- Typography ---------- */
-  --font-rc-sans: "Inter", "Helvetica Neue", Arial, system-ui, -apple-system,
-    "Segoe UI", sans-serif;
-  --font-rc-mono: "JetBrains Mono", "Fira Code", "SFMono-Regular", Menlo,
-    Consolas, monospace;
+  --font-rc-sans: var(
+    --rc-font-sans-runtime,
+    "Inter",
+    "Helvetica Neue",
+    Arial,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif
+  );
+  --font-rc-mono: var(
+    --rc-font-mono-runtime,
+    "JetBrains Mono",
+    "Fira Code",
+    "SFMono-Regular",
+    Menlo,
+    Consolas,
+    monospace
+  );
   --text-rc-xs: 12px;
   --text-rc-sm: 13px;
   --text-rc-base: 14px;
@@ -52,15 +122,29 @@
   --text-rc-2xl: 24px;
   --text-rc-3xl: 30px;
 
+  /* Display sizes — marketing/hero only. Do not use for body. */
+  --text-rc-display-sm: 32px;
+  --text-rc-display-md: 40px;
+  --text-rc-display-lg: 48px;
+  --text-rc-display-xl: 60px;
+  --text-rc-display-2xl: 72px;
+
+  --leading-rc-display: 1.05;
+  --leading-rc-body: 1.6;
+  --tracking-rc-display: -0.02em;
+  --tracking-rc-eyebrow: 0.1em;
+
   /* ---------- Radius ---------- */
   --radius-rc-sm: 4px;
   --radius-rc-md: 6px;
   --radius-rc-lg: 8px;
+  --radius-rc-xl: 12px;
 
   /* ---------- Motion ---------- */
   --duration-rc-fast: 120ms;
   --duration-rc-base: 180ms;
   --duration-rc-slow: 260ms;
+  --duration-rc-entrance: 300ms;
   --ease-rc-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-rc-emphasized: cubic-bezier(0.3, 0, 0, 1);
 
@@ -71,21 +155,26 @@
 
 /* Dark mode override. Activated by setting `data-theme="dark"` on <html>. */
 :where([data-theme="dark"]) {
-  --color-rc-bg: #0b0d11;
-  --color-rc-surface: #13161c;
-  --color-rc-surface-muted: #1a1e26;
-  --color-rc-border: #262b35;
-  --color-rc-border-strong: #3a414f;
-  --color-rc-text: #f3f5f8;
-  --color-rc-text-muted: #a8b0bd;
-  --color-rc-text-subtle: #7c8492;
-  --color-rc-accent: #5b8bff;
-  --color-rc-accent-hover: #7aa1ff;
-  --color-rc-accent-subtle: #1a2440;
-  --color-rc-on-accent: #0b0d11;
+  --color-rc-bg: #0e1320;
+  --color-rc-surface: #161c2d;
+  --color-rc-surface-muted: #1f2638;
+  --color-rc-border: #2b3349;
+  --color-rc-border-strong: #3d465e;
+  --color-rc-text: #f1e8da;
+  --color-rc-text-muted: #a8b0c0;
+  --color-rc-text-subtle: #7c8597;
+  --color-rc-accent: #f08a6b;
+  --color-rc-accent-hover: #f5a589;
+  --color-rc-accent-subtle: #3a1b12;
+  --color-rc-accent-foreground: #0e1320;
+  --color-rc-accent-50: #2b130c;
+  --color-rc-accent-200: #7a2e1a;
+  --color-rc-accent-400: #f08a6b;
+  --color-rc-accent-700: #fbc4b0;
+  --color-rc-on-accent: #0e1320;
   --color-rc-success: #3dd17a;
   --color-rc-success-subtle: #0f2a1c;
-  --color-rc-warning: #e8a64a;
+  --color-rc-warning: #f2b541;
   --color-rc-warning-subtle: #3a2810;
   --color-rc-danger: #ef6a60;
   --color-rc-danger-subtle: #3a1816;
@@ -95,6 +184,13 @@
   --color-rc-neutral-subtle: #1c2028;
   --color-rc-locked: #5b6373;
   --color-rc-locked-subtle: #1a1d24;
+  --color-rc-code-bg: #0a0f1c;
+  --color-rc-code-text: #f1e8da;
+  --color-rc-code-muted: #7c8597;
+
+  /* Icon-accent flips brighter in dark mode so it pops on the deep navy. */
+  --color-rc-icon-accent: #5ee9b5;
+  --color-rc-icon-accent-soft: rgba(94, 233, 181, 0.14);
 }
 
 /*
@@ -105,4 +201,456 @@
 [data-card] [data-card] {
   outline: 2px dashed var(--color-rc-danger);
   outline-offset: 2px;
+}
+
+/*
+ * Card inside a clickable wrapper (anchor, button, link card) gets a subtle
+ * border-color shift on hover. Cards used as static surfaces stay quiet.
+ */
+a:hover > [data-card],
+button:hover > [data-card],
+[data-card-link]:hover > [data-card] {
+  border-color: var(--color-rc-border-strong);
+}
+
+/*
+ * Component layer: workbench-precise patterns shared across surfaces.
+ * Marketing surfaces (catalog, package overview) are allowed a few extra
+ * patterns — hero grid, hover-lift, eyebrow, terminal animation — gated by
+ * `prefers-reduced-motion`. Workbench surfaces (stage player, mentor panel,
+ * run logs) keep the original restraint.
+ */
+@layer components {
+  /*
+   * Subtle dot grid for the hero band. Single CSS gradient, no images.
+   * Density and contrast tuned to disappear at scale — readers should sense
+   * texture, not see decoration.
+   */
+  .rc-hero-grid {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      var(--color-rc-border) 1px,
+      transparent 0
+    );
+    background-size: 22px 22px;
+    background-position: 0 0;
+  }
+
+  /*
+   * Eyebrow — small mono uppercase label rendered above display headlines on
+   * marketing surfaces. Defined as a class so authors can pair it with any
+   * heading element without sprinkling identical utility soup.
+   */
+  .rc-eyebrow {
+    font-family: var(--font-rc-mono);
+    font-size: 11px;
+    line-height: 1;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-rc-eyebrow);
+    color: var(--color-rc-accent);
+  }
+
+  /* Display heading — hero/H1 only. */
+  .rc-display {
+    font-size: var(--text-rc-display-md);
+    line-height: var(--leading-rc-display);
+    font-weight: 700;
+    letter-spacing: var(--tracking-rc-display);
+  }
+  @media (min-width: 1100px) {
+    .rc-display {
+      font-size: var(--text-rc-display-lg);
+    }
+  }
+
+  .rc-display-xl {
+    font-size: var(--text-rc-display-lg);
+    line-height: var(--leading-rc-display);
+    font-weight: 700;
+    letter-spacing: var(--tracking-rc-display);
+  }
+  @media (min-width: 768px) {
+    .rc-display-xl {
+      font-size: var(--text-rc-display-xl);
+    }
+  }
+  @media (min-width: 1100px) {
+    .rc-display-xl {
+      font-size: var(--text-rc-display-2xl);
+    }
+  }
+
+  /* Indeterminate top-of-shell loading bar slot. Hidden by default. */
+  .rc-loading-bar {
+    height: 2px;
+    width: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-rc-accent),
+      transparent
+    );
+    background-size: 200% 100%;
+    background-position: 100% 0;
+    opacity: 0;
+  }
+  .rc-loading-bar[data-active="true"] {
+    opacity: 1;
+    animation: rc-loading-bar 1.2s var(--ease-rc-standard, linear) infinite;
+  }
+  @keyframes rc-loading-bar {
+    from {
+      background-position: 100% 0;
+    }
+    to {
+      background-position: -100% 0;
+    }
+  }
+
+  /*
+   * Terminal CommandBlock animation primitives. Used only when the consumer
+   * passes `typing: true` (default off). Both keyframes are gated on
+   * `prefers-reduced-motion: no-preference` so reduced-motion users get the
+   * static render.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes rc-typing {
+      from {
+        width: 0ch;
+      }
+      to {
+        width: var(--rc-typing-width, 100%);
+      }
+    }
+    @keyframes rc-blink {
+      0%,
+      49% {
+        opacity: 1;
+      }
+      50%,
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes rc-card-enter {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  }
+
+  /*
+   * Marketing-only hover-lift. Applied via `data-hover-lift` so the same
+   * Card primitive can be neutral on workbench surfaces and bouncy on the
+   * catalog. Border color shifts toward accent on hover; 1px translate only.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    [data-hover-lift]:hover {
+      transform: translateY(-2px);
+      border-color: var(--color-rc-accent);
+    }
+  }
+  [data-hover-lift] {
+    transition:
+      transform var(--duration-rc-base) var(--ease-rc-standard),
+      border-color var(--duration-rc-fast) var(--ease-rc-standard),
+      box-shadow var(--duration-rc-base) var(--ease-rc-standard);
+  }
+  [data-hover-lift]:hover {
+    box-shadow: 0 6px 16px -10px rgba(231, 111, 81, 0.3);
+  }
+
+  /*
+   * Prose block — marketing pages, package overview "what you'll practice",
+   * and the stage player center column. Body line-height bumped to 1.6 for
+   * readability; display headings keep 1.05.
+   */
+  .prose-rc {
+    line-height: var(--leading-rc-body);
+    color: var(--color-rc-text);
+  }
+  .prose-rc p {
+    line-height: var(--leading-rc-body);
+  }
+  .prose-rc a {
+    color: var(--color-rc-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+  .prose-rc a:hover {
+    color: var(--color-rc-accent-hover);
+  }
+  .prose-rc h1,
+  .prose-rc h2,
+  .prose-rc h3 {
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+  .prose-rc strong {
+    font-weight: 600;
+    color: var(--color-rc-text);
+  }
+  .prose-rc code {
+    background: var(--color-rc-surface-muted);
+    color: var(--color-rc-accent);
+    padding: 1px 5px;
+    border-radius: var(--radius-rc-sm);
+    font-size: 0.92em;
+    font-family: var(--font-rc-mono);
+  }
+  .prose-rc em {
+    font-style: italic;
+    color: var(--color-rc-text);
+  }
+  .prose-rc ul,
+  .prose-rc ol {
+    padding-left: 1.25em;
+    margin: 0.6em 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35em;
+  }
+  .prose-rc ul {
+    list-style: disc;
+  }
+  .prose-rc ol {
+    list-style: decimal;
+  }
+  .prose-rc ul ::marker,
+  .prose-rc ol ::marker {
+    color: var(--color-rc-accent);
+  }
+  .prose-rc blockquote {
+    border-left: 3px solid var(--color-rc-accent);
+    padding-left: 0.85em;
+    color: var(--color-rc-text-muted);
+    font-style: italic;
+    margin: 0.75em 0;
+  }
+  .prose-rc hr {
+    border: none;
+    border-top: 1px solid var(--color-rc-border);
+    margin: 1em 0;
+  }
+  .prose-rc table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.75em 0;
+    font-size: 0.92em;
+  }
+  .prose-rc th,
+  .prose-rc td {
+    border: 1px solid var(--color-rc-border);
+    padding: 0.4em 0.65em;
+    text-align: left;
+  }
+  .prose-rc th {
+    background: var(--color-rc-surface-muted);
+    font-weight: 600;
+  }
+  .prose-rc del {
+    color: var(--color-rc-text-subtle);
+  }
+  /* KaTeX math wrappers — both inline ($...$) and block ($$...$$). */
+  .prose-rc .katex {
+    font-size: 1em;
+    color: var(--color-rc-text);
+  }
+  .prose-rc .katex-display {
+    margin: 0.85em 0;
+    padding: 0.5em 0;
+    overflow-x: auto;
+  }
+  /* Inline variant — used inside sentence-level surfaces (graph node titles,
+     branch summaries, decision choice labels). The wrapper is a <span> and
+     react-markdown's <p> wrapping is collapsed via the components override
+     so emphasis / strong / inline math sit flush with surrounding text. */
+  .prose-rc-inline {
+    /* inherit the parent's color/size so the wrapper is visually invisible */
+    color: inherit;
+  }
+  .prose-rc-inline em {
+    font-style: italic;
+  }
+  .prose-rc-inline strong {
+    font-weight: 600;
+  }
+  .prose-rc-inline code {
+    background: var(--color-rc-surface-muted);
+    color: var(--color-rc-accent);
+    padding: 0 4px;
+    border-radius: var(--radius-rc-sm);
+    font-size: 0.92em;
+    font-family: var(--font-rc-mono);
+  }
+  .prose-rc-inline .katex {
+    font-size: 1em;
+  }
+  /* Size variants. */
+  .prose-rc-sm {
+    font-size: var(--text-rc-sm);
+  }
+  .prose-rc-sm p,
+  .prose-rc-sm li {
+    line-height: 1.55;
+  }
+  .prose-rc-lg {
+    font-size: var(--text-rc-md);
+  }
+  .prose-rc-lg p,
+  .prose-rc-lg li {
+    line-height: 1.7;
+  }
+
+  /*
+   * CodeBlock theme switch. Server renders BOTH light/dark Shiki HTML;
+   * we hide whichever doesn't match the current data-theme. Defaults to
+   * showing light; dark wins when the document is in dark mode.
+   */
+  .rc-codeblock-shiki--dark {
+    display: none;
+  }
+  :where([data-theme="dark"]) .rc-codeblock-shiki--light {
+    display: none;
+  }
+  :where([data-theme="dark"]) .rc-codeblock-shiki--dark {
+    display: block;
+  }
+  /* Shiki's <pre> ships its own background; force transparent so our card
+     surface drives the chrome. */
+  .rc-codeblock-shiki pre,
+  .rc-codeblock-shiki pre.shiki {
+    background: transparent !important;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-rc-mono);
+    font-size: var(--text-rc-sm);
+    line-height: 1.65;
+  }
+
+  /*
+   * RichAnswerEditor preview prose. Tighter than `.prose-rc` (which is for
+   * marketing prose) because writing-stage previews live in narrow columns
+   * and need tight spacing for the editor split-view to feel responsive.
+   */
+  .rc-rich-prose {
+    color: var(--color-rc-text);
+    line-height: 1.55;
+    font-size: var(--text-rc-base);
+  }
+  .rc-rich-prose h1,
+  .rc-rich-prose h2,
+  .rc-rich-prose h3 {
+    color: var(--color-rc-text);
+    font-weight: 600;
+    line-height: 1.25;
+    margin-top: 1em;
+    margin-bottom: 0.4em;
+  }
+  .rc-rich-prose h1 { font-size: var(--text-rc-xl); }
+  .rc-rich-prose h2 { font-size: var(--text-rc-lg); }
+  .rc-rich-prose h3 { font-size: var(--text-rc-md); }
+  .rc-rich-prose p { margin: 0.5em 0; }
+  .rc-rich-prose ul,
+  .rc-rich-prose ol { margin: 0.5em 0; padding-left: 1.4em; }
+  .rc-rich-prose ul { list-style: disc; }
+  .rc-rich-prose ol { list-style: decimal; }
+  .rc-rich-prose li { margin: 0.15em 0; }
+  .rc-rich-prose strong { font-weight: 600; color: var(--color-rc-text); }
+  .rc-rich-prose em { font-style: italic; }
+  .rc-rich-prose code {
+    background: var(--color-rc-surface-muted);
+    padding: 1px 5px;
+    border-radius: var(--radius-rc-sm);
+    font-family: var(--font-rc-mono);
+    font-size: 0.92em;
+  }
+  .rc-rich-prose blockquote {
+    border-left: 3px solid var(--color-rc-accent);
+    padding-left: 0.8em;
+    margin: 0.6em 0;
+    color: var(--color-rc-text-muted);
+    font-style: italic;
+  }
+  .rc-rich-prose a {
+    color: var(--color-rc-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .rc-rich-prose pre {
+    background: var(--color-rc-code-bg);
+    color: var(--color-rc-code-text);
+    padding: 0.7em 0.9em;
+    border-radius: var(--radius-rc-md);
+    overflow-x: auto;
+    font-family: var(--font-rc-mono);
+    font-size: var(--text-rc-sm);
+  }
+  .rc-rich-prose pre code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+  }
+
+  /*
+   * Toolbar button visual — used by `RichTextToolbar`. Provides a 32px hit
+   * target, hover lift on the icon, and a green-tinted "active" state when
+   * the wrapped editor reports the formatting is currently applied.
+   */
+  .rc-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    width: 32px;
+    border-radius: var(--radius-rc-sm);
+    border: 1px solid var(--color-rc-border);
+    background: var(--color-rc-bg);
+    color: var(--color-rc-text-muted);
+    transition:
+      background-color var(--duration-rc-fast) var(--ease-rc-standard),
+      color var(--duration-rc-fast) var(--ease-rc-standard),
+      border-color var(--duration-rc-fast) var(--ease-rc-standard);
+  }
+  .rc-toolbar-btn:hover {
+    background: var(--color-rc-surface-muted);
+    color: var(--color-rc-text);
+    border-color: var(--color-rc-border-strong);
+  }
+  .rc-toolbar-btn[data-active="true"] {
+    color: var(--color-rc-icon-accent);
+    background: var(--color-rc-icon-accent-soft);
+    border-color: var(--color-rc-icon-accent);
+  }
+  .rc-toolbar-btn--sm {
+    height: 28px;
+    width: 28px;
+  }
+
+  /*
+   * Math workbench specifics. KaTeX defaults are fine for most surfaces but
+   * the derivation list needs a slightly tighter inline math sizing so it
+   * doesn't tower over surrounding 14px body copy.
+   */
+  .rc-math-step {
+    border-left: 2px solid var(--color-rc-border);
+    padding-left: 0.8em;
+  }
+  .rc-math-step[data-validation="passed"] {
+    border-left-color: var(--color-rc-icon-accent);
+  }
+  .rc-math-step[data-validation="wrong"] {
+    border-left-color: var(--color-rc-danger);
+  }
+  .rc-math-step[data-validation="partial"] {
+    border-left-color: var(--color-rc-warning);
+  }
+  .rc-math-step .katex { font-size: 1.05em; }
 }

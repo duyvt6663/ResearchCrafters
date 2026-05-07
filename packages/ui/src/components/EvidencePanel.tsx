@@ -57,7 +57,7 @@ export function EvidencePanel({
       className={cn("flex flex-col gap-2", className)}
     >
       {sourceItems.length === 0 ? (
-        <p className="text-[--text-rc-sm] text-[--color-rc-text-muted]">
+        <p className="text-(--text-rc-sm) text-(--color-rc-text-muted)">
           No evidence is in scope for this stage.
         </p>
       ) : (
@@ -67,15 +67,15 @@ export function EvidencePanel({
             return (
               <li
                 key={item.id}
-                className="flex items-start gap-2 rounded-[--radius-rc-sm] border border-[--color-rc-border] p-2"
+                className="flex items-start gap-2 rounded-(--radius-rc-sm) border border-(--color-rc-border) p-2"
               >
                 <Icon
                   size={14}
                   aria-hidden
-                  className="mt-0.5 text-[--color-rc-text-muted]"
+                  className="mt-0.5 text-(--color-rc-text-muted)"
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[--text-rc-sm] font-medium truncate">
+                  <div className="text-(--text-rc-sm) font-medium truncate">
                     {item.href ? (
                       <a
                         href={item.href}
@@ -90,7 +90,7 @@ export function EvidencePanel({
                     )}
                   </div>
                   {item.source ? (
-                    <div className="text-[--text-rc-xs] text-[--color-rc-text-muted] truncate">
+                    <div className="text-(--text-rc-xs) text-(--color-rc-text-muted) truncate">
                       {item.source}
                     </div>
                   ) : null}
@@ -99,7 +99,7 @@ export function EvidencePanel({
                   <button
                     type="button"
                     onClick={() => onInsertRef(item)}
-                    className="flex-none rounded-[--radius-rc-sm] border border-[--color-rc-border] px-1.5 py-0.5 text-[--text-rc-xs] text-[--color-rc-text-muted] hover:bg-[--color-rc-surface-muted]"
+                    className="flex-none rounded-(--radius-rc-sm) border border-(--color-rc-border) px-1.5 py-0.5 text-(--text-rc-xs) text-(--color-rc-text-muted) hover:bg-(--color-rc-surface-muted)"
                   >
                     Insert ref
                   </button>

@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
 import { getPackageBySlug } from "@/lib/data/packages";
-import { getSession } from "@/lib/auth";
+import { getSessionFromRequest } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 
 export const runtime = "nodejs";
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ slug: string }> },
 ): Promise<NextResponse> {
   const { slug } = await params;
   const pkg = await getPackageBySlug(slug);
   if (!pkg) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  const session = await getSession();
+  const session = await getSessionFromRequest(req);
   const access = await permissions.canAccess({
     user: session,
     packageVersionId: `${pkg.slug}@stub`,

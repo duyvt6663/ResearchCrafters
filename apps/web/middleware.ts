@@ -23,7 +23,15 @@
  */
 
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "@/auth.config";
+
+// Edge-safe NextAuth instance — uses only the providers + pages from the
+// shared config, NOT the PrismaAdapter (which would pull `node:crypto` into
+// the edge bundle through `@researchcrafters/db`'s at-rest encryption).
+// Route handlers and server components keep using the full `auth` export
+// from `@/auth`, which has the database adapter wired in.
+const { auth } = NextAuth(authConfig);
 
 function generateNonce(): string {
   // crypto.randomUUID is available on Edge runtime; strip dashes for a

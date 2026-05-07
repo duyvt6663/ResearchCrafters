@@ -7,6 +7,7 @@ import {
   type RunStatus,
 } from "@/lib/api-contract";
 import { getStorageEnv, signDownloadUrl } from "@/lib/storage";
+import { setActiveSpanAttributes, withSpan } from "@/lib/tracing";
 
 export const runtime = "nodejs";
 
@@ -41,6 +42,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   const { id } = await params;
+  return withSpan("api.runs.get", async () => {
+  setActiveSpanAttributes({ "rc.run.id": id });
   const session = await getSessionFromRequest(req);
 
   let run:
@@ -110,6 +113,7 @@ export async function GET(
   if (!run) {
     // Synthesize a queued response so the CLI's polling loop can settle even
     // before the runner workstream wires real rows.
+    setActiveSpanAttributes({ "rc.run.status": "queued" });
     const body = runStatusResponseSchema.parse({
       id,
       status: "queued",
@@ -119,6 +123,7 @@ export async function GET(
   }
 
   const status = coerceStatus(run.status);
+  setActiveSpanAttributes({ "rc.run.status": status });
   const executionStatus = run.submission.stageAttempt.executionStatus
     ? coerceStatus(run.submission.stageAttempt.executionStatus)
     : undefined;
@@ -148,4 +153,5 @@ export async function GET(
     logUrl,
   });
   return NextResponse.json(body);
+  });
 }

@@ -73,7 +73,7 @@ hints:
 feedback:
   canonical_md: |
     A defensible claim looks something like: "Re-parameterizing each block
-    of a deep CNN to learn a residual mapping `F(x) + x` with a
+    of a deep CNN to learn a residual mapping $F(x) + x$ with a
     parameter-free identity shortcut allows training error on CIFAR-10 to
     *decrease* with depth from 20 to 56 layers under SGD with momentum and
     BatchNorm, whereas the plain counterpart's training error increases

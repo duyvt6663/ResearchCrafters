@@ -11,7 +11,21 @@ export { StatusBadge } from "./StatusBadge.js";
 export type { StatusBadgeProps } from "./StatusBadge.js";
 
 export { CommandBlock } from "./CommandBlock.js";
-export type { CommandBlockProps } from "./CommandBlock.js";
+export type {
+  CommandBlockProps,
+  CommandBlockOutput,
+} from "./CommandBlock.js";
+
+export { CodeBlock } from "./CodeBlock.js";
+export type { CodeBlockProps } from "./CodeBlock.js";
+
+export { EvidenceCard } from "./EvidenceCard.js";
+export type {
+  EvidenceCardKind,
+  EvidenceCardProps,
+  EvidenceCardData,
+  EvidenceTrajectory,
+} from "./EvidenceCard.js";
 
 export { Card, CardHeader, CardBody, CardFooter } from "./Card.js";
 export type {
@@ -70,6 +84,14 @@ export type {
   StageMapItem,
   StageMapItemStatus,
 } from "./StageMap.js";
+
+export { DecisionGraphMobile } from "./DecisionGraphMobile.js";
+export type {
+  DecisionGraphMobileProps,
+  DecisionGraphNode,
+  DecisionGraphNodeStatus,
+  DecisionGraphBranch,
+} from "./DecisionGraphMobile.js";
 
 export { GradePanel } from "./GradePanel.js";
 export type {
@@ -137,3 +159,58 @@ export type {
 
 export { ErrorPanel } from "./ErrorPanel.js";
 export type { ErrorPanelProps, ErrorPanelKind } from "./ErrorPanel.js";
+
+export { Prose } from "./Prose.js";
+export type { ProseProps } from "./Prose.js";
+
+export { DerivationStepList } from "./DerivationStepList.js";
+export type {
+  DerivationStepListProps,
+  DerivationStep,
+  DerivationStepValidation,
+} from "./DerivationStepList.js";
+
+export { ShapeTableEditor } from "./ShapeTableEditor.js";
+export type {
+  ShapeTableEditorProps,
+  ShapeRow,
+  ShapeRowValidation,
+} from "./ShapeTableEditor.js";
+
+export { ToyExamplePanel } from "./ToyExamplePanel.js";
+export type {
+  ToyExampleProps,
+  ToyExampleInput,
+  ToyExampleResult,
+} from "./ToyExamplePanel.js";
+
+export { MathWorkspace } from "./MathWorkspace.js";
+export type { MathWorkspaceProps, MathWorkspaceState } from "./MathWorkspace.js";
+
+export { RichTextToolbar, RICH_TEXT_TOOLBAR_ITEMS } from "./RichTextToolbar.js";
+export type {
+  RichTextToolbarProps,
+  RichTextSnippet,
+} from "./RichTextToolbar.js";
+
+export {
+  RichAnswerEditor,
+  registerReactMarkdown,
+} from "./RichAnswerEditor.js";
+export type {
+  RichAnswerEditorProps,
+  RichAnswerEditorMode,
+} from "./RichAnswerEditor.js";
+
+export { WritingWorkbench } from "./WritingWorkbench.js";
+export type {
+  WritingWorkbenchProps,
+  WritingWorkbenchMentorReview,
+} from "./WritingWorkbench.js";
+
+export {
+  renderInlineMath,
+  renderBlockMath,
+  renderMixedInline,
+  registerReactKatex,
+} from "../lib/math.js";

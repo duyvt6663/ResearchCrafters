@@ -2,6 +2,7 @@ import {
   BRANCH_STATS_ROLLUP_QUEUE,
   EVENT_DUAL_WRITE_QUEUE,
   SHARE_CARD_RENDER_QUEUE,
+  SUBMISSION_RUN_QUEUE,
   type QueueName,
 } from './queues.js';
 import { getRedisConnection } from './redis.js';
@@ -21,6 +22,11 @@ import {
   runEventDualWrite,
   type EventDualWriteJob,
 } from './jobs/event-dual-write.js';
+import {
+  runSubmissionRun,
+  makeDefaultRunnerExecutor,
+  type SubmissionRunJob,
+} from './jobs/submission-run.js';
 
 export * from './queues.js';
 export * from './redis.js';
@@ -58,6 +64,23 @@ export {
   type EventDualWriteJob,
   type EventDualWritePrisma,
 } from './jobs/event-dual-write.js';
+export {
+  runSubmissionRun,
+  makeDefaultRunnerExecutor,
+  type SubmissionRunJob,
+  type SubmissionRunResult,
+  type SubmissionRunPrisma,
+  type SubmissionRunDeps,
+  type RunnerArtifacts,
+  type RunnerExecutor,
+  type RunnerExecutorInput,
+  type GraderFn,
+  type GradeRow,
+  type RunLogLine,
+  type RunnerMode,
+  type ExecutionStatus,
+  type RunStatus,
+} from './jobs/submission-run.js';
 
 interface BullWorker {
   close(): Promise<void>;
@@ -104,6 +127,7 @@ export async function startAllWorkers(
       BRANCH_STATS_ROLLUP_QUEUE,
       SHARE_CARD_RENDER_QUEUE,
       EVENT_DUAL_WRITE_QUEUE,
+      SUBMISSION_RUN_QUEUE,
     ] as const);
 
   // Lazy import so unit tests can import this module without a live DB.
@@ -141,6 +165,11 @@ export async function startAllWorkers(
     }
   }
 
+  // Default executor for `submission_run`: stub-but-real path against the
+  // seeded canonical solution. Production replaces this with a real
+  // sandboxed dispatch once the worker can pull learner bundles from S3.
+  const defaultRunnerExecutor = makeDefaultRunnerExecutor();
+
   for (const queueName of queues) {
     let processor: (data: unknown) => Promise<unknown>;
     switch (queueName) {
@@ -159,9 +188,17 @@ export async function startAllWorkers(
         processor = (data) =>
           runEventDualWrite(data as EventDualWriteJob, prisma as never);
         break;
+      case 'submission_run':
+        processor = (data) =>
+          runSubmissionRun(
+            data as SubmissionRunJob,
+            prisma as never,
+            { runnerExecutor: defaultRunnerExecutor },
+          );
+        break;
       default:
-        // Other queues (submission_run, mentor_request, package_build) are
-        // owned elsewhere; skip silently if they slip into the list.
+        // Other queues (mentor_request, package_build) are owned elsewhere;
+        // skip silently if they slip into the list.
         continue;
     }
     const worker = await startBullWorker({

@@ -29,7 +29,10 @@ export interface StageMapProps {
   className?: string;
 }
 
-const ICONS: Record<StageMapItemStatus, React.ComponentType<{ size?: number }>> = {
+const ICONS: Record<
+  StageMapItemStatus,
+  React.ComponentType<{ size?: number; className?: string; "aria-hidden"?: boolean }>
+> = {
   completed: CheckCircle2,
   current: ArrowRightCircle,
   unlocked: Circle,
@@ -49,6 +52,17 @@ export function StageMap({
           const Icon = ICONS[item.status];
           const isCurrent = item.id === currentId || item.status === "current";
           const isLocked = item.status === "locked";
+          // Icon tint logic:
+          //  - completed → green icon-accent (signals "passed").
+          //  - current   → green icon-accent (signals "this is your next action").
+          //  - unlocked  → coral accent (still a primary affordance, just not active).
+          //  - locked    → muted gray (we never paint locked stages green).
+          const iconTone =
+            item.status === "completed" || item.status === "current"
+              ? "text-(--color-rc-icon-accent)"
+              : isLocked
+              ? "text-(--color-rc-locked)"
+              : "text-(--color-rc-accent)";
           return (
             <li key={item.id}>
               <button
@@ -56,20 +70,20 @@ export function StageMap({
                 disabled={isLocked}
                 onClick={() => onSelect?.(item.id)}
                 className={cn(
-                  "flex w-full items-center gap-2 px-3 py-2 text-left text-[--text-rc-sm]",
+                  "flex w-full items-center gap-2 px-3 py-2 text-left text-(--text-rc-sm)",
                   "border-l-2",
                   isCurrent
-                    ? "border-[--color-rc-accent] bg-[--color-rc-accent-subtle] text-[--color-rc-text]"
-                    : "border-transparent text-[--color-rc-text-muted]",
+                    ? "border-(--color-rc-accent) bg-(--color-rc-accent-subtle) text-(--color-rc-text)"
+                    : "border-transparent text-(--color-rc-text-muted)",
                   isLocked
                     ? "cursor-not-allowed opacity-70"
-                    : "hover:bg-[--color-rc-surface-muted] hover:text-[--color-rc-text]",
+                    : "hover:bg-(--color-rc-surface-muted) hover:text-(--color-rc-text)",
                 )}
               >
-                <Icon size={14} aria-hidden />
+                <Icon size={14} aria-hidden className={iconTone} />
                 <span className="flex-1 truncate">{item.title}</span>
                 {isLocked && item.unlockRule ? (
-                  <span className="text-[--text-rc-xs] text-[--color-rc-text-subtle]">
+                  <span className="text-(--text-rc-xs) text-(--color-rc-text-subtle)">
                     {item.unlockRule}
                   </span>
                 ) : null}

@@ -18,7 +18,7 @@ ResNet is famous for a reason most learners never feel: deeper plain networks
 trained worse than shallower ones, even on training data. Engineers who only
 read the paper memorize "skip connections fix vanishing gradients" without ever
 seeing the failure mode the residual formulation was actually designed to solve.
-This package replays that decision so you can feel why `F(x) + x` is a
+This package replays that decision so you can feel why $F(x) + x$ is a
 hypothesis about optimization, not just a regularization trick.
 
 ## Start

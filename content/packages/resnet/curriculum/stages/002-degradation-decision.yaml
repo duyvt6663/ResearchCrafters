@@ -21,7 +21,7 @@ task:
     research branches:
 
     A. **branch-residual-canonical** — re-parameterize each block so it
-       learns a residual mapping `F(x) + x`, with a parameter-free identity
+       learns a residual mapping $F(x) + x$, with a parameter-free identity
        shortcut.
     B. **branch-deeper-no-residual** — keep stacking plain blocks; trust
        that more layers, better initialization, and BatchNorm are enough.
@@ -96,7 +96,7 @@ feedback:
     topology changes parameter count and FLOPs but does not change whether
     the optimizer can recover identity (rules out branch C as a fix on
     its own). The residual reformulation directly attacks identity-recovery
-    by making the optimum reachable when `F(x) → 0`, which is why it is
+    by making the optimum reachable when $F(x) → 0$, which is why it is
     the canonical branch.
   common_misconceptions:
     - "\"Branch B fails because of vanishing gradients.\" It fails because the optimizer cannot find identity, not because gradients vanish."

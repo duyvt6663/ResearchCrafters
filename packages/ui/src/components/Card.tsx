@@ -28,10 +28,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(function Card(
       ref={ref}
       data-card="true"
       className={cn(
-        "rounded-[--radius-rc-lg] border bg-[--color-rc-surface] text-[--color-rc-text]",
+        "rounded-(--radius-rc-lg) border bg-(--color-rc-surface) text-(--color-rc-text)",
         emphasis === "strong"
-          ? "border-[--color-rc-border-strong] shadow-sm"
-          : "border-[--color-rc-border]",
+          ? "border-(--color-rc-border-strong) shadow-sm"
+          : "border-(--color-rc-border)",
         className,
       )}
       {...rest}
@@ -46,7 +46,7 @@ export function CardHeader({ className, ...rest }: CardHeaderProps) {
   return (
     <div
       className={cn(
-        "px-4 py-3 border-b border-[--color-rc-border]",
+        "px-4 py-3 border-b border-(--color-rc-border)",
         className,
       )}
       {...rest}
@@ -64,7 +64,7 @@ export function CardFooter({ className, ...rest }: CardFooterProps) {
   return (
     <div
       className={cn(
-        "px-4 py-3 border-t border-[--color-rc-border]",
+        "px-4 py-3 border-t border-(--color-rc-border)",
         className,
       )}
       {...rest}

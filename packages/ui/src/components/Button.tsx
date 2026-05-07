@@ -16,19 +16,19 @@ export type ButtonSize = "sm" | "md" | "lg";
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    "bg-[--color-rc-accent] text-[--color-rc-on-accent] hover:bg-[--color-rc-accent-hover] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--color-rc-accent]",
+    "bg-(--color-rc-accent) text-(--color-rc-on-accent) hover:bg-(--color-rc-accent-hover) focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-rc-accent)",
   secondary:
-    "bg-[--color-rc-surface] text-[--color-rc-text] border border-[--color-rc-border] hover:bg-[--color-rc-surface-muted]",
+    "bg-(--color-rc-surface) text-(--color-rc-text) border border-(--color-rc-border) hover:bg-(--color-rc-surface-muted)",
   ghost:
-    "bg-transparent text-[--color-rc-text] hover:bg-[--color-rc-surface-muted]",
+    "bg-transparent text-(--color-rc-text) hover:bg-(--color-rc-surface-muted)",
   danger:
-    "bg-[--color-rc-danger] text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--color-rc-danger]",
+    "bg-(--color-rc-danger) text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-rc-danger)",
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  sm: "h-7 px-2 text-[--text-rc-sm] gap-1",
-  md: "h-9 px-3 text-[--text-rc-base] gap-1.5",
-  lg: "h-11 px-4 text-[--text-rc-md] gap-2",
+  sm: "h-7 px-2 text-(--text-rc-sm) gap-1",
+  md: "h-9 px-3 text-(--text-rc-base) gap-1.5",
+  lg: "h-11 px-4 text-(--text-rc-md) gap-2",
 };
 
 export interface ButtonProps
@@ -60,7 +60,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         type={type}
         className={cn(
-          "inline-flex items-center justify-center rounded-[--radius-rc-md] font-medium transition-colors duration-[--duration-rc-fast] disabled:opacity-50 disabled:cursor-not-allowed",
+          "inline-flex items-center justify-center rounded-(--radius-rc-md) font-medium transition-colors duration-(--duration-rc-fast) disabled:opacity-50 disabled:cursor-not-allowed",
           VARIANT_CLASSES[variant],
           SIZE_CLASSES[size],
           className,

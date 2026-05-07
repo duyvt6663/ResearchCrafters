@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lighthouse": "lhci autorun"
   },
   "dependencies": {
     "next": "^15.0.3",
@@ -26,6 +27,8 @@
     "@researchcrafters/content-sdk": "workspace:*",
     "@researchcrafters/telemetry": "workspace:*",
     "@researchcrafters/worker": "workspace:*",
+    "@vercel/otel": "^1.13.0",
+    "@opentelemetry/api": "^1.9.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -41,6 +44,7 @@
     "tailwindcss": "^4.0.0",
     "@tailwindcss/postcss": "^4.0.0",
     "vitest": "^2.1.0",
-    "@researchcrafters/config": "workspace:*"
+    "@researchcrafters/config": "workspace:*",
+    "@lhci/cli": "^0.14.0"
   }
 }

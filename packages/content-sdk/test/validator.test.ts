@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promises as fs } from 'node:fs';
+import { MockLLMGateway } from '@researchcrafters/ai';
 import {
   validatePackage,
   validateStructural,
@@ -11,6 +12,19 @@ import {
   validatePedagogy,
   buildPackageManifest,
 } from '../src/index.js';
+
+/**
+ * Clean-refusal gateway used for structural pedagogy tests. The default mock
+ * gateway in `leak-tests.ts` deliberately ECHOES the first redaction target on
+ * the `direct-ask` default attack — this is a regression test of the leak
+ * matcher, not a stand-in for a real model. Tests that want to assert "the
+ * structural pedagogy validator returns no errors" need a gateway that
+ * returns a clean refusal so the default-attack battery (which now always
+ * runs alongside authored attacks) does not produce a leak.
+ */
+function cleanRefusalGateway(): MockLLMGateway {
+  return new MockLLMGateway(() => "I will not disclose hidden material.");
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(__dirname, 'fixtures', 'sample-package');
@@ -45,12 +59,19 @@ describe('validatePackage on fixture', () => {
 
   it('passes pedagogy validation', async () => {
     const loaded = await loadPackage(FIXTURE);
-    const r = await validatePedagogy(loaded);
+    const r = await validatePedagogy(loaded, {
+      // Pass a clean-refusal gateway so the default-attack battery (now run on
+      // every stage in addition to authored attacks) does not trip the
+      // deterministic mock's `direct-ask` echo behaviour.
+      leakTestGatewayFactory: () => cleanRefusalGateway(),
+    });
     expect(r.errors, JSON.stringify(r.errors, null, 2)).toEqual([]);
   });
 
   it('end-to-end validatePackage returns ok=true', async () => {
-    const r = await validatePackage(FIXTURE);
+    const r = await validatePackage(FIXTURE, {
+      leakTestGatewayFactory: () => cleanRefusalGateway(),
+    });
     expect(r.errors, JSON.stringify(r.errors, null, 2)).toEqual([]);
     expect(r.ok).toBe(true);
   });

@@ -214,6 +214,76 @@ describe('CLI <-> web API contract (drift guard)', () => {
     ).toBe(true);
   });
 
+  // -------------------------------------------------------------------------
+  // CLI-side surface assertions: every interface the CLI exposes that mirrors
+  // a wire shape MUST be a strict subset of the contract schema. The
+  // assertions below build an instance from the CLI's interface and feed it
+  // back through the schema; if a CLI-only field sneaks in, the strict Zod
+  // schema rejects it and CI flags the drift.
+  // -------------------------------------------------------------------------
+
+  it('CLI EnrollResponse fields are a strict subset of enrollResponseSchema', async () => {
+    contract ??= await loadContract();
+    // Build the response shape the CLI advertises. If a future change adds
+    // a field here that isn't in `enrollResponseSchema.strict()`, this
+    // assertion flips red.
+    const cliShape: EnrollResponse = {
+      enrollmentId: 'enr-1',
+      packageVersionId: 'pv-1',
+      firstStageRef: 'S001',
+    };
+    expect(contract.enrollResponseSchema.safeParse(cliShape).success).toBe(true);
+    // The fields that used to live on EnrollResponse / StartPackageResponse
+    // (`starterUrl`, `apiUrl`, `smokeCommand`) MUST now be rejected by the
+    // strict schema if they leak back in.
+    expect(
+      contract.enrollResponseSchema.safeParse({
+        ...cliShape,
+        starterUrl: 'https://example.invalid/starter.tar',
+      }).success,
+    ).toBe(false);
+    expect(
+      contract.enrollResponseSchema.safeParse({
+        ...cliShape,
+        apiUrl: 'https://api.example.invalid',
+      }).success,
+    ).toBe(false);
+    expect(
+      contract.enrollResponseSchema.safeParse({
+        ...cliShape,
+        smokeCommand: 'pnpm test',
+      }).success,
+    ).toBe(false);
+  });
+
+  it('CLI RunStatusResponse consumed by `status` parses against the schema', async () => {
+    contract ??= await loadContract();
+    // The shapes the `status` command renders. Each must round-trip the
+    // strict schema; missing optional fields are explicitly allowed.
+    const queued: RunStatusResponse = {
+      id: 'run-1',
+      status: 'queued',
+    };
+    expect(contract.runStatusResponseSchema.safeParse(queued).success).toBe(true);
+
+    const running: RunStatusResponse = {
+      id: 'run-1',
+      status: 'running',
+      startedAt: new Date().toISOString(),
+    };
+    expect(contract.runStatusResponseSchema.safeParse(running).success).toBe(true);
+
+    const finished: RunStatusResponse = {
+      id: 'run-1',
+      status: 'ok',
+      executionStatus: 'ok',
+      startedAt: '2026-05-07T10:00:00.000Z',
+      finishedAt: '2026-05-07T10:01:23.000Z',
+      logUrl: 'https://example.invalid/logs/run-1',
+    };
+    expect(contract.runStatusResponseSchema.safeParse(finished).success).toBe(true);
+  });
+
   it('rejects malformed payloads (drift guard)', async () => {
     contract ??= await loadContract();
     // sha256 must be 64 lowercase-hex chars.

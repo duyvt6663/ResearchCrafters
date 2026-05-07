@@ -29,7 +29,7 @@ higher *training* error too.
 ## #residual-helps
 
 **Claim.** Re-parameterizing each block to learn a residual mapping
-`F(x) + x` allows networks of 50–152 layers to train *without* degradation
+$F(x) + x$ allows networks of 50–152 layers to train *without* degradation
 and to outperform their plain counterparts at matched depth.
 
 - `support_level`: explicit
@@ -43,7 +43,7 @@ and to outperform their plain counterparts at matched depth.
 **Claim.** The shortcut connection is parameter-free identity (or a 1x1
 projection only when dimensions change). The optimization advantage does not
 come from extra parameters — it comes from the optimizer being able to drive
-`F(x)` toward zero when the optimal mapping is close to identity.
+$F(x)$ toward zero when the optimal mapping is close to identity.
 
 - `support_level`: explicit
 - `source_refs`:

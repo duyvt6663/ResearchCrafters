@@ -95,13 +95,13 @@ export function MentorPanel({
     <section
       aria-label="Mentor"
       className={cn(
-        "flex flex-col gap-3 rounded-[--radius-rc-md] border border-[--color-rc-border] bg-[--color-rc-bg] p-3",
+        "flex flex-col gap-3 rounded-(--radius-rc-md) border border-(--color-rc-border) bg-(--color-rc-bg) p-3",
         className,
       )}
     >
       {/* Header: usage badges */}
       <header className="flex items-center justify-between gap-2">
-        <h2 className="text-[--text-rc-md] font-semibold">Mentor</h2>
+        <h2 className="text-(--text-rc-md) font-semibold">Mentor</h2>
         <div className="flex items-center gap-1.5">
           {rateLimited ? (
             <StatusBadge
@@ -123,8 +123,8 @@ export function MentorPanel({
       </header>
 
       {/* Allowed context */}
-      <div className="rounded-[--radius-rc-sm] bg-[--color-rc-surface] px-2.5 py-2 text-[--text-rc-xs] text-[--color-rc-text-muted]">
-        <div className="font-medium text-[--color-rc-text] mb-1">
+      <div className="rounded-(--radius-rc-sm) bg-(--color-rc-surface) px-2.5 py-2 text-(--text-rc-xs) text-(--color-rc-text-muted)">
+        <div className="font-medium text-(--color-rc-text) mb-1">
           Allowed context
         </div>
         {scope.length === 0 ? (
@@ -134,7 +134,7 @@ export function MentorPanel({
             {scope.map((c) => (
               <li
                 key={c}
-                className="inline-flex items-center rounded-[--radius-rc-sm] border border-[--color-rc-border] px-1.5 py-0.5"
+                className="inline-flex items-center rounded-(--radius-rc-sm) border border-(--color-rc-border) px-1.5 py-0.5"
               >
                 {c}
               </li>
@@ -147,14 +147,14 @@ export function MentorPanel({
       {refusal ? (
         <div
           role="alert"
-          className="rounded-[--radius-rc-sm] border border-[--color-rc-warning] bg-[--color-rc-warning-subtle] p-2.5 text-[--text-rc-sm] text-[--color-rc-text]"
+          className="rounded-(--radius-rc-sm) border border-(--color-rc-warning) bg-(--color-rc-warning-subtle) p-2.5 text-(--text-rc-sm) text-(--color-rc-text)"
         >
           <div className="flex items-center gap-1.5 font-medium">
             <AlertTriangle size={14} aria-hidden />
             {refusal.title}
           </div>
-          <p className="mt-1 text-[--color-rc-text-muted]">{refusal.body}</p>
-          <p className="mt-1 text-[--color-rc-text-muted]">{refusal.hint}</p>
+          <p className="mt-1 text-(--color-rc-text-muted)">{refusal.body}</p>
+          <p className="mt-1 text-(--color-rc-text-muted)">{refusal.hint}</p>
         </div>
       ) : null}
 

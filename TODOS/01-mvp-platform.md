@@ -11,12 +11,18 @@ reflect that snapshot.
 - [x] Create package overview page with paper, skills, prerequisites, difficulty, time, and free-stage count.
 - [x] Create learning session page.
 - [x] Show current stage, progress, unlocked graph nodes, and next action.
-- [x] Support stage types: decision, writing, analysis, review, reflection.
+- [x] Support basic stage types: decision, math, writing, analysis, review,
+      reflection.
 - [x] Support code/experiment stages by linking to CLI instructions.
 - [x] Show expert-authored branch feedback after the policy allows it.
-- [x] Show deterministic/evaluator grade results.
-- [x] Show runner logs and execution failure states.
-- [x] Add share-card preview after meaningful progress.
+- [ ] Show deterministic/evaluator grade results.
+      _(UI components exist; runner/evaluator grade persistence is not wired
+      end-to-end.)_
+- [ ] Show runner logs and execution failure states.
+      _(UI components and APIs exist; submitted runs remain queued with empty
+      logs until runner enqueue/callback persistence lands.)_
+- [ ] Add share-card preview after meaningful progress.
+      _(preview component exists; share-card API/page still use stub payloads.)_
 
 ## Enrollment and Progress
 
@@ -24,7 +30,9 @@ reflect that snapshot.
 - [x] Pin each enrollment to `package_version_id`.
 - [x] Track active stage, completed stages, and unlocked nodes.
 - [x] Track stage attempts with answer payloads.
-- [x] Track node traversal and selected branch.
+- [ ] Track node traversal and selected branch.
+      _(route emits telemetry and returns a synthesized id, but does not persist
+      `node_traversals` rows.)_
 - [ ] Support resuming a package from any device.
 - [ ] Preserve old enrollment history after package migration.
 
@@ -47,6 +55,17 @@ reflect that snapshot.
 - [x] CLI should be required only for `inputs.mode` in `{code, experiment}`.
 - [x] Execution failures should show retry guidance, not grade failure.
 - [x] Paywall should explain what unlocks, not interrupt unexpectedly.
+
+## Learning Module Depth
+
+- [ ] Support interactive math modules beyond free-text rubric answers:
+      derivation steps, shape tables, numeric checks, and misconception repair.
+- [ ] Support academic writing modules beyond a plain answer box:
+      claim surgery, evidence mapping, reviewer rebuttal, and revision diff.
+- [ ] Treat math and writing stages as first-class graded work in progress,
+      resume, mentor, share-card, and telemetry flows.
+- [ ] Ensure the flagship package includes one polished interactive math module
+      and one academic writing module before launch.
 
 ## Error and Empty States
 
@@ -83,7 +102,11 @@ section 11.
 
 - [x] User can start the package, complete preview stages, hit a clear paid gate, and resume.
 - [x] User can select a branch and see expert feedback.
-- [x] User can submit a web-only answer and receive a structured grade.
+- [ ] User can submit a web-only answer and receive a structured grade.
+      _(stage-attempt route returns queued attempts only; grade persistence is
+      still pending.)_
+- [ ] User can complete one interactive math module and one academic writing
+      module with structured feedback.
 - [ ] User can submit a code/experiment stage through CLI and see results in web.
 - [x] Access gates are enforced through one policy function across all routes.
       _(function exists; live membership/entitlement correctness is tracked in
@@ -93,14 +116,32 @@ section 11.
 
 - [x] Choose an auth provider (NextAuth / Clerk / in-house) and wire DB-backed sessions in `lib/auth.ts`.
       _(NextAuth v5 + Prisma adapter; GitHub provider; magic-link deferred)_
-- [ ] Fix `/api/packages` so the API returns the awaited Prisma-backed package
-      list instead of `{}`.
-- [ ] Replace the stubbed `permissions.canAccess` entitlement branch with live
-      `Membership` + `Entitlement` reads. _(in flight — async/Prisma rewrite
-      mid-migration)_
+- [x] Fix `/api/packages` so the API returns the awaited Prisma-backed package
+      list instead of `{}`. _(Tier-1 fix landed: `await listPackages()`.)_
+- [x] Replace the stubbed `permissions.canAccess` entitlement branch with live
+      `Membership` + `Entitlement` reads.
 - [x] Automate the package overview and stage-player browser smoke path from
       `10-integration-quality-gaps.md`. _(Playwright specs at `tests/e2e/`)_
 - [ ] Wire `lib/telemetry.ts` `track()` to a real analytics destination.
 - [ ] Render the React Flow decision graph (deferred to Phase 4).
+- [x] Fix `/api/enrollments/:id/graph` so it returns the awaited Prisma-backed
+      graph instead of `{}`. _(Tier-1 fix landed: `await getDecisionGraph(id)`.)_
+- [x] Fix Tailwind package-source scanning / config so `packages/ui` utility
+      classes render correctly and pages do not overflow horizontally.
+      _(Tier-1 fix landed: `apps/web/app/globals.css` migrated to v4
+      `@import "tailwindcss"` + `@source ../../../packages/ui/src/...`; dead
+      `apps/web/tailwind.config.ts` removed; CSS payload 109 → ~1328 lines.)_
+- [x] Ship a mobile decision-graph fallback so the package overview is
+      usable on small screens without a pannable canvas.
+      _(Iterations 4+5: `packages/ui/src/components/DecisionGraphMobile.tsx`
+      shipped with spoiler discipline; wired into
+      `apps/web/app/packages/[slug]/page.tsx`; pinned by
+      `packages/ui/test/decision-graph-mobile.test.tsx` (5 cases). Mobile
+      sheet/tab UI for code/experiment stage-player still open — see `09`.)_
 - [ ] Generate real share-card public URLs and image assets.
 - [ ] Review the static prototype with target users.
+- [ ] UI polish for catalog/overview/stage layouts, AppShell, dark-mode
+      toggle. _(in flight)_
+- [ ] CLI/entitlements polish: `lastRunId` persistence, `slug@slug@stub`
+      rendering fix, drop dead `EnrollResponse` fields, replace
+      `/api/entitlements` stub with live Prisma reads. _(in flight)_

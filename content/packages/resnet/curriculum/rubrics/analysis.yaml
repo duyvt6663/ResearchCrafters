@@ -35,7 +35,7 @@ criteria:
         description: "Rules out both, citing curve features."
   - id: identity-recovery
     title: "Maps the residual success to identity-recovery"
-    description: "Connects the residual variant's success at depth to the optimizer's ability to drive `F(x) → 0`."
+    description: "Connects the residual variant's success at depth to the optimizer's ability to drive $F(x) → 0$."
     weight: 25
     levels:
       - score: 0

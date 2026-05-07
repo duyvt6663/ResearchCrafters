@@ -1,8 +1,22 @@
+/* Tailwind v4 entry point.
+ * v4 is CSS-first: `@import "tailwindcss"` replaces the old v3
+ * `@tailwind base/components/utilities` directives. The `tailwind.config.ts`
+ * file is ignored by v4 — content paths come from `@source` and from
+ * automatic detection.
+ *
+ * The UI package's tokens land via `@theme` in @researchcrafters/ui/styles.css.
+ */
+@import "tailwindcss";
+
+/* Pull in the design tokens defined as @theme in the UI package. */
 @import "@researchcrafters/ui/styles.css";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind v4 only auto-scans the app's own files. We have to explicitly
+ * point it at the workspace package whose components carry our utility
+ * classes. Without this, classes like `flex`, `text-(--color-rc-text)`, and
+ * `bg-(--color-rc-surface)` never make it into the generated stylesheet —
+ * which produces the "bland page" symptom we hit before this fix. */
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
 
 :root {
   color-scheme: light dark;
@@ -14,17 +28,114 @@ body {
 }
 
 body {
-  font-family: var(--rc-font-sans, ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, sans-serif);
+  font-family: var(
+    --font-rc-sans,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif
+  );
   letter-spacing: 0;
-  background: var(--rc-color-bg, #fff);
-  color: var(--rc-color-fg, #111);
+  background: var(--color-rc-bg, #fff);
+  color: var(--color-rc-text, #111);
+  line-height: var(--leading-rc-body, 1.6);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 code,
 kbd,
 pre,
 samp {
-  font-family: var(--rc-font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, monospace);
+  font-family: var(
+    --font-rc-mono,
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace
+  );
+}
+
+/* Prefer the user's OS theme on first load; the web app can later persist
+ * their explicit choice via `data-theme` on <html>. */
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) {
+    color-scheme: dark;
+  }
+  html:not([data-theme]) body {
+    background: var(--color-rc-bg);
+    color: var(--color-rc-text);
+  }
+  html:not([data-theme]) {
+    --color-rc-bg: #0e1320;
+    --color-rc-surface: #161c2d;
+    --color-rc-surface-muted: #1f2638;
+    --color-rc-border: #2b3349;
+    --color-rc-border-strong: #3d465e;
+    --color-rc-text: #f1e8da;
+    --color-rc-text-muted: #a8b0c0;
+    --color-rc-text-subtle: #7c8597;
+    --color-rc-accent: #f08a6b;
+    --color-rc-accent-hover: #f5a589;
+    --color-rc-accent-subtle: #3a1b12;
+    --color-rc-on-accent: #0e1320;
+    --color-rc-code-bg: #0a0f1c;
+    --color-rc-code-text: #f1e8da;
+    --color-rc-code-muted: #7c8597;
+  }
+}
+
+/* Smooth focus ring for keyboard nav — workbench tone, not brand-y. */
+:focus-visible {
+  outline: 2px solid var(--color-rc-accent, #e76f51);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Subtle scrollbar for dense panels. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-rc-border, #e2dacb);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-rc-border-strong, #c9bfaa);
+}
+
+/*
+ * Marketing-only entrance keyframes. Marketing pages may opt into them by
+ * applying `.rc-anim-fade-up` to a hero element. Workbench surfaces should
+ * not use these — see `docs/FRONTEND.md` §4 (workbench vs marketing split).
+ *
+ * All gated on `prefers-reduced-motion: no-preference`; reduced-motion users
+ * get the static end-state with no transform.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes rc-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .rc-anim-fade-up {
+    animation: rc-fade-up var(--duration-rc-entrance, 300ms)
+      var(--ease-rc-emphasized) both;
+  }
+  .rc-anim-fade-up--delay-1 {
+    animation-delay: 80ms;
+  }
+  .rc-anim-fade-up--delay-2 {
+    animation-delay: 160ms;
+  }
 }

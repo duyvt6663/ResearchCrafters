@@ -217,10 +217,14 @@ function buildFailedBranchLesson(loaded: LoadedPackage): {
     return { title: "", redactedSummary: "" };
   }
   return {
-    title: `Failed branch: ${failed.data.choice}`,
-    // The package overview treats this section as a non-spoiler teaser of
-    // the failed-branch lesson. We surface the high-level lesson but stop
-    // before the explicit canonical mechanism.
+    // Catalog spoiler boundary: never bake the failed-branch CHOICE into
+    // the title. The choice text IS the wrong-but-plausible answer the
+    // package wants the learner to consider unaided. The non-spoiler title
+    // promises a lesson without revealing which path it critiques.
+    title: "What a tempting wrong path here taught us",
+    // The redactedSummary is a high-level lesson — already non-spoiler in
+    // the authored content (`branch.lesson` does not name the canonical
+    // mechanism by design). Surface as authored.
     redactedSummary: failed.data.lesson.trim(),
   };
 }
