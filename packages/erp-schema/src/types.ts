@@ -6,6 +6,7 @@ import type {
   reviewSchema,
   statusEnum,
   difficultyEnum,
+  packageDifficultyEnum,
 } from './schemas/package.js';
 import type {
   graphSchema,
@@ -43,6 +44,7 @@ export type Release = z.infer<typeof releaseSchema>;
 export type Review = z.infer<typeof reviewSchema>;
 export type Status = z.infer<typeof statusEnum>;
 export type Difficulty = z.infer<typeof difficultyEnum>;
+export type PackageDifficulty = z.infer<typeof packageDifficultyEnum>;
 
 export type Graph = z.infer<typeof graphSchema>;
 export type GraphNode = z.infer<typeof graphNodeSchema>;

@@ -2,61 +2,64 @@
 
 Goal: make progress, decisions, entitlement, privacy, and share loops reliable.
 
+Status (2026-05-07): see `PROGRESS.md` for the snapshot. Checkboxes below
+reflect that snapshot.
+
 ## Core Data Model
 
-- [ ] Add `users`.
-- [ ] Add `memberships`.
-- [ ] Add `entitlements`.
-- [ ] Add `packages`.
-- [ ] Add `package_versions`.
-- [ ] Add `package_version_patches`.
-- [ ] Add `stages`.
-- [ ] Add `decision_nodes`.
-- [ ] Add `branches`.
-- [ ] Add `enrollments`.
-- [ ] Add `node_traversals`.
-- [ ] Add `stage_attempts`.
-- [ ] Add `submissions`.
-- [ ] Add `runs`.
-- [ ] Add `grades`.
-- [ ] Add `mentor_threads`.
-- [ ] Add `mentor_messages`.
-- [ ] Add `branch_stats`.
-- [ ] Add `share_cards`.
-- [ ] Add `reviews`.
-- [ ] Add `events`.
+- [x] Add `users`.
+- [x] Add `memberships`.
+- [x] Add `entitlements`.
+- [x] Add `packages`.
+- [x] Add `package_versions`.
+- [x] Add `package_version_patches`.
+- [x] Add `stages`.
+- [x] Add `decision_nodes`.
+- [x] Add `branches`.
+- [x] Add `enrollments`.
+- [x] Add `node_traversals`.
+- [x] Add `stage_attempts`.
+- [x] Add `submissions`.
+- [x] Add `runs`.
+- [x] Add `grades`.
+- [x] Add `mentor_threads`.
+- [x] Add `mentor_messages`.
+- [x] Add `branch_stats`.
+- [x] Add `share_cards`.
+- [x] Add `reviews`.
+- [x] Add `events`.
 
 ## Package Build Mirroring
 
-- [ ] Mirror stage metadata into `stages`.
-- [ ] Mirror `stage_policy` into `stages`.
-- [ ] Mirror rubric pointer into `stages`.
-- [ ] Mirror runner mode into `stages`.
-- [ ] Mirror entitlement gates into `stages`.
-- [ ] Mirror graph nodes into `decision_nodes`.
-- [ ] Mirror branch choices into `branches`.
+- [x] Mirror stage metadata into `stages`.
+- [x] Mirror `stage_policy` into `stages`.
+- [x] Mirror rubric pointer into `stages`.
+- [x] Mirror runner mode into `stages`.
+- [x] Mirror entitlement gates into `stages`.
+- [x] Mirror graph nodes into `decision_nodes`.
+- [x] Mirror branch choices into `branches`.
 - [ ] Store source hash and package build manifest.
-- [ ] Store active patch sequence.
+- [x] Store active patch sequence.
 
 ## Access Policy
 
-- [ ] Implement `permissions.canAccess(user, packageVersion, stage, action)`.
-- [ ] Support `view_stage`.
-- [ ] Support `submit_attempt`.
-- [ ] Support `request_mentor_hint`.
-- [ ] Support `request_mentor_feedback`.
-- [ ] Support `view_branch_feedback`.
-- [ ] Support `create_share_card`.
-- [ ] Support `view_solution`.
-- [ ] Use memberships, entitlements, package status, free stages, stage gates, and roles.
-- [ ] Add tests that every route calls the policy.
+- [x] Implement `permissions.canAccess(user, packageVersion, stage, action)`.
+- [x] Support `view_stage`.
+- [x] Support `submit_attempt`.
+- [x] Support `request_mentor_hint`.
+- [x] Support `request_mentor_feedback`.
+- [x] Support `view_branch_feedback`.
+- [x] Support `create_share_card`.
+- [x] Support `view_solution`.
+- [ ] Use memberships, entitlements, package status, free stages, stage gates, and roles. _(stubbed)_
+- [x] Add tests that every route calls the policy.
 
 ## Version and Patch Policy
 
-- [ ] Pin enrollment to `package_version_id`.
+- [x] Pin enrollment to `package_version_id`.
 - [ ] New enrollments use latest live package version.
 - [ ] Keep existing enrollments pinned.
-- [ ] Implement `package_version_patches` with `patch_seq`.
+- [x] Implement `package_version_patches` with `patch_seq`.
 - [ ] Allow only cosmetic overlays for patches.
 - [ ] Record active `patch_seq` on stage attempts.
 - [ ] Require new package version for graph/stage/rubric/runner/solution changes.
@@ -69,13 +72,13 @@ Goal: make progress, decisions, entitlement, privacy, and share loops reliable.
 - [ ] Define cohorts: `all_attempts`, `completers`, `entitled_paid`, `alpha_beta`.
 - [ ] Exclude `alpha_beta` from public percentages by default.
 - [ ] Compute branch stats by package version, stage, node, branch, cohort, and time window.
-- [ ] Hide public percentages unless the cohort N for the decision node is at
+- [x] Hide public percentages unless the cohort N for the decision node is at
       least 20.
-- [ ] Hide individual branch percentages unless that specific branch's N is at
+- [x] Hide individual branch percentages unless that specific branch's N is at
       least 5; display "rare branch" copy instead.
-- [ ] Use suppressed display copy when N is too low.
-- [ ] Add tests for minimum-N suppression at both node and branch granularity.
-- [ ] Round displayed percentages to the nearest 5% to reduce identifiability in
+- [x] Use suppressed display copy when N is too low.
+- [x] Add tests for minimum-N suppression at both node and branch granularity.
+- [x] Round displayed percentages to the nearest 5% to reduce identifiability in
       small cohorts.
 
 ## Telemetry
@@ -128,18 +131,33 @@ Goal: make progress, decisions, entitlement, privacy, and share loops reliable.
 
 ## Share Cards
 
-- [ ] Store immutable share-card payload snapshot.
-- [ ] Include package slug and version.
-- [ ] Include completion status.
-- [ ] Include score summary.
-- [ ] Include hardest decision when available.
-- [ ] Include selected branch and branch type.
-- [ ] Include cohort selection percentage only after minimum-N suppression passes.
-- [ ] Include learner-written evidence-grounded insight when available.
+- [x] Store immutable share-card payload snapshot.
+- [x] Include package slug and version.
+- [x] Include completion status.
+- [x] Include score summary.
+- [x] Include hardest decision when available.
+- [x] Include selected branch and branch type.
+- [x] Include cohort selection percentage only after minimum-N suppression passes.
+- [x] Include learner-written evidence-grounded insight when available.
 
 ## Acceptance Criteria
 
 - [ ] Branch selections can power safe share-card percentages.
-- [ ] Free-stage access cannot drift between routes.
-- [ ] Package versions and patches are auditable.
+- [x] Free-stage access cannot drift between routes.
+- [x] Package versions and patches are auditable.
 - [ ] Analytics map directly to PRD success metrics.
+
+## Open gaps from snapshot
+
+- [ ] Generate the baseline Prisma migration and make `pnpm db:migrate`
+      runnable.
+- [ ] Replace the web `lib/data/*` in-memory stubs with real Prisma queries
+      through `@researchcrafters/db`.
+- [ ] Wire `permissions.canAccess` to live `Membership` and `Entitlement` rows.
+- [ ] Build the branch-stats rollup job (per-branch N>=5, per-node N>=20, 5%
+      rounding).
+- [ ] Land the events dual-write: PostHog primary, audit-grade rows in the
+      Postgres `Event` table.
+- [ ] Surface the migration UX flow in the web app.
+- [ ] Add privacy plumbing: encryption-at-rest fields, data export endpoint,
+      deletion cascade workflow.

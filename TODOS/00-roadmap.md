@@ -4,6 +4,9 @@
 
 Goal: make the first package and platform loop concrete before broad implementation.
 
+Status (2026-05-07): see `PROGRESS.md` for the snapshot. Checkboxes below
+reflect that snapshot.
+
 - [ ] Choose the first flagship package: FlashAttention or ResNet.
 - [ ] Define the target learner persona for the first package.
 - [ ] Write a one-page package promise: what skill gap this ERP exposes.
@@ -23,35 +26,38 @@ Acceptance criteria:
 Goal: render a package from files and validate that the ERP format works.
 
 - [ ] Stand up infra foundations from `08-infra-foundations.md`: monorepo, dev DB,
-      Redis, S3, CI.
-- [ ] Create `content/packages/{slug}` with `package.yaml`.
-- [ ] Add `artifact/`, `curriculum/`, `workspace/`, `solutions/`, and `media/`.
-- [ ] Implement package/stage/branch/rubric schemas.
-- [ ] Build a static package renderer in the web app.
-- [ ] Build a simple session view for decision, writing, analysis, and reflection stages.
-- [ ] Implement `researchcrafters validate` for structural checks.
-- [ ] Add basic ARA cross-link validation.
-- [ ] Validate starter/canonical workspaces manually for the first package.
+      Redis, S3, CI. _(stubbed)_
+- [x] Create `content/packages/{slug}` with `package.yaml`.
+- [x] Add `artifact/`, `curriculum/`, `workspace/`, `solutions/`, and `media/`.
+- [x] Implement package/stage/branch/rubric schemas.
+- [x] Build a static package renderer in the web app.
+- [x] Build a simple session view for decision, writing, analysis, and reflection stages.
+- [x] Implement `researchcrafters validate` for structural checks.
+- [x] Add basic ARA cross-link validation.
+- [ ] Validate starter/canonical workspaces manually for the first package. _(stubbed)_
+- [ ] Run the P0 integration-quality gate from `10-integration-quality-gaps.md`.
 
 Acceptance criteria:
 
 - [ ] A user can click through the first package locally.
 - [ ] Package content validates without manual inspection.
 - [ ] The first meaningful branch produces expert-authored feedback.
+- [ ] Package overview and stage-player routes pass browser smoke tests.
 
 ## Phase 2: MVP Product Loop
 
 Goal: support real users completing the first package.
 
-- [ ] Add auth with email and GitHub OAuth minimum scope.
-- [ ] Add package catalog and package overview page.
-- [ ] Add enrollment and package-version pinning.
-- [ ] Add stage state, attempts, progress, and branch traversal.
-- [ ] Add entitlement checks through `permissions.canAccess`.
-- [ ] Add CLI for code/experiment stages.
-- [ ] Add runner for `test`, `replay`, and CPU-only `mini_experiment` modes.
-- [ ] Add evaluator output and structured grades.
-- [ ] Add run logs and execution failure handling.
+- [ ] Complete all P0 tasks in `10-integration-quality-gaps.md`.
+- [ ] Add auth with email and GitHub OAuth minimum scope. _(stubbed)_
+- [ ] Add package catalog and package overview page. _(stubbed)_
+- [ ] Add enrollment and package-version pinning. _(stubbed)_
+- [ ] Add stage state, attempts, progress, and branch traversal. _(stubbed)_
+- [x] Add entitlement checks through `permissions.canAccess`.
+- [x] Add CLI for code/experiment stages.
+- [x] Add runner for `test`, `replay`, and CPU-only `mini_experiment` modes.
+- [x] Add evaluator output and structured grades.
+- [ ] Add run logs and execution failure handling. _(stubbed)_
 - [ ] Add basic billing or gated manual access for alpha.
 
 Acceptance criteria:

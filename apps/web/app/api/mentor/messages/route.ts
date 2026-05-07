@@ -1,33 +1,44 @@
 import { NextResponse } from "next/server";
 import { getEnrollment, getStage } from "@/lib/data/enrollment";
-import { getSession } from "@/lib/auth";
+import { getSessionFromRequest } from "@/lib/auth";
 import { denialHttpStatus, permissions } from "@/lib/permissions";
 import { track } from "@/lib/telemetry";
+import {
+  mentorMessageRequestSchema,
+  mentorMessageResponseSchema,
+} from "@/lib/api-contract";
 
 export const runtime = "nodejs";
 
-type Body = {
-  enrollmentId: string;
-  stageRef: string;
-  mode: "hint" | "clarify" | "review_draft" | "explain_branch";
-  message: string;
-};
-
 export async function POST(req: Request): Promise<NextResponse> {
-  const body = (await req.json()) as Body;
+  let raw: unknown;
+  try {
+    raw = await req.json();
+  } catch {
+    raw = {};
+  }
+  const parsed = mentorMessageRequestSchema.safeParse(raw ?? {});
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "bad_request", reason: parsed.error.issues },
+      { status: 400 },
+    );
+  }
+  const body = parsed.data;
+
   const enr = getEnrollment(body.enrollmentId);
   const stage = getStage(body.stageRef);
   if (!enr || !stage) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  const session = await getSession();
+  const session = await getSessionFromRequest(req);
   const action =
     body.mode === "hint"
       ? "request_mentor_hint"
       : "request_mentor_feedback";
 
-  const access = permissions.canAccess({
+  const access = await permissions.canAccess({
     user: session,
     packageVersionId: enr.packageVersionId,
     stage: { ref: stage.ref, isFreePreview: stage.isFreePreview, isLocked: stage.isLocked },
@@ -51,7 +62,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   // copy here because the policy module owns "no model-generated refusal" —
   // any real refusal will use the ui/copy module too.
   const reply = `Hint stub for stage ${stage.ref} (${body.mode}). Use the evidence panel and rubric.`;
-  return NextResponse.json({
+  const responseBody = mentorMessageResponseSchema.parse({
     message: {
       id: `m-${Date.now()}`,
       enrollmentId: enr.id,
@@ -59,6 +70,8 @@ export async function POST(req: Request): Promise<NextResponse> {
       mode: body.mode,
       role: "mentor",
       content: reply,
+      createdAt: new Date().toISOString(),
     },
   });
+  return NextResponse.json(responseBody);
 }

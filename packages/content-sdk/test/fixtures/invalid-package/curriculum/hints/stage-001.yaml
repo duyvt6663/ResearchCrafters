@@ -1,0 +1,12 @@
+id: hints-stage-001
+stage_id: S001
+levels:
+  - level: 1
+    title: "TODO_hint_level_1_title"
+    body_md: "TODO_hint_level_1_body"
+  - level: 2
+    title: "TODO_hint_level_2_title"
+    body_md: "TODO_hint_level_2_body"
+  - level: 3
+    title: "TODO_hint_level_3_title"
+    body_md: "TODO_hint_level_3_body"

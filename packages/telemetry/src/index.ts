@@ -1,0 +1,42 @@
+export type {
+  TelemetryEvent,
+  TelemetryEventName,
+  Cohort,
+  BranchType,
+  RunnerMode,
+  RunnerStatus,
+  PackageViewedSurface,
+  MentorRequestKind,
+  SubscriptionPlan,
+  PackageViewedEvent,
+  EnrollmentStartedEvent,
+  StageLoadedEvent,
+  StageAttemptSubmittedEvent,
+  BranchSelectedEvent,
+  BranchFeedbackUnlockedEvent,
+  BranchFeedbackViewedEvent,
+  RunnerJobStartedEvent,
+  RunnerJobCompletedEvent,
+  GradeCreatedEvent,
+  GradeOverriddenEvent,
+  EvaluatorRedactionTriggeredEvent,
+  MentorHintRequestedEvent,
+  MentorFeedbackRequestedEvent,
+  StageCompletedEvent,
+  ShareCardCreatedEvent,
+  PaywallViewedEvent,
+  SubscriptionStartedEvent,
+} from './events.js';
+export { AUDIT_GRADE_EVENTS, isAuditGradeEvent } from './events.js';
+export {
+  initTelemetry,
+  _resetTelemetryForTests,
+  type InitTelemetryOptions,
+  type PostHogLikeClient,
+} from './init.js';
+export {
+  track,
+  setEventStoreForTests,
+  type TrackContext,
+  type EventStore,
+} from './track.js';

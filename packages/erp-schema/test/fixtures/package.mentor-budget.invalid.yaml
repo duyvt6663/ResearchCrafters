@@ -1,0 +1,23 @@
+slug: flash-attention
+title: "FlashAttention: IO-Aware Exact Attention"
+paper:
+  title: "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness"
+  authors:
+    - "Tri Dao"
+  year: 2022
+  arxiv: "2205.14135"
+status: alpha
+difficulty: hard
+estimated_time_minutes: 180
+skills:
+  - systems thinking
+prerequisites:
+  - Python
+release:
+  free_stage_ids:
+    - S001
+  requires_gpu: false
+review: {}
+version: "0.1.0"
+mentor_budget:
+  per_user_per_day_usd: 1.50

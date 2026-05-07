@@ -125,3 +125,220 @@ describe('negative fixtures', () => {
     expect(result.success).toBe(false);
   });
 });
+
+describe('schema decisions (PRD reconciliation)', () => {
+  // Helper: a minimal valid stage authored in the PRD top-level shape.
+  function topLevelStage(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+    return {
+      id: 'S1',
+      title: 't',
+      type: 'framing',
+      difficulty: 'very_easy',
+      estimated_time_minutes: 1,
+      artifact_refs: [],
+      task: { prompt_md: 'do the thing' },
+      validation: { kind: 'rubric' },
+      inputs: { mode: 'free_text' },
+      runner: { mode: 'none', config: 'workspace/runner.yaml' },
+      feedback: {},
+      stage_policy: {
+        mentor_visibility: {
+          stage_copy: 'always',
+          artifact_refs: 'always',
+          rubric: 'always',
+          evidence: 'always',
+          branch_feedback: 'always',
+          canonical_solution: 'always',
+          branch_solutions: 'never',
+        },
+      },
+      ...overrides,
+    };
+  }
+
+  it('package.difficulty accepts the PRD vocabulary (advanced)', () => {
+    const ok = packageSchema.safeParse({
+      slug: 'x',
+      title: 'X',
+      paper: { title: 'p', authors: [], year: 2020, arxiv: '' },
+      status: 'alpha',
+      difficulty: 'advanced',
+      estimated_time_minutes: 60,
+      skills: [],
+      prerequisites: [],
+      release: { free_stage_ids: [], requires_gpu: false },
+      review: {},
+      version: '0.1.0',
+    });
+    expect(ok.success).toBe(true);
+  });
+
+  it('package.difficulty still accepts the legacy stage vocabulary (easy)', () => {
+    const ok = packageSchema.safeParse({
+      slug: 'x',
+      title: 'X',
+      paper: { title: 'p', authors: [], year: 2020, arxiv: '' },
+      status: 'alpha',
+      difficulty: 'easy',
+      estimated_time_minutes: 60,
+      skills: [],
+      prerequisites: [],
+      release: { free_stage_ids: [], requires_gpu: false },
+      review: {},
+      version: '0.1.0',
+    });
+    expect(ok.success).toBe(true);
+  });
+
+  it('stage.difficulty rejects the package vocabulary (advanced)', () => {
+    const bad = stageSchema.safeParse(topLevelStage({ difficulty: 'advanced' }));
+    expect(bad.success).toBe(false);
+  });
+
+  it('lifts top-level validation/inputs/feedback/runner into stage_policy', () => {
+    const r = stageSchema.safeParse(topLevelStage());
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.stage_policy.validation.kind).toBe('rubric');
+      expect(r.data.stage_policy.inputs.mode).toBe('free_text');
+      expect(r.data.stage_policy.runner.mode).toBe('none');
+      expect(r.data.stage_policy.feedback).toBeDefined();
+    }
+  });
+
+  it('runner stage accepts command as a string', () => {
+    const ok = runnerSchema.safeParse({
+      image: 'researchcrafters/runner:python-3.11',
+      default_mode: 'test',
+      resources: { cpu: 2, memory_mb: 2048, wall_clock_seconds: 60 },
+      network: 'none',
+      stages: {
+        S1: { mode: 'test', command: 'pytest -q' },
+      },
+    });
+    expect(ok.success).toBe(true);
+    if (ok.success) {
+      expect(ok.data.stages.S1?.command).toBe('pytest -q');
+    }
+  });
+
+  it('runner stage accepts command as an array and normalizes to a single string', () => {
+    const ok = runnerSchema.safeParse({
+      image: 'researchcrafters/runner:python-3.11',
+      default_mode: 'test',
+      resources: { cpu: 2, memory_mb: 2048, wall_clock_seconds: 60 },
+      network: 'none',
+      stages: {
+        S1: { mode: 'test', command: ['pytest', '-q', 'workspace/tests/test.py'] },
+      },
+    });
+    expect(ok.success).toBe(true);
+    if (ok.success) {
+      expect(ok.data.stages.S1?.command).toBe('pytest -q workspace/tests/test.py');
+    }
+  });
+
+  it('runner mode:none allows omitting command', () => {
+    const ok = runnerSchema.safeParse({
+      image: 'researchcrafters/runner:python-3.11',
+      default_mode: 'test',
+      resources: { cpu: 2, memory_mb: 2048, wall_clock_seconds: 60 },
+      network: 'none',
+      stages: {
+        S1: { mode: 'none' },
+      },
+    });
+    expect(ok.success).toBe(true);
+  });
+
+  it('runner mode:test without command fails', () => {
+    const bad = runnerSchema.safeParse({
+      image: 'researchcrafters/runner:python-3.11',
+      default_mode: 'test',
+      resources: { cpu: 2, memory_mb: 2048, wall_clock_seconds: 60 },
+      network: 'none',
+      stages: {
+        S1: { mode: 'test' },
+      },
+    });
+    expect(bad.success).toBe(false);
+  });
+
+  it('runner.resources rejects timeout_seconds in favor of wall_clock_seconds', () => {
+    const bad = runnerSchema.safeParse({
+      image: 'researchcrafters/runner:python-3.11',
+      default_mode: 'test',
+      resources: { cpu: 2, memory_mb: 2048, wall_clock_seconds: 60, timeout_seconds: 60 },
+      network: 'none',
+      stages: { S1: { mode: 'none' } },
+    });
+    expect(bad.success).toBe(false);
+    if (!bad.success) {
+      expect(bad.error.issues.some((i) => i.path.includes('timeout_seconds'))).toBe(true);
+    }
+  });
+
+  it('runner stage rejects timeout_seconds in favor of wall_clock_seconds', () => {
+    const bad = runnerSchema.safeParse({
+      image: 'researchcrafters/runner:python-3.11',
+      default_mode: 'test',
+      resources: { cpu: 2, memory_mb: 2048, wall_clock_seconds: 60 },
+      network: 'none',
+      stages: {
+        S1: { mode: 'test', command: 'pytest', timeout_seconds: 30 },
+      },
+    });
+    expect(bad.success).toBe(false);
+  });
+
+  it('stage with inputs.mode=code requires runner.mode != none', () => {
+    const bad = stageSchema.safeParse(
+      topLevelStage({
+        inputs: { mode: 'code' },
+        runner: { mode: 'none' },
+      }),
+    );
+    expect(bad.success).toBe(false);
+  });
+
+  it('rubric accepts authored shape (criteria + levels + 0..100 pass_threshold)', () => {
+    const ok = rubricSchema.safeParse({
+      id: 'rubric-x',
+      total_points: 100,
+      criteria: [
+        {
+          id: 'c1',
+          title: 'C1',
+          description: 'd',
+          weight: 50,
+          levels: [
+            { score: 0, description: 'no' },
+            { score: 50, description: 'partial' },
+            { score: 100, description: 'full' },
+          ],
+        },
+      ],
+      pass_threshold: 60,
+    });
+    expect(ok.success).toBe(true);
+    if (ok.success) {
+      expect(ok.data.dimensions).toHaveLength(1);
+      expect(ok.data.pass_threshold).toBeCloseTo(0.6);
+    }
+  });
+
+  it('hint accepts authored levels[] shape', () => {
+    const ok = hintSchema.safeParse({
+      stage_id: 'S001',
+      levels: [
+        { level: 1, title: 't', body_md: 'b' },
+        { level: 2, title: 't2', body_md: 'b2' },
+      ],
+    });
+    expect(ok.success).toBe(true);
+    if (ok.success) {
+      expect(ok.data.hints.length).toBe(2);
+      expect(ok.data.hints[0]?.body_md).toBe('b');
+    }
+  });
+});

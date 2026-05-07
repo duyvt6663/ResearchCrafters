@@ -1,0 +1,34 @@
+// Flat ESLint config for @researchcrafters/web (Next.js 15, ESLint 9).
+//
+// Composition:
+//   - Inherits the workspace TypeScript + Prettier baseline from
+//     @researchcrafters/config/eslint (typescript-eslint recommended +
+//     eslint-config-prettier).
+//   - Layers on @next/eslint-plugin-next's `core-web-vitals` rule set so
+//     Next-specific anti-patterns (img-vs-Image, html-link-for-pages, etc.)
+//     fail lint.
+//
+// Notes for the Next 15 migration: `next lint` is deprecated; the canonical
+// invocation is `eslint .` against this flat config. We do NOT pull in
+// `eslint-config-next` (that's the legacy shareable config consumed by the
+// old CLI) — the flat plugin import is the supported path going forward.
+
+import baseConfig from "@researchcrafters/config/eslint";
+import nextPlugin from "@next/eslint-plugin-next";
+
+export default [
+  ...baseConfig,
+  {
+    ignores: [".next/**", "node_modules/**", "dist/**", "coverage/**"],
+  },
+  {
+    files: ["**/*.{js,jsx,ts,tsx}"],
+    plugins: {
+      "@next/next": nextPlugin,
+    },
+    rules: {
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs["core-web-vitals"].rules,
+    },
+  },
+];

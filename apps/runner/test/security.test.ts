@@ -3,6 +3,7 @@ import {
   enforceMaxUploadSize,
   evaluateNetworkPolicy,
   InMemoryRateLimiter,
+  isPathInside,
   MAX_UPLOAD_BYTES,
   stripSecretsFromEnv,
   UploadTooLargeError,
@@ -152,6 +153,25 @@ describe('sanitizeRunOpts', () => {
     });
     expect(opts.env).toEqual({ PATH: '/usr/bin' });
     expect(opts.readOnlyRootfs).toBe(true);
+  });
+});
+
+describe('isPathInside', () => {
+  it('returns true when child is nested inside parent', () => {
+    expect(isPathInside('/tmp/sandbox/run-1/file.txt', '/tmp/sandbox/run-1')).toBe(true);
+    expect(isPathInside('/tmp/sandbox/run-1/sub/dir/x', '/tmp/sandbox/run-1')).toBe(true);
+  });
+  it('returns true when child equals parent', () => {
+    expect(isPathInside('/tmp/sandbox/run-1', '/tmp/sandbox/run-1')).toBe(true);
+  });
+  it('returns false when child escapes via ..', () => {
+    expect(isPathInside('/tmp/sandbox/run-1/../other', '/tmp/sandbox/run-1')).toBe(false);
+  });
+  it('returns false for sibling directories', () => {
+    expect(isPathInside('/tmp/sandbox/run-2/file', '/tmp/sandbox/run-1')).toBe(false);
+  });
+  it('returns false for prefix-but-not-inside paths', () => {
+    expect(isPathInside('/tmp/sandbox/run-12/file', '/tmp/sandbox/run-1')).toBe(false);
   });
 });
 

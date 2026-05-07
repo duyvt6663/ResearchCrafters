@@ -1,0 +1,16 @@
+version: 1
+slug: TODO_paper_slug
+entry: N001
+nodes:
+  - id: N001
+    type: framing
+    title: "TODO_framing_title"
+    stage: stages/001-problem-framing.yaml
+    artifact_refs:
+      - artifact/logic/problem.md
+      - artifact/logic/claims.md#central-claim
+    unlocks: []
+# TODO: add nodes for decision (with at least one canonical branch and
+# one failed/suboptimal branch), implementation, experiment, analysis,
+# writing, review, and reflection. See content/packages/resnet for the
+# reference layout with 8 nodes.

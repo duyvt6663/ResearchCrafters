@@ -1,0 +1,178 @@
+import {
+  BRANCH_STATS_ROLLUP_QUEUE,
+  EVENT_DUAL_WRITE_QUEUE,
+  SHARE_CARD_RENDER_QUEUE,
+  type QueueName,
+} from './queues.js';
+import { getRedisConnection } from './redis.js';
+import {
+  runBranchStatsRollup,
+  type BranchStatsRollupJob,
+} from './jobs/branch-stats-rollup.js';
+import {
+  runShareCardRender,
+  type ShareCardRenderJob,
+} from './jobs/share-card-render.js';
+import {
+  runEventDualWrite,
+  type EventDualWriteJob,
+} from './jobs/event-dual-write.js';
+
+export * from './queues.js';
+export * from './redis.js';
+export {
+  runBranchStatsRollup,
+  aggregateTraversals,
+  computePercent,
+  roundToNearestFive,
+  NODE_MIN_N,
+  BRANCH_MIN_N,
+  type BranchStatsRollupJob,
+  type BranchStatsRollupResult,
+  type BranchStatsCohort,
+  type BranchStatsPrisma,
+} from './jobs/branch-stats-rollup.js';
+export {
+  runShareCardRender,
+  generatePublicSlug,
+  type ShareCardRenderJob,
+  type ShareCardRenderResult,
+  type ShareCardPrisma,
+  type SlugRng,
+} from './jobs/share-card-render.js';
+export {
+  runEventDualWrite,
+  type EventDualWriteJob,
+  type EventDualWritePrisma,
+} from './jobs/event-dual-write.js';
+
+interface BullWorker {
+  close(): Promise<void>;
+}
+
+interface WorkerStartOpts {
+  queueName: QueueName;
+  concurrency: number;
+  connection: Record<string, unknown>;
+  processor: (data: unknown) => Promise<unknown>;
+}
+
+async function startBullWorker(opts: WorkerStartOpts): Promise<BullWorker> {
+  const bullmq = (await import('bullmq')) as {
+    Worker: new (
+      name: string,
+      processor: (job: { data: unknown }) => Promise<unknown>,
+      options: { connection: Record<string, unknown>; concurrency: number },
+    ) => BullWorker;
+  };
+  return new bullmq.Worker(
+    opts.queueName,
+    async (job) => opts.processor(job.data),
+    {
+      connection: opts.connection,
+      concurrency: opts.concurrency,
+    },
+  );
+}
+
+export interface StartAllOptions {
+  /** Override the queues to serve. Defaults to the three this app owns. */
+  queues?: ReadonlyArray<QueueName>;
+  concurrency?: number;
+}
+
+export async function startAllWorkers(
+  opts: StartAllOptions = {},
+): Promise<{ workers: BullWorker[]; shutdown: () => Promise<void> }> {
+  const concurrency = opts.concurrency ?? Number(process.env['CONCURRENCY'] ?? 1);
+  const queues =
+    opts.queues ??
+    ([
+      BRANCH_STATS_ROLLUP_QUEUE,
+      SHARE_CARD_RENDER_QUEUE,
+      EVENT_DUAL_WRITE_QUEUE,
+    ] as const);
+
+  // Lazy import so unit tests can import this module without a live DB.
+  const { prisma } = (await import('@researchcrafters/db')) as {
+    prisma: unknown;
+  };
+
+  const redisOpts = getRedisConnection();
+  const connection: Record<string, unknown> = {
+    url: redisOpts.url,
+    maxRetriesPerRequest: redisOpts.maxRetriesPerRequest,
+  };
+  const workers: BullWorker[] = [];
+
+  for (const queueName of queues) {
+    let processor: (data: unknown) => Promise<unknown>;
+    switch (queueName) {
+      case 'branch_stats_rollup':
+        processor = (data) =>
+          runBranchStatsRollup(
+            data as BranchStatsRollupJob,
+            prisma as never,
+          );
+        break;
+      case 'share_card_render':
+        processor = (data) =>
+          runShareCardRender(data as ShareCardRenderJob, prisma as never);
+        break;
+      case 'event_dual_write':
+        processor = (data) =>
+          runEventDualWrite(data as EventDualWriteJob, prisma as never);
+        break;
+      default:
+        // Other queues (submission_run, mentor_request, package_build) are
+        // owned elsewhere; skip silently if they slip into the list.
+        continue;
+    }
+    const worker = await startBullWorker({
+      queueName,
+      concurrency,
+      connection,
+      processor,
+    });
+    workers.push(worker);
+  }
+
+  // eslint-disable-next-line no-console
+  console.log(
+    JSON.stringify({
+      kind: 'worker_started',
+      queues,
+      concurrency,
+    }),
+  );
+
+  const shutdown = async (): Promise<void> => {
+    await Promise.all(workers.map((w) => w.close().catch(() => undefined)));
+  };
+
+  return { workers, shutdown };
+}
+
+export async function main(): Promise<void> {
+  const { shutdown } = await startAllWorkers();
+
+  const onSignal = async (signal: NodeJS.Signals): Promise<void> => {
+    // eslint-disable-next-line no-console
+    console.log(JSON.stringify({ kind: 'worker_shutdown', signal }));
+    await shutdown();
+    process.exit(0);
+  };
+  process.on('SIGINT', () => void onSignal('SIGINT'));
+  process.on('SIGTERM', () => void onSignal('SIGTERM'));
+}
+
+const isEntry = (() => {
+  try {
+    return import.meta.url === `file://${process.argv[1]}`;
+  } catch {
+    return false;
+  }
+})();
+if (isEntry) {
+  void main();
+}

@@ -35,4 +35,8 @@ export type {
   ShareCard,
   Review,
   Event,
+  Account,
+  Session,
+  VerificationToken,
+  DeviceCodeFlow,
 } from "@prisma/client";

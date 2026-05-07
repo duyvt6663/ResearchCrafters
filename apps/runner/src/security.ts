@@ -1,3 +1,4 @@
+import { resolve, sep } from 'node:path';
 import { scrubLogs } from './log-scrub.js';
 
 /**
@@ -132,4 +133,21 @@ export class InMemoryRateLimiter implements RateLimiter {
 /** Combined "scrub before persist" helper. */
 export function scrubForPersistence(text: string): { text: string; triggered: string[] } {
   return scrubLogs(text);
+}
+
+/**
+ * Returns true if `child` resolves to a path strictly inside `parent`. Used by
+ * `LocalFsSandbox` to refuse path-traversal entries in workspace bundles.
+ *
+ * Both inputs are resolved to absolute paths before comparison so callers do
+ * not need to pre-normalize. A `child` equal to `parent` is treated as inside.
+ */
+export function isPathInside(child: string, parent: string): boolean {
+  const resolvedParent = resolve(parent);
+  const resolvedChild = resolve(child);
+  if (resolvedChild === resolvedParent) return true;
+  const parentWithSep = resolvedParent.endsWith(sep)
+    ? resolvedParent
+    : resolvedParent + sep;
+  return resolvedChild.startsWith(parentWithSep);
 }

@@ -12,6 +12,8 @@ export {
   reviewSchema,
   statusEnum,
   difficultyEnum,
+  packageDifficultyEnum,
+  packageDifficultyAccept,
 } from './package.js';
 export { graphNodeSchema, graphChoiceSchema, stageTypeEnum } from './graph.js';
 export {

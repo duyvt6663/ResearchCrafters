@@ -1,0 +1,83 @@
+# Local dev tier for the ResearchCrafters monorepo.
+#
+# Brings up Postgres 16, Redis 7, and a MinIO S3 emulator (with a one-shot
+# bucket bootstrap container). Match the env values in .env.example.
+#
+# Usage:
+#   docker compose up -d
+#   docker compose down            # stop, keep volumes
+#   docker compose down -v         # stop, drop volumes (full reset)
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: researchcrafters-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: researchcrafters
+      POSTGRES_PASSWORD: researchcrafters
+      POSTGRES_DB: researchcrafters
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U researchcrafters -d researchcrafters"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7
+    container_name: researchcrafters-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio
+    container_name: researchcrafters-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: researchcrafters
+      MINIO_ROOT_PASSWORD: researchcrafters
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio-init:
+    image: minio/mc
+    container_name: researchcrafters-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >-
+      /bin/sh -c "
+      set -eu;
+      mc alias set local http://minio:9000 researchcrafters researchcrafters;
+      for bucket in researchcrafters-submissions researchcrafters-runs researchcrafters-packages researchcrafters-share-cards; do
+        mc mb --ignore-existing local/$$bucket;
+      done;
+      echo 'minio buckets ready';
+      "
+    restart: "no"
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:

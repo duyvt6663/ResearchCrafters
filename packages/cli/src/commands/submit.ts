@@ -101,13 +101,17 @@ export async function submitCommand(opts: { cwd?: string } = {}): Promise<Submit
   );
 
   const init = await api.initSubmission({
-    packageSlug: cfg.packageSlug,
+    packageVersionId: cfg.packageVersionId,
     stageRef: cfg.stageRef,
-    bundleSha256: sha,
-    bundleSizeBytes: bundle.length,
+    fileCount: entries.length,
+    byteSize: bundle.length,
+    sha256: sha,
   });
   await api.uploadToSignedUrl(init.uploadUrl, bundle);
-  await api.finalizeSubmission(init.submissionId);
+  await api.finalizeSubmission(init.submissionId, {
+    uploadedSha256: sha,
+    uploadedBytes: bundle.length,
+  });
 
   process.stdout.write(kleur.green(`Submitted. id=${init.submissionId}\n`));
   return {

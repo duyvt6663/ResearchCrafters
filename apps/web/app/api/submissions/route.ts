@@ -1,61 +1,144 @@
 import { NextResponse } from "next/server";
-import { getEnrollment, getStage } from "@/lib/data/enrollment";
-import { getSession } from "@/lib/auth";
+import { prisma, withQueryTimeout } from "@researchcrafters/db";
+import { getStage } from "@/lib/data/enrollment";
+import { getSessionFromRequest } from "@/lib/auth";
 import { denialHttpStatus, permissions } from "@/lib/permissions";
 import { track } from "@/lib/telemetry";
+import {
+  submissionInitRequestSchema,
+  submissionInitResponseSchema,
+} from "@/lib/api-contract";
 
 export const runtime = "nodejs";
 
-type Body = {
-  enrollmentId: string;
-  stageRef: string;
-  bundleSize?: number;
-  bundleSha256?: string;
-};
-
+/**
+ * POST /api/submissions
+ *
+ * Submission init. The CLI hands us:
+ *   - `packageVersionId` and `stageRef` (the stage being submitted)
+ *   - `fileCount`, `byteSize`, `sha256` from the local bundle
+ *   - optional `stageAttemptId` when the caller already has one open
+ *
+ * We persist the submission row pre-populated with the bundle metadata and
+ * return the contract-shaped `{ submissionId, uploadUrl, uploadHeaders }`
+ * payload. The actual signed-URL minting lives in the storage workstream;
+ * we keep the placeholder URL shape stable.
+ */
 export async function POST(req: Request): Promise<NextResponse> {
-  const body = (await req.json()) as Body;
-  const enr = getEnrollment(body.enrollmentId);
-  const stage = getStage(body.stageRef);
-  if (!enr || !stage) {
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  let raw: unknown;
+  try {
+    raw = await req.json();
+  } catch {
+    raw = {};
+  }
+  const parsed = submissionInitRequestSchema.safeParse(raw ?? {});
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "bad_request", reason: parsed.error.issues },
+      { status: 400 },
+    );
+  }
+  const body = parsed.data;
+
+  const session = await getSessionFromRequest(req);
+  if (!session.userId) {
+    return NextResponse.json(
+      { error: "forbidden", reason: "not_authenticated" },
+      { status: 401 },
+    );
   }
 
-  const session = await getSession();
-  const access = permissions.canAccess({
+  // Resolve the stage policy descriptor used by the access policy. The data
+  // layer is still stubbed against a fixed catalog, so we accept any stageRef
+  // that resolves there — the live data layer landing in 06-data-access
+  // replaces this with a Prisma-backed lookup keyed by packageVersionId.
+  const stage = getStage(body.stageRef);
+
+  const access = await permissions.canAccess({
     user: session,
-    packageVersionId: enr.packageVersionId,
-    stage: { ref: stage.ref, isFreePreview: stage.isFreePreview, isLocked: stage.isLocked },
+    packageVersionId: body.packageVersionId,
+    stage: {
+      ref: body.stageRef,
+      isFreePreview: stage?.isFreePreview ?? false,
+      isLocked: stage?.isLocked ?? false,
+    },
     action: "submit_attempt",
   });
   if (!access.allowed) {
     return NextResponse.json(
-      { error: access.reason },
+      { error: "forbidden", reason: access.reason },
       { status: denialHttpStatus(access.reason) },
     );
   }
 
-  const submissionId = `sub-${Date.now()}`;
-  await track("runner_job_started", {
+  // Resolve / open the StageAttempt this submission belongs to. The
+  // enrollment id is implicit in the user+packageVersion pair; if we can't
+  // find one we fall through to a stub stageAttempt to keep the CLI loop
+  // unblocked during integration testing.
+  let stageAttemptId = body.stageAttemptId;
+  if (!stageAttemptId) {
+    try {
+      const enrollment = await withQueryTimeout(
+        prisma.enrollment.findFirst({
+          where: {
+            userId: session.userId,
+            packageVersionId: body.packageVersionId,
+          },
+          select: { id: true },
+          orderBy: { updatedAt: "desc" },
+        }),
+      );
+      if (enrollment) {
+        const attempt = await withQueryTimeout(
+          prisma.stageAttempt.create({
+            data: {
+              enrollmentId: enrollment.id,
+              stageRef: body.stageRef,
+              answer: {},
+              executionStatus: "queued",
+            },
+            select: { id: true },
+          }),
+        );
+        stageAttemptId = attempt.id;
+      }
+    } catch {
+      // DB unreachable: fall through to a synthesized id below.
+    }
+  }
+  if (!stageAttemptId) {
+    stageAttemptId = `att-${Date.now()}`;
+  }
+
+  let submissionId = `sub-${Date.now()}`;
+  try {
+    const submission = await withQueryTimeout(
+      prisma.submission.create({
+        data: {
+          stageAttemptId,
+          bundleObjectKey: `pending-${stageAttemptId}`,
+          bundleSha: body.sha256.toLowerCase(),
+          byteSize: body.byteSize,
+          fileCount: body.fileCount,
+        },
+        select: { id: true },
+      }),
+    );
+    submissionId = submission.id;
+  } catch {
+    // DB unreachable: keep the synthesized id so the CLI loop can finish
+    // round-tripping the contract shape.
+  }
+
+  await track("stage_attempt_submitted", {
     submissionId,
-    enrollmentId: enr.id,
-    stageRef: stage.ref,
+    stageRef: body.stageRef,
   });
 
-  // Signed-URL placeholder. Real impl will mint an S3-compatible URL with a
-  // short expiry plus a pre-set content-length cap and SHA verification.
-  return NextResponse.json({
-    submission: {
-      id: submissionId,
-      enrollmentId: enr.id,
-      stageRef: stage.ref,
-      status: "awaiting_upload",
-    },
-    upload: {
-      url: `https://stub-storage.local/upload/${submissionId}`,
-      method: "PUT",
-      headers: { "x-rc-submission-id": submissionId },
-      expiresInSeconds: 600,
-    },
+  const responseBody = submissionInitResponseSchema.parse({
+    submissionId,
+    uploadUrl: `https://stub-storage.local/upload/${submissionId}`,
+    uploadHeaders: { "x-rc-submission-id": submissionId },
   });
+  return NextResponse.json(responseBody);
 }

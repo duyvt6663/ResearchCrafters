@@ -23,26 +23,35 @@ export async function loginCommand(opts: LoginOptions = {}): Promise<void> {
   }
 
   process.stdout.write('\n');
-  process.stdout.write(`  ${kleur.bold('Visit:')} ${kleur.cyan(device.verification_uri)}\n`);
-  process.stdout.write(`  ${kleur.bold('Code:')}  ${kleur.yellow(device.user_code)}\n`);
-  if (device.verification_uri_complete) {
+  process.stdout.write(`  ${kleur.bold('Visit:')} ${kleur.cyan(device.verificationUri)}\n`);
+  process.stdout.write(`  ${kleur.bold('Code:')}  ${kleur.yellow(device.userCode)}\n`);
+  if (device.verificationUriComplete) {
     process.stdout.write(
-      `  ${kleur.dim('Or open:')} ${kleur.cyan(device.verification_uri_complete)}\n`,
+      `  ${kleur.dim('Or open:')} ${kleur.cyan(device.verificationUriComplete)}\n`,
     );
   }
   process.stdout.write('\nWaiting for confirmation...\n');
 
   const intervalMs = opts.pollIntervalMs ?? Math.max(1000, device.interval * 1000);
-  const maxAttempts = opts.maxAttempts ?? Math.ceil(device.expires_in / device.interval);
+  const maxAttempts = opts.maxAttempts ?? Math.ceil(device.expiresIn / device.interval);
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     await new Promise((res) => setTimeout(res, intervalMs));
     try {
-      const token = await api.pollDeviceToken(device.device_code);
+      const token = await api.pollDeviceToken(device.deviceCode);
+      if (!token.token) {
+        // Server returned a 200 with no token — defensive guard. Treat as
+        // pending so the next loop iteration retries.
+        continue;
+      }
+      const expiresAtMs = token.expiresAt
+        ? Date.parse(token.expiresAt)
+        : Date.now() + 30 * 24 * 60 * 60 * 1000;
       setState({
-        token: token.access_token,
-        ...(token.refresh_token !== undefined ? { refreshToken: token.refresh_token } : {}),
-        tokenExpiresAt: Date.now() + token.expires_in * 1000,
+        token: token.token,
+        ...(token.refreshToken !== undefined ? { refreshToken: token.refreshToken } : {}),
+        tokenExpiresAt: expiresAtMs,
+        ...(token.email ? { email: token.email } : {}),
       });
       process.stdout.write(kleur.green('Logged in successfully.\n'));
       return;

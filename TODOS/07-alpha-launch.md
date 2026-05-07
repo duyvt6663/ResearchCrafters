@@ -2,6 +2,9 @@
 
 Goal: validate willingness to pay and learning value with one excellent package.
 
+Status (2026-05-07): see `PROGRESS.md` for the snapshot. Checkboxes below
+reflect that snapshot.
+
 ## Audience
 
 - [ ] Define target alpha persona.
@@ -98,3 +101,10 @@ quantitative gate for promoting from alpha to public launch.
 - [ ] At least 3 users indicate clear willingness to pay.
 - [ ] The team can name the next package based on alpha demand.
 - [ ] Metric targets above are met or have a clear remediation plan.
+
+## Open gaps from snapshot
+
+- [ ] Ship the public waitlist page and landing copy.
+- [ ] Draft 5-10 decision-challenge posts anchored on ResNet S002 degradation.
+- [ ] Define the founder pricing offer and publish it.
+- [ ] Build the cohort intake form and start recruitment.

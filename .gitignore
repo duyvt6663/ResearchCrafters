@@ -36,3 +36,4 @@ pnpm-debug.log*
 
 # Local CLI state
 .researchcrafters/
+.playwright-mcp/

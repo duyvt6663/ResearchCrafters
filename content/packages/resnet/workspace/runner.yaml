@@ -5,7 +5,7 @@ network: none
 resources:
   cpu: 2
   memory_mb: 2048
-  timeout_seconds: 60
+  wall_clock_seconds: 60
 allowed_writes:
   - .researchcrafters/results
   - .researchcrafters/logs
@@ -20,11 +20,9 @@ stages:
       - "pytest"
       - "workspace/tests/test_residual_block.py"
       - "-q"
-    resources:
-      cpu: 2
-      memory_mb: 2048
-      timeout_seconds: 60
-      network: false
+    cpu: 2
+    memory_mb: 2048
+    wall_clock_seconds: 60
     outputs:
       result_json: .researchcrafters/results/S003.json
       logs: .researchcrafters/logs/S003.log
@@ -35,11 +33,9 @@ stages:
       - "scripts/check_replay.py"
       - "--stage"
       - "S004"
-    resources:
-      cpu: 2
-      memory_mb: 2048
-      timeout_seconds: 30
-      network: false
+    cpu: 2
+    memory_mb: 2048
+    wall_clock_seconds: 30
     fixtures:
       - path: workspace/fixtures/stage-004/training_log.json
         sha256: "35669084d93dfdf5a901a7420011ccfa4e18342d63672e2e3d07f2c1228b105d"

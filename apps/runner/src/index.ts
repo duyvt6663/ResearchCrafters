@@ -5,7 +5,7 @@
  * Tests should NEVER import this module — they import `worker.ts`,
  * `sandbox.ts`, and the mode handlers directly.
  */
-import { DockerSandbox } from './sandbox.js';
+import { selectSandbox } from './sandbox.js';
 import { FilesystemFixtureReader } from './modes/replay.js';
 import { startWorker } from './worker.js';
 
@@ -17,7 +17,17 @@ export {
   FakeSandbox,
   runSandbox,
   sanitizeRunOpts,
+  selectSandbox,
 } from './sandbox.js';
+export {
+  LocalFsSandbox,
+  LocalFsSandboxConfigError,
+  LocalFsSandboxPathError,
+  MAX_LOCAL_FS_MEMORY_MB,
+  MAX_LOCAL_FS_CPU,
+  assertSafeRelativePath,
+  readDeclaredOutputs,
+} from './sandboxes/local-fs.js';
 export {
   runTestMode,
   parseCommand,
@@ -44,6 +54,7 @@ export {
   enforceMaxUploadSize,
   evaluateNetworkPolicy,
   scrubForPersistence,
+  isPathInside,
   InMemoryRateLimiter,
   UploadTooLargeError,
   MAX_UPLOAD_BYTES,
@@ -60,7 +71,7 @@ export async function main(): Promise<void> {
   const redisUrl = process.env['REDIS_URL'] ?? 'redis://localhost:6379';
   const fixtureRoot = process.env['RUNNER_FIXTURE_ROOT'] ?? process.cwd();
 
-  const sandbox = new DockerSandbox();
+  const sandbox = await selectSandbox();
   const fixtureReader = new FilesystemFixtureReader(fixtureRoot);
 
   const handle = await startWorker({

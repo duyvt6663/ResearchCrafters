@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Note: this workflow does not stand up Postgres / Redis / S3. The current
+# test suite uses mocks and stubs (see TODOS/PROGRESS.md). Integration tests
+# that need live services will be added in a follow-up workflow that wires
+# `services:` (or `docker compose`) before the test step.
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @researchcrafters/db exec prisma generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Validate ERP packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          failed=0
+          dirs=(content/packages/*/)
+          if [ ${#dirs[@]} -eq 0 ]; then
+            echo "No packages found under content/packages/"
+            exit 0
+          fi
+          for dir in "${dirs[@]}"; do
+            dir="${dir%/}"
+            echo "::group::validate $dir"
+            if ! pnpm --filter @researchcrafters/cli exec node ./bin/researchcrafters.js validate "$dir"; then
+              echo "::error::validate failed for $dir"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          if [ "$failed" -ne 0 ]; then
+            exit 1
+          fi

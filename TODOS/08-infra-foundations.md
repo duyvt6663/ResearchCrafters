@@ -2,19 +2,22 @@
 
 Goal: stand up the shared scaffolding every other workstream depends on.
 
+Status (2026-05-07): see `PROGRESS.md` for the snapshot. Checkboxes below
+reflect that snapshot.
+
 Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 
 ## Monorepo
 
-- [ ] Initialize pnpm workspace.
-- [ ] Add Turborepo with pipeline for `build`, `lint`, `typecheck`, `test`.
-- [ ] Add shared `tsconfig` and `eslint` packages under `packages/config/`.
-- [ ] Add `apps/web`, `packages/db`, `packages/erp-schema`, `packages/content-sdk`,
+- [x] Initialize pnpm workspace.
+- [x] Add Turborepo with pipeline for `build`, `lint`, `typecheck`, `test`.
+- [x] Add shared `tsconfig` and `eslint` packages under `packages/config/`.
+- [x] Add `apps/web`, `packages/db`, `packages/erp-schema`, `packages/content-sdk`,
       `packages/cli`, `packages/evaluator-sdk`, `packages/ai`, `packages/ui`, `apps/runner`.
-- [ ] Add `content/packages/` and `content/templates/` directories with placeholder
+- [x] Add `content/packages/` and `content/templates/` directories with placeholder
       package.
 - [ ] Add `infra/docker/`, `infra/terraform/`, `infra/scripts/` directories.
-- [ ] Document local-dev bootstrap in `README.md` at repo root.
+- [x] Document local-dev bootstrap in `README.md` at repo root.
 
 ## Environments
 
@@ -27,11 +30,11 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 ## Database
 
 - [ ] Provision Postgres for `dev` and `staging`.
-- [ ] Add Prisma project under `packages/db/prisma/`.
+- [x] Add Prisma project under `packages/db/prisma/`.
 - [ ] Add baseline migration with empty schema.
 - [ ] Set up shadow database for safe migration generation.
-- [ ] Add Prisma client wrapper with logging and query timeouts.
-- [ ] Add seed script for one fixture user, one package, and one enrollment.
+- [x] Add Prisma client wrapper with logging and query timeouts.
+- [x] Add seed script for one fixture user, one package, and one enrollment.
 
 ## Queue and Workers
 
@@ -94,8 +97,8 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 - [ ] Choose auth library (NextAuth, Clerk, or in-house) and document the choice.
 - [ ] Implement GitHub OAuth with minimum scope `read:user`.
 - [ ] Implement email/password fallback or magic-link login.
-- [ ] Implement OAuth device-code flow endpoints for the CLI.
-- [ ] Add session and CSRF protection.
+- [ ] Implement OAuth device-code flow endpoints for the CLI. _(stubbed)_
+- [ ] Add session and CSRF protection. _(stubbed)_
 
 ## Privacy and Compliance Foundations
 
@@ -123,3 +126,19 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 - [ ] CI runs lint, typecheck, test, and package validation on every PR.
 - [ ] Secrets never appear in git, logs, or CI artifacts.
 - [ ] Observability dashboards show real traffic in `staging` before alpha.
+
+## Open gaps from snapshot
+
+- [ ] Define `dev` / `preview` / `staging` / `prod` environments and Terraform.
+- [ ] Provision Postgres, Redis, and S3 across environments.
+- [ ] Choose and wire a secrets manager (Doppler / Vault / AWS Secrets Manager).
+- [ ] Add OpenTelemetry SDK to web, worker, and runner; expose dashboards for
+      submission latency, runner queue depth, mentor latency, and validate
+      duration.
+- [ ] Stand up CI workflow that runs typecheck, test, and
+      `researchcrafters validate` on every PR.
+- [ ] Add container image scans and digest pinning for runner base images.
+- [ ] Land privacy foundations: PII inventory, encryption-at-rest, data export,
+      deletion cascade.
+- [ ] Codify SLO target dashboards in a single observability surface.
+- [ ] Pick an auth provider and wire it through the web app.

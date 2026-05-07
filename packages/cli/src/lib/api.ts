@@ -1,22 +1,47 @@
 import { request } from 'undici';
 import { getState } from './config.js';
 
+// CLI <-> web API surface. Payload shapes mirror
+// `apps/web/lib/api-contract.ts` — the source of truth lives there and a
+// contract test in `packages/cli/test/contract.test.ts` reads that file via a
+// relative path so drift on either side breaks CI.
+
 export interface DeviceCodeResponse {
-  device_code: string;
-  user_code: string;
-  verification_uri: string;
-  verification_uri_complete?: string;
-  expires_in: number;
+  deviceCode: string;
+  userCode: string;
+  verificationUri: string;
+  verificationUriComplete?: string;
+  expiresIn: number;
   interval: number;
 }
 
-export interface TokenResponse {
-  access_token: string;
-  refresh_token?: string;
-  expires_in: number;
-  token_type: 'Bearer';
+export type DeviceTokenError =
+  | 'authorization_pending'
+  | 'slow_down'
+  | 'expired_token'
+  | 'access_denied';
+
+export interface DeviceTokenResponse {
+  token?: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  email?: string | null;
+  error?: DeviceTokenError;
 }
 
+export interface EnrollResponse {
+  enrollmentId: string;
+  packageVersionId: string;
+  firstStageRef: string;
+}
+
+/**
+ * Workspace-resolution payload returned by `start <slug>`. Composes the
+ * `EnrollResponse` shape with workspace-only fields the CLI uses to write
+ * `.researchcrafters/config.json`. The web app returns a back-compat envelope
+ * that includes both this and the contract-shape fields; the CLI reads the
+ * legacy envelope for now.
+ */
 export interface StartPackageResponse {
   packageSlug: string;
   packageVersionId: string;
@@ -26,22 +51,62 @@ export interface StartPackageResponse {
   smokeCommand?: string;
 }
 
+export interface SubmitInitRequest {
+  stageAttemptId?: string;
+  stageRef: string;
+  packageVersionId: string;
+  fileCount: number;
+  byteSize: number;
+  sha256: string;
+}
+
 export interface SubmitInitResponse {
   submissionId: string;
   uploadUrl: string;
-  expectedSha256?: string;
+  uploadHeaders: Record<string, string>;
 }
 
-export interface RunStatusResponse {
+export interface SubmitFinalizeRequest {
+  uploadedSha256: string;
+  uploadedBytes: number;
+}
+
+export interface SubmitFinalizeResponse {
   runId: string;
-  status: 'queued' | 'running' | 'ok' | 'timeout' | 'oom' | 'crash' | 'exit_nonzero';
-  logsUrl?: string;
-  gradeId?: string;
+}
+
+export type RunStatus =
+  | 'queued'
+  | 'running'
+  | 'ok'
+  | 'timeout'
+  | 'oom'
+  | 'crash'
+  | 'exit_nonzero';
+
+export interface RunStatusResponse {
+  id: string;
+  status: RunStatus;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  executionStatus?: RunStatus;
+  logUrl?: string | null;
+}
+
+export interface RunLogLine {
+  ts: string;
+  severity: 'debug' | 'info' | 'warn' | 'error';
+  text: string;
+}
+
+export interface RunLogsResponse {
+  lines: RunLogLine[];
+  nextCursor?: string;
 }
 
 export interface VersionInfoResponse {
-  serverVersion: string;
   minCliVersion: string;
+  serverVersion?: string;
 }
 
 const DEFAULT_API_URL = 'https://api.researchcrafters.dev';
@@ -94,9 +159,17 @@ async function call<T>(pathname: string, opts: FetchOptions = {}): Promise<T> {
       parsed = { raw: text };
     }
   }
-  if (status >= 400) {
-    const obj = (parsed as { code?: string; message?: string } | undefined) ?? {};
-    throw new ApiError(status, obj.code ?? 'http_error', obj.message ?? `HTTP ${status}`);
+  // 202 from /api/auth/device-token carries `{ error: 'authorization_pending' }`
+  // — the CLI's login loop relies on that being raised as an ApiError so it
+  // can keep polling. Treat any 4xx/5xx, plus the 202 polling response,
+  // uniformly.
+  const errorObj =
+    parsed && typeof parsed === 'object'
+      ? (parsed as { error?: string; reason?: unknown; message?: string })
+      : undefined;
+  if (status >= 400 || (status === 202 && errorObj?.error)) {
+    const code = errorObj?.error ?? errorObj?.message ?? 'http_error';
+    throw new ApiError(status, code, `HTTP ${status}: ${code}`);
   }
   return parsed as T;
 }
@@ -108,25 +181,25 @@ export const api = {
     return call<VersionInfoResponse>('/api/cli/version', { auth: false });
   },
 
-  // OAuth device code flow stub.
+  // OAuth device code flow.
   async deviceCode(clientId: string): Promise<DeviceCodeResponse> {
     return call<DeviceCodeResponse>('/api/auth/device-code', {
       method: 'POST',
-      body: { client_id: clientId },
+      body: { clientId },
       auth: false,
     });
   },
 
-  async pollDeviceToken(deviceCode: string): Promise<TokenResponse> {
-    return call<TokenResponse>('/api/auth/device-token', {
+  async pollDeviceToken(deviceCode: string): Promise<DeviceTokenResponse> {
+    return call<DeviceTokenResponse>('/api/auth/device-token', {
       method: 'POST',
-      body: { device_code: deviceCode },
+      body: { deviceCode },
       auth: false,
     });
   },
 
-  async revokeToken(token: string): Promise<void> {
-    await call<void>('/api/auth/revoke', {
+  async revokeToken(token: string): Promise<{ revoked: boolean }> {
+    return call<{ revoked: boolean }>('/api/auth/revoke', {
       method: 'POST',
       body: { token },
       auth: false,
@@ -134,37 +207,64 @@ export const api = {
   },
 
   async startPackage(slug: string): Promise<StartPackageResponse> {
-    return call<StartPackageResponse>(`/api/packages/${encodeURIComponent(slug)}/enroll`, {
+    // The web /enroll route returns a back-compat envelope: the contract
+    // fields are at the top level (enrollmentId, packageVersionId,
+    // firstStageRef) and the legacy `enrollment` object is also present. The
+    // CLI's `start` command builds a workspace, so we keep using the legacy
+    // envelope until the workspace fields move into the contract.
+    type Envelope = EnrollResponse & {
+      enrollment?: {
+        id: string;
+        packageSlug: string;
+        packageVersionId: string;
+        activeStageRef: string | null;
+      };
+      // Optional starter URL + smoke command surfaced by future routes.
+      starterUrl?: string;
+      apiUrl?: string;
+      smokeCommand?: string;
+    };
+    const env = await call<Envelope>(`/api/packages/${encodeURIComponent(slug)}/enroll`, {
       method: 'POST',
       body: {},
     });
+    return {
+      packageSlug: env.enrollment?.packageSlug ?? slug,
+      packageVersionId: env.packageVersionId,
+      stageRef: env.firstStageRef,
+      starterUrl: env.starterUrl ?? '',
+      apiUrl: env.apiUrl ?? apiUrl(),
+      ...(env.smokeCommand !== undefined ? { smokeCommand: env.smokeCommand } : {}),
+    };
   },
 
-  async initSubmission(args: {
-    packageSlug: string;
-    stageRef: string;
-    bundleSha256: string;
-    bundleSizeBytes: number;
-  }): Promise<SubmitInitResponse> {
+  async initSubmission(args: SubmitInitRequest): Promise<SubmitInitResponse> {
     return call<SubmitInitResponse>('/api/submissions', {
       method: 'POST',
       body: args,
     });
   },
 
-  async finalizeSubmission(submissionId: string): Promise<{ runId: string }> {
-    return call<{ runId: string }>(`/api/submissions/${encodeURIComponent(submissionId)}/finalize`, {
-      method: 'POST',
-      body: {},
-    });
+  async finalizeSubmission(
+    submissionId: string,
+    args: SubmitFinalizeRequest,
+  ): Promise<SubmitFinalizeResponse> {
+    return call<SubmitFinalizeResponse>(
+      `/api/submissions/${encodeURIComponent(submissionId)}/finalize`,
+      {
+        method: 'POST',
+        body: args,
+      },
+    );
   },
 
   async getRunStatus(runId: string): Promise<RunStatusResponse> {
     return call<RunStatusResponse>(`/api/runs/${encodeURIComponent(runId)}`);
   },
 
-  async getRunLogs(runId: string): Promise<{ logs: string }> {
-    return call<{ logs: string }>(`/api/runs/${encodeURIComponent(runId)}/logs`);
+  async getRunLogs(runId: string, cursor?: string): Promise<RunLogsResponse> {
+    const q = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+    return call<RunLogsResponse>(`/api/runs/${encodeURIComponent(runId)}/logs${q}`);
   },
 
   async uploadToSignedUrl(signedUrl: string, body: Buffer): Promise<void> {

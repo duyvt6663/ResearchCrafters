@@ -37,6 +37,7 @@ inputs:
 validation:
   kind: test
   test_path: workspace/tests/test_residual_block.py
+pass_threshold: 1.0
 runner:
   mode: test
   config: workspace/runner.yaml

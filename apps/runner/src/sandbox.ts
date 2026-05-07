@@ -106,6 +106,33 @@ export function sanitizeRunOpts(opts: SandboxRunOpts): SandboxRunOpts {
 }
 
 /**
+ * Select the runtime sandbox adapter based on env flags.
+ *
+ * Resolution order:
+ * 1. `RUNNER_DOCKER_ENABLED=true` -> {@link DockerSandbox} (production target).
+ * 2. `RUNNER_LOCAL_FS_ENABLED` !== 'false' -> dev-only `LocalFsSandbox`.
+ *    The local adapter ships enabled-by-default in development; set it to
+ *    `'false'` to opt out.
+ * 3. Otherwise throw — there is no safe default for tests; tests must inject
+ *    their own `FakeSandbox` instead of calling this factory.
+ *
+ * The dynamic import keeps `LocalFsSandbox` (and its node-fs imports) off any
+ * code path that strictly wants `DockerSandbox`.
+ */
+export async function selectSandbox(): Promise<Sandbox> {
+  if (process.env['RUNNER_DOCKER_ENABLED'] === 'true') {
+    return new DockerSandbox();
+  }
+  if (process.env['RUNNER_LOCAL_FS_ENABLED'] !== 'false') {
+    const mod = await import('./sandboxes/local-fs.js');
+    return new mod.LocalFsSandbox();
+  }
+  throw new Error(
+    'selectSandbox: no sandbox adapter enabled. Set RUNNER_DOCKER_ENABLED=true or leave RUNNER_LOCAL_FS_ENABLED unset.',
+  );
+}
+
+/**
  * Convenience helper used by mode handlers. Runs the sandbox, scrubs the
  * stdout/stderr, and translates the exit reason.
  */

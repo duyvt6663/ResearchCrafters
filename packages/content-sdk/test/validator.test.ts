@@ -78,6 +78,22 @@ describe('validatePackage detects errors', () => {
     await fs.rm(tmpRoot, { recursive: true, force: true });
   });
 
+  it('flags missing required field on the deliberately-invalid fixture', async () => {
+    const INVALID = path.join(__dirname, 'fixtures', 'invalid-package');
+    const r = await validatePackage(INVALID);
+    expect(r.ok).toBe(false);
+    // Package YAML drops `paper.title`, which the package schema requires —
+    // so we expect a structural schema.invalid issue scoped to package.yaml.
+    const structural = r.errors.filter(
+      (e) => e.layer === 'structural' && e.code.startsWith('schema.'),
+    );
+    expect(structural.length).toBeGreaterThanOrEqual(1);
+    const titleIssue = structural.find(
+      (e) => e.path === 'package.yaml' && (e.ref ?? '').includes('paper.title'),
+    );
+    expect(titleIssue, JSON.stringify(structural, null, 2)).toBeDefined();
+  });
+
   it('detects fixture hash mismatch', async () => {
     const loaded = await loadPackage(FIXTURE);
     if (loaded.runner) {

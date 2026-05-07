@@ -45,12 +45,20 @@ export async function runTestMode(
 }
 
 /**
- * Parse a `runner.yaml` command string into argv. Authors usually write a
- * single string ("pytest -q tests"); this helper splits on whitespace. Real
- * production code may want shell-quoting; for the scaffold this is enough.
+ * Parse a `runner.yaml` command into argv. Authors may write either a single
+ * string ("pytest -q tests") or an array form (`['pytest', '-q', 'tests']`).
+ * `runner.yaml` schema also allows `command` to be omitted for `mode: 'none'`
+ * stages — modes that do call `parseCommand` are responsible for upstream
+ * validation, so we throw if we see `undefined` here.
  */
-export function parseCommand(cmd: string): string[] {
-  return cmd
+export function parseCommand(cmd: string | readonly string[] | undefined): string[] {
+  if (cmd === undefined) {
+    throw new Error('parseCommand: command is required for this runner mode');
+  }
+  if (Array.isArray(cmd)) {
+    return cmd.filter((p) => p.length > 0);
+  }
+  return (cmd as string)
     .trim()
     .split(/\s+/)
     .filter((p) => p.length > 0);

@@ -3,7 +3,7 @@ node_id: N002
 title: "Which fix do you attack first?"
 type: decision
 difficulty: easy
-estimated_time_minutes: 15
+estimated_time_minutes: 10
 artifact_refs:
   - artifact/logic/related_work.md
   - artifact/logic/claims.md#identity-is-the-trick

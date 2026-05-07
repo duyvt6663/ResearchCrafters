@@ -1,5 +1,10 @@
 import type { Sandbox } from '../sandbox.js';
 import { runSandbox } from '../sandbox.js';
+import {
+  LocalFsSandbox,
+  MAX_LOCAL_FS_CPU,
+  MAX_LOCAL_FS_MEMORY_MB,
+} from '../sandboxes/local-fs.js';
 import type { RunArtifactsRaw, RunJob } from '../types.js';
 import { parseCommand } from './test.js';
 
@@ -18,6 +23,13 @@ export class GpuNotAvailableError extends Error {
       `GPU not available for mini_experiment stage ${stageId}. MVP runner is CPU-only; see TODOS/03.`,
     );
     this.name = 'GpuNotAvailableError';
+  }
+}
+
+export class MiniExperimentResourceError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MiniExperimentResourceError';
   }
 }
 
@@ -40,14 +52,26 @@ export async function runMiniExperimentMode(
     throw new GpuNotAvailableError(job.stageId);
   }
 
-  const cpu = Math.min(
-    job.runnerStage.cpu ?? job.resources.cpu,
-    MAX_MINI_EXPERIMENT_CPU,
-  );
-  const memoryMb = Math.min(
-    job.runnerStage.memory_mb ?? job.resources.memory_mb,
-    MAX_MINI_EXPERIMENT_MEMORY_MB,
-  );
+  const requestedCpu = job.runnerStage.cpu ?? job.resources.cpu;
+  const requestedMemoryMb = job.runnerStage.memory_mb ?? job.resources.memory_mb;
+
+  // When the dev-only LocalFsSandbox is in play, refuse anything beyond its
+  // documented caps. Production (DockerSandbox) gets the looser MVP limits.
+  if (deps.sandbox instanceof LocalFsSandbox) {
+    if (requestedCpu > MAX_LOCAL_FS_CPU) {
+      throw new MiniExperimentResourceError(
+        `mini_experiment requested cpu=${requestedCpu} but LocalFsSandbox max is ${MAX_LOCAL_FS_CPU}`,
+      );
+    }
+    if (requestedMemoryMb > MAX_LOCAL_FS_MEMORY_MB) {
+      throw new MiniExperimentResourceError(
+        `mini_experiment requested memoryMb=${requestedMemoryMb} but LocalFsSandbox max is ${MAX_LOCAL_FS_MEMORY_MB}`,
+      );
+    }
+  }
+
+  const cpu = Math.min(requestedCpu, MAX_MINI_EXPERIMENT_CPU);
+  const memoryMb = Math.min(requestedMemoryMb, MAX_MINI_EXPERIMENT_MEMORY_MB);
   const wallClockSeconds = Math.min(
     job.runnerStage.wall_clock_seconds ?? job.resources.wall_clock_seconds,
     MAX_MINI_EXPERIMENT_WALL_SECONDS,

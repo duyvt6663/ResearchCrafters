@@ -1,0 +1,34 @@
+version: 1
+description: |
+  TODO: replace with the exploration tree for your paper. Each node
+  must reference at least one logic claim or evidence artifact.
+nodes:
+  - id: T001
+    kind: observation
+    title: "TODO_observation_title"
+    refs:
+      - artifact/logic/problem.md
+      - artifact/logic/claims.md#central-claim
+    parents: []
+  - id: T002
+    kind: decision
+    title: "TODO_decision_title"
+    refs:
+      - artifact/logic/related_work.md
+    parents: [T001]
+    children: [T003]
+  - id: T003
+    kind: branch
+    branch_type: canonical
+    title: "TODO_canonical_branch_title"
+    branch_id: branch-canonical
+    refs:
+      - artifact/logic/claims.md#central-claim
+    parents: [T002]
+edges:
+  - from: T001
+    to: T002
+    kind: motivates
+  - from: T002
+    to: T003
+    kind: branch_canonical

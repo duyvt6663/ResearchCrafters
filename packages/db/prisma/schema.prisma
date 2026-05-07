@@ -34,6 +34,12 @@ model User {
   email         String   @unique
   githubHandle  String?
   displayName   String?
+  // Auth.js extension: optional display name surfaced by OAuth providers.
+  name          String?
+  // Auth.js extension: optional avatar URL surfaced by OAuth providers.
+  image         String?
+  // Auth.js extension: timestamp set when an email magic-link is verified.
+  emailVerified DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -43,8 +49,100 @@ model User {
   shareCards    ShareCard[]
   reviews       Review[]      @relation("ReviewReviewer")
   events        Event[]
+  // Auth.js relations.
+  accounts      Account[]
+  sessions      Session[]
+  // CLI device-code flow approvals issued by this user.
+  deviceFlows   DeviceCodeFlow[]
 
   @@index([createdAt])
+}
+
+// Auth.js: linked OAuth provider account (e.g. GitHub) for a User.
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  // Auth.js standard: account type, e.g. 'oauth' | 'oidc' | 'email'.
+  type              String
+  // Auth.js standard: provider id, e.g. 'github'.
+  provider          String
+  // Auth.js standard: opaque provider-side account id.
+  providerAccountId String
+  // OAuth refresh token (when issued).
+  refresh_token     String?
+  // OAuth access token (when issued).
+  access_token      String?
+  // OAuth access-token expiry as Unix epoch seconds.
+  expires_at        Int?
+  // OAuth token type, typically 'bearer'.
+  token_type        String?
+  // OAuth scope string, space-delimited.
+  scope             String?
+  // OIDC id_token when the provider issues one.
+  id_token          String?
+  // OAuth session_state for OpenID Connect session management.
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Auth.js standard: unique pair scoped per provider.
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+// Auth.js: server-side session row when using the database session strategy.
+// Also doubles as the bearer-token store for the CLI: the same
+// `sessionToken` value is accepted in `Authorization: Bearer <token>` by
+// `lib/auth.ts`.
+model Session {
+  id           String   @id @default(cuid())
+  // Auth.js standard: opaque session token stored in the user's cookie.
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Auth.js: pending email magic-link / verification token.
+model VerificationToken {
+  // Auth.js standard: identifier is typically the email address.
+  identifier String
+  // Auth.js standard: opaque verification token.
+  token      String   @unique
+  expires    DateTime
+
+  // Auth.js standard: composite uniqueness on (identifier, token).
+  @@unique([identifier, token])
+}
+
+// CLI OAuth device-code flow row. Persists the short-lived state machine for
+// `researchcrafters login`: a `pending` flow can be `approved` (by a logged-in
+// browser session that hits /auth/device with the matching userCode), `denied`
+// by the same surface, or `expired` once `expiresAt` lapses. Once consumed
+// (token minted by the CLI poll), `consumedAt` is set so the same deviceCode
+// cannot mint a second session.
+model DeviceCodeFlow {
+  id         String    @id @default(cuid())
+  // The CLI-side opaque token. Returned to the CLI from /api/auth/device-code
+  // and presented back via /api/auth/device-token.
+  deviceCode String    @unique
+  // The human-readable code shown to the learner (e.g. "ABCD-EFGH"). Entered
+  // on the verification page to bind the flow to the active browser session.
+  userCode   String    @unique
+  // Set when the flow is approved (or denied — we still record who acted).
+  userId     String?
+  // Allowed values: 'pending' | 'approved' | 'denied' | 'expired'
+  state      String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([state, expiresAt])
 }
 
 model Membership {
