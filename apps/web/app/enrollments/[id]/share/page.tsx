@@ -13,9 +13,9 @@ export default async function SharePage({
   params: Promise<Params>;
 }): Promise<ReactElement> {
   const { id } = await params;
-  const enrollment = getEnrollment(id);
+  const enrollment = await getEnrollment(id);
   if (!enrollment) notFound();
-  const pkg = getPackageBySlug(enrollment.packageSlug);
+  const pkg = await getPackageBySlug(enrollment.packageSlug);
   if (!pkg) notFound();
 
   // Snapshot payload that will eventually be persisted as an immutable

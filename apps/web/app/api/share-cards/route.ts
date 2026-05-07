@@ -15,7 +15,7 @@ type Body = {
 
 export async function POST(req: Request): Promise<NextResponse> {
   const body = (await req.json()) as Body;
-  const enr = getEnrollment(body.enrollmentId);
+  const enr = await getEnrollment(body.enrollmentId);
   if (!enr) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const session = await getSession();

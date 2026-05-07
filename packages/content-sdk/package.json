@@ -25,6 +25,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@researchcrafters/ai": "workspace:*",
     "@researchcrafters/erp-schema": "workspace:*",
     "fast-glob": "^3.3.2",
     "gray-matter": "^4.0.3",

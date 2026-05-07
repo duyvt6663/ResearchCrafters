@@ -26,8 +26,8 @@ export default async function StagePage({
   params: Promise<Params>;
 }): Promise<ReactElement> {
   const { id, stageRef } = await params;
-  const enrollment = getEnrollment(id);
-  const stage = getStage(stageRef);
+  const enrollment = await getEnrollment(id);
+  const stage = await getStage(id, stageRef);
   if (!enrollment || !stage) notFound();
 
   const session = await getSession();

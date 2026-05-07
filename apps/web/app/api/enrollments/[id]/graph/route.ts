@@ -10,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   const { id } = await params;
-  const enr = getEnrollment(id);
+  const enr = await getEnrollment(id);
   if (!enr) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const session = await getSession();

@@ -25,7 +25,7 @@ export interface EventDualWritePrisma {
 }
 
 function payloadFromEvent(event: TelemetryEvent): Record<string, unknown> {
-  const entries = Object.entries(event as Record<string, unknown>).filter(
+  const entries = Object.entries(event as unknown as Record<string, unknown>).filter(
     ([k]) => k !== 'name',
   );
   return Object.fromEntries(entries);

@@ -37,7 +37,9 @@ export function setEventStoreForTests(store: EventStore | null): void {
 async function resolveEventStore(): Promise<EventStore | null> {
   if (injectedStore) return injectedStore;
   try {
-    const mod = (await import('@researchcrafters/db')) as { prisma: EventStore };
+    const mod = (await import('@researchcrafters/db')) as unknown as {
+      prisma: EventStore;
+    };
     return mod.prisma;
   } catch {
     return null;
@@ -47,7 +49,7 @@ async function resolveEventStore(): Promise<EventStore | null> {
 function payloadFromEvent(event: TelemetryEvent): Record<string, unknown> {
   // Strip the discriminant from the persisted payload — `name` already lives
   // on the Event row column.
-  const entries = Object.entries(event as Record<string, unknown>).filter(
+  const entries = Object.entries(event as unknown as Record<string, unknown>).filter(
     ([k]) => k !== 'name',
   );
   return Object.fromEntries(entries);

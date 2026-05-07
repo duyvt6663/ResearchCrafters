@@ -16,8 +16,8 @@ type Body = {
 
 export async function POST(req: Request): Promise<NextResponse> {
   const body = (await req.json()) as Body;
-  const enr = getEnrollment(body.enrollmentId);
-  const stage = getStage(body.stageRef);
+  const enr = await getEnrollment(body.enrollmentId);
+  const stage = await getStage(body.enrollmentId, body.stageRef);
   if (!enr || !stage) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }

@@ -9,6 +9,8 @@
     },
     "incremental": true,
     "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
     "jsx": "preserve",
     "allowJs": true,
     "resolveJsonModule": true,

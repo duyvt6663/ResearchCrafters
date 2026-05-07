@@ -5,7 +5,7 @@ import { listPackages } from "@/lib/data/packages";
 import { track } from "@/lib/telemetry";
 
 export default async function CatalogPage(): Promise<ReactElement> {
-  const packages = listPackages();
+  const packages = await listPackages();
 
   // Catalog view is the primary marketing surface; record the visit.
   await track("package_viewed", { surface: "catalog", count: packages.length });

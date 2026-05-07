@@ -403,3 +403,7 @@ export async function getDecisionGraph(
 
   return { nodes, edges };
 }
+
+// Backwards-compat aliases for routes/pages that still import the old names.
+// New code should call getEnrollmentState / getStageForEnrollment directly.
+export { getEnrollmentState as getEnrollment, getStageForEnrollment as getStage };

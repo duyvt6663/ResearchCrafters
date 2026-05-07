@@ -13,7 +13,7 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> },
 ): Promise<NextResponse> {
   const { slug } = await params;
-  const pkg = getPackageBySlug(slug);
+  const pkg = await getPackageBySlug(slug);
   if (!pkg) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const session = await getSessionFromRequest(req);

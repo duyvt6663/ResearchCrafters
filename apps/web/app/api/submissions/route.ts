@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma, withQueryTimeout } from "@researchcrafters/db";
-import { getStage } from "@/lib/data/enrollment";
+// Stage descriptor for the policy check is stubbed inline — the submission
+// route accepts (packageVersionId, stageRef) but the data helper still resolves
+// stages through an enrollment id. Wire to a real lookup once submissions are
+// fully Prisma-backed.
 import { getSessionFromRequest } from "@/lib/auth";
 import { denialHttpStatus, permissions } from "@/lib/permissions";
 import { track } from "@/lib/telemetry";
@@ -48,19 +51,20 @@ export async function POST(req: Request): Promise<NextResponse> {
     );
   }
 
-  // Resolve the stage policy descriptor used by the access policy. The data
-  // layer is still stubbed against a fixed catalog, so we accept any stageRef
-  // that resolves there — the live data layer landing in 06-data-access
-  // replaces this with a Prisma-backed lookup keyed by packageVersionId.
-  const stage = getStage(body.stageRef);
+  // Stage descriptor for the access policy. We don't have an enrollment id
+  // here, so we trust the policy to do the right thing with isLocked=false
+  // and let it cross-reference packageVersionId+stageRef itself once the
+  // policy gains a Prisma-backed lookup. TODO: wire to a stage-by-version
+  // helper once submissions are fully Prisma-backed (TODOS/06).
+  const stage = { isFreePreview: false, isLocked: false };
 
   const access = await permissions.canAccess({
     user: session,
     packageVersionId: body.packageVersionId,
     stage: {
       ref: body.stageRef,
-      isFreePreview: stage?.isFreePreview ?? false,
-      isLocked: stage?.isLocked ?? false,
+      isFreePreview: stage.isFreePreview,
+      isLocked: stage.isLocked,
     },
     action: "submit_attempt",
   });

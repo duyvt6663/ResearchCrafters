@@ -17,7 +17,7 @@ export default async function PackageOverviewPage({
   params: Promise<Params>;
 }): Promise<ReactElement> {
   const { slug } = await params;
-  const pkg = getPackageBySlug(slug);
+  const pkg = await getPackageBySlug(slug);
   if (!pkg) notFound();
 
   await track("package_viewed", { surface: "overview", slug });
