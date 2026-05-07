@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { Dialog, DialogContent } from "./Dialog.js";
 import { Button } from "./Button.js";

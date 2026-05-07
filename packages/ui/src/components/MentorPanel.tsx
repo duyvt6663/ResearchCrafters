@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { AlertTriangle, ShieldOff, Gauge, Wallet } from "lucide-react";
 import { cn } from "../lib/cn.js";

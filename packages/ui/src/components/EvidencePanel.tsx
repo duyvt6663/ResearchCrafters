@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { ExternalLink, FileText, Link as LinkIcon } from "lucide-react";
 import { cn } from "../lib/cn.js";

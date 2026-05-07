@@ -37,6 +37,8 @@
   },
   "devDependencies": {
     "@researchcrafters/config": "workspace:*",
+    "@researchcrafters/content-sdk": "workspace:*",
+    "@researchcrafters/erp-schema": "workspace:*",
     "@types/node": "^22.10.0",
     "prisma": "^5.22.0",
     "tsx": "^4.19.0",
