@@ -1,0 +1,34 @@
+id: branch-residual-canonical
+type: canonical
+support_level: explicit
+stage: S002
+choice: "Reformulate each block to learn a residual mapping F(x) + x with a parameter-free identity shortcut."
+expected_by_learner: |
+  Adding an identity shortcut should make optimization easier because the
+  network can recover identity by driving F(x) toward zero. This should
+  let depth scale without degradation.
+actual_outcome: |
+  Confirmed. CIFAR-10 residual-56 trains to lower training error than
+  residual-20 (the depth dividend works) and lower training error than
+  plain-56 (the shortcut closes the degradation gap). ImageNet results in
+  the original paper extend the same pattern up through 152 layers.
+source_refs:
+  - artifact/logic/claims.md#residual-helps
+  - artifact/logic/claims.md#identity-is-the-trick
+  - "ResNet paper, Section 3 'Deep Residual Learning' and Section 4.1 Table 2."
+evidence_refs:
+  - artifact/evidence/tables/training-curves.md#plain-vs-residual
+  - workspace/fixtures/stage-004/training_log.json
+lesson: |
+  Reformulating the *learning target* (residual mapping) is sometimes more
+  effective than tuning the *learning process* (optimizer, normalization,
+  initialization). The intervention here is structural and parameter-free.
+expert_feedback_md: |
+  Strong choice. The mechanism justification you should look for in your
+  own writing is identity-recovery: the optimum near identity is now the
+  network's *default* behavior at zero parameter cost. This is what makes
+  the paper's contribution feel different from "more BN" or "more depth".
+  A common weak version of this answer attributes the gain to vanishing
+  gradients; the package's evidence does not support that attribution.
+next_nodes:
+  - N003

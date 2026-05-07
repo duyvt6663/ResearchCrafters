@@ -1,0 +1,56 @@
+id: rubric-problem-framing
+title: "Problem framing rubric"
+description: |
+  Used by `S001`. Grades whether the learner can articulate the degradation
+  phenomenon precisely and distinguish it from overfitting.
+applies_to:
+  - S001
+grader: hybrid
+llm_grading_allowed: true
+total_points: 100
+criteria:
+  - id: surprising-correctly
+    title: "Identifies the surprise"
+    description: "Names the contradiction with the naive 'deeper has at least the same capacity' intuition."
+    weight: 25
+    levels:
+      - score: 0
+        description: "Does not articulate any contradiction with naive depth intuition."
+      - score: 15
+        description: "Mentions surprise but does not connect it to capacity / identity-mapping reachability."
+      - score: 25
+        description: "Clearly states that a deeper network should at minimum recover the shallower function and that the failure is therefore surprising."
+  - id: not-overfitting
+    title: "Distinguishes degradation from overfitting"
+    description: "Argues that training error rising rules out overfitting as a sufficient explanation."
+    weight: 30
+    levels:
+      - score: 0
+        description: "Treats degradation as overfitting."
+      - score: 20
+        description: "Mentions training error but does not explicitly contrast it with the overfitting hypothesis."
+      - score: 30
+        description: "Explicitly notes that *training* error is worse, which rules out overfitting."
+  - id: degradation-statement
+    title: "Names the failure mode in one sentence"
+    description: "Concise, specific framing using the term 'degradation' or an equivalent precise term."
+    weight: 25
+    levels:
+      - score: 0
+        description: "No clean one-sentence framing."
+      - score: 15
+        description: "Framing exists but conflates degradation with capacity or signal-scale failure."
+      - score: 25
+        description: "One-sentence framing: deeper plain stacks suffer optimization-side degradation; not a capacity or normalization issue."
+  - id: scope-discipline
+    title: "Stays within evidence"
+    description: "Avoids unsupported claims (e.g., 'vanishing gradients caused this') beyond what the framing prompt provides."
+    weight: 20
+    levels:
+      - score: 0
+        description: "Asserts a mechanism the prompt's evidence does not support."
+      - score: 10
+        description: "Speculates about mechanism but flags it as speculation."
+      - score: 20
+        description: "Stays close to the observation; mechanism is treated as still-open."
+pass_threshold: 60

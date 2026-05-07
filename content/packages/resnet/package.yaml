@@ -1,0 +1,47 @@
+slug: resnet
+title: "ResNet: Deep Residual Learning for Image Recognition"
+version: "0.1.0"
+paper:
+  title: "Deep Residual Learning for Image Recognition"
+  authors:
+    - "Kaiming He"
+    - "Xiangyu Zhang"
+    - "Shaoqing Ren"
+    - "Jian Sun"
+  year: 2015
+  arxiv: "1512.03385"
+  venue: "CVPR 2016"
+status: alpha
+difficulty: intermediate
+estimated_time_minutes: 180
+skills:
+  - degradation-problem framing
+  - residual learning intuition
+  - convolutional architecture implementation
+  - training-curve interpretation
+  - ablation reasoning
+  - evidence-grounded writing
+prerequisites:
+  - Python
+  - PyTorch basics
+  - convolutional neural networks
+  - SGD with momentum
+  - CIFAR-10 familiarity
+release:
+  free_stage_ids:
+    - S001
+    - S002
+  free_stages: 2
+  requires_gpu: false
+safety:
+  redaction_targets:
+    - "F(x) + x"
+    - "identity shortcut"
+    - "residual mapping"
+    - "shortcut connection"
+    - "He et al."
+    - "canonical answer"
+review:
+  expert_reviewer: ""
+  last_reviewed_at: ""
+fixture_refresh_cadence: "annual"

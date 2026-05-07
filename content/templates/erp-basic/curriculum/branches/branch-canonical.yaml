@@ -1,0 +1,18 @@
+id: branch-canonical
+type: canonical
+support_level: explicit
+stage: S002
+choice: "TODO_canonical_choice"
+expected_by_learner: "TODO_what_a_2015_era_engineer_would_have_predicted"
+actual_outcome: "TODO_what_actually_happened"
+source_refs:
+  - artifact/logic/claims.md#central-claim
+  - "TODO paper section reference"
+evidence_refs:
+  - artifact/evidence/README.md
+lesson: "TODO_what_the_learner_should_take_away"
+expert_feedback_md: |
+  TODO: write expert branch feedback explaining why this branch is the
+  canonical path and what reasoning it rewards in the learner.
+next_nodes:
+  - N003

@@ -1,0 +1,25 @@
+image: "researchcrafters/runner:python-3.11"
+default_mode: test
+allowed_commands:
+  - pytest
+  - python
+resources:
+  cpu: 2
+  memory_mb: 2048
+  wall_clock_seconds: 120
+network: none
+stages:
+  S001:
+    mode: replay
+    command: "python -m runner.replay"
+    fixtures:
+      - path: workspace/fixtures/profile_case_01.json
+        sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+    output_paths:
+      - workspace/out/S001.json
+  S002:
+    mode: test
+    command: "pytest workspace/tests/test_s002.py"
+    cpu: 1
+    memory_mb: 1024
+    wall_clock_seconds: 60

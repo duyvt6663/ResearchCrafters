@@ -1,0 +1,6 @@
+stage_id: S001
+hints:
+  - level: 0
+    body_md: "Skim the problem and look for what is being held constant."
+  - level: 1
+    body_md: "Notice which quantity scales unfavorably."

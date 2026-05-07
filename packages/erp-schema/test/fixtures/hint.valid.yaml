@@ -1,0 +1,8 @@
+stage_id: S001
+hints:
+  - level: 1
+    body_md: "Look at the GPU memory profile."
+  - level: 2
+    body_md: "Compare HBM bandwidth to compute throughput."
+  - level: 3
+    body_md: "Consider the IO cost relative to FLOPs."

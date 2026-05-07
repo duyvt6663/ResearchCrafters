@@ -1,0 +1,23 @@
+id: hints-stage-007
+stage_id: S007
+levels:
+  - level: 1
+    title: "What does the swap actually change?"
+    body_md: |
+      List everything that differs between BatchNorm and LayerNorm,
+      *not just gradient flow*. The list will be longer than you expect.
+      Each item is a confounder for the proposed swap.
+  - level: 2
+    title: "The hypothesis under test"
+    body_md: |
+      The reviewer is using BN→LN as a proxy for "fix gradient scale". If
+      the proxy controls more than gradient scale, neither outcome cleanly
+      attributes degradation to gradients.
+  - level: 3
+    title: "Sketch the cheaper experiment"
+    body_md: |
+      A sharper experiment varies *one* knob. Initialize plain-56 so each
+      block starts very close to identity (e.g., zero-init the final
+      conv) without any other changes. If that closes the degradation
+      gap, identity-recovery is doing the work. If it doesn't, the story
+      is more complicated.

@@ -1,0 +1,11 @@
+id: branch-recompute-attention
+type: failed
+support_level: inferred
+choice: "Recompute attention blocks naively"
+expected_by_learner: "Lower memory use should improve long-sequence performance"
+actual_outcome: "Compute overhead dominates before memory savings matter"
+evidence_refs:
+  - artifact/evidence/tables/seqlen-vs-time.md
+lesson: "A memory-saving branch can still fail if it increases the wrong IO path."
+next_nodes:
+  - N004

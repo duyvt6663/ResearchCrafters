@@ -1,0 +1,8 @@
+nodes:
+  - id: T001
+    refs:
+      - artifact/logic/problem.md
+    children:
+      - id: T002
+        refs:
+          - artifact/evidence/results.md

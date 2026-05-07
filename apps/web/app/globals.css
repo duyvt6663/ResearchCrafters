@@ -1,0 +1,30 @@
+@import "@researchcrafters/ui/styles.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--rc-font-sans, ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif);
+  letter-spacing: 0;
+  background: var(--rc-color-bg, #fff);
+  color: var(--rc-color-fg, #111);
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--rc-font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, monospace);
+}

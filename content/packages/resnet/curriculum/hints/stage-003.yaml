@@ -1,0 +1,20 @@
+id: hints-stage-003
+stage_id: S003
+levels:
+  - level: 1
+    title: "Start with the easy case"
+    body_md: |
+      Implement the case where `in_channels == out_channels` and
+      `stride == 1` first. Identity shortcut is just `x`.
+  - level: 2
+    title: "Handle the dimension change"
+    body_md: |
+      When dimensions change, the shortcut is a 1x1 convolution with the
+      same `stride` as the first 3x3 conv, followed by BatchNorm. Build
+      this conditionally in `__init__`, not in `forward`.
+  - level: 3
+    title: "Activation order"
+    body_md: |
+      Apply BatchNorm and ReLU after the *first* conv, BatchNorm only after
+      the *second* conv, then add the shortcut, then a final ReLU. The
+      ReLU goes after the addition, not before it.

@@ -1,0 +1,23 @@
+nodes:
+  - id: N001
+    type: framing
+    title: "Why is attention slow?"
+    stage: stages/001-problem-framing.md
+    artifact_refs:
+      - artifact/logic/problem.md#O01
+    unlocks:
+      - N002
+  - id: N002
+    type: decision
+    title: "Which bottleneck do you attack first?"
+    stage: stages/002-core-decision.md
+    choices:
+      - id: cache-kv
+        branch: branches/cache-kv.yaml
+      - id: reduce-hbm-traffic
+        branch: branches/reduce-hbm-traffic.yaml
+    unlocks_by_choice:
+      cache-kv:
+        - N003A
+      reduce-hbm-traffic:
+        - N003B

@@ -1,0 +1,59 @@
+id: rubric-branch-reasoning
+title: "Branch-reasoning rubric"
+description: |
+  Used by `S002` and `S008`. Grades the quality of the learner's reasoning
+  about a branch decision, *not* whether they picked the canonical branch.
+  Picking branch B (deeper-no-residual) with strong reasoning is graded
+  against the same bar as picking branch A.
+applies_to:
+  - S002
+  - S008
+grader: hybrid
+llm_grading_allowed: true
+total_points: 100
+criteria:
+  - id: failure-mode
+    title: "Names the failure mode being attacked"
+    description: "States *which* failure of plain deep stacks the chosen branch is supposed to fix."
+    weight: 30
+    levels:
+      - score: 0
+        description: "No failure mode named."
+      - score: 15
+        description: "Vague failure mode — 'plain networks are bad'."
+      - score: 30
+        description: "Specific failure mode: optimization-side degradation, identity unreachable, etc."
+  - id: mechanism
+    title: "Mechanism justification"
+    description: "Explains why the chosen branch is mechanistically expected to fix the named failure."
+    weight: 30
+    levels:
+      - score: 0
+        description: "No mechanism."
+      - score: 15
+        description: "Mechanism cited but generic."
+      - score: 30
+        description: "Specific mechanism, e.g. identity-recovery via parameter-free shortcut."
+  - id: falsifier
+    title: "Predicts a falsifier"
+    description: "Names at least one experimental outcome that would falsify the chosen branch."
+    weight: 20
+    levels:
+      - score: 0
+        description: "No falsifier."
+      - score: 10
+        description: "Vague falsifier."
+      - score: 20
+        description: "Concrete falsifier tied to a measurable outcome."
+  - id: humility
+    title: "Acknowledges uncertainty"
+    description: "Avoids overconfidence, names something the chosen branch could miss."
+    weight: 20
+    levels:
+      - score: 0
+        description: "Treats the chosen branch as obviously correct."
+      - score: 10
+        description: "Some hedging."
+      - score: 20
+        description: "Names a limitation of the chosen branch."
+pass_threshold: 60

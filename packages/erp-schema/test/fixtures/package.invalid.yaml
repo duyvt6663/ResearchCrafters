@@ -1,0 +1,17 @@
+slug: bad-package
+title: "Bad"
+paper:
+  title: "Missing required fields"
+  authors: []
+  year: 2022
+  arxiv: ""
+status: alpha
+difficulty: hard
+estimated_time_minutes: 30
+skills: []
+prerequisites: []
+release:
+  free_stage_ids: []
+  requires_gpu: false
+review: {}
+version: "not-a-semver"

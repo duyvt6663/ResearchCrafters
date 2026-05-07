@@ -1,0 +1,35 @@
+{
+  "name": "@researchcrafters/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^15.0.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@researchcrafters/ui": "workspace:*",
+    "@researchcrafters/db": "workspace:*",
+    "@researchcrafters/erp-schema": "workspace:*",
+    "@researchcrafters/content-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.16.0",
+    "eslint-config-next": "^15.0.3",
+    "postcss": "^8.4.49",
+    "autoprefixer": "^10.4.20",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "@researchcrafters/config": "workspace:*"
+  }
+}

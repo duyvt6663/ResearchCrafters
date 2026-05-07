@@ -1,0 +1,17 @@
+version: 1
+image: researchcrafters/runner-python:3.11-slim
+default_mode: test
+network: none
+resources:
+  cpu: 2
+  memory_mb: 2048
+  timeout_seconds: 60
+allowed_writes:
+  - .researchcrafters/results
+  - .researchcrafters/logs
+stages:
+  S001:
+    mode: none
+# TODO: add stage entries for every executable stage. Replay-mode stages
+# must declare fixture paths and SHA-256 hashes computed via
+# `shasum -a 256`.

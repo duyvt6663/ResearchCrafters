@@ -1,0 +1,56 @@
+id: rubric-claim-writing
+title: "Claim-writing rubric"
+description: |
+  Used by `S006`. Grades a research-quality claim about residual learning.
+  Heavily rewards mechanism specificity, scope, and evidence linking.
+applies_to:
+  - S006
+grader: hybrid
+llm_grading_allowed: true
+total_points: 100
+criteria:
+  - id: mechanism
+    title: "Mechanism specificity"
+    description: "States *what* residual learning does, not just that it 'helps'."
+    weight: 30
+    levels:
+      - score: 0
+        description: "Vague — 'residual learning improves training' with no mechanism."
+      - score: 15
+        description: "Mentions skip or shortcut connections without explaining what they enable."
+      - score: 30
+        description: "Names the addition path and explains the identity-recovery property."
+  - id: scope
+    title: "Scope conditions"
+    description: "States the conditions under which the claim holds (depth range, optimizer, BatchNorm, dataset)."
+    weight: 25
+    levels:
+      - score: 0
+        description: "No scope; claim is unbounded."
+      - score: 15
+        description: "Some scope but missing depth or optimizer."
+      - score: 25
+        description: "Clear scope: depth, optimizer, BatchNorm, dataset."
+  - id: evidence-link
+    title: "Evidence link"
+    description: "Cites at least one evidence reference path."
+    weight: 25
+    levels:
+      - score: 0
+        description: "No evidence reference."
+      - score: 15
+        description: "References evidence informally without a path."
+      - score: 25
+        description: "Cites a specific path under `artifact/evidence/` or `workspace/fixtures/`."
+  - id: scope-discipline
+    title: "Avoids overclaim"
+    description: "Does not claim the residual mechanism solves vanishing gradients or always beats plain at every depth."
+    weight: 20
+    levels:
+      - score: 0
+        description: "Overclaims (vanishing gradients, always beats plain)."
+      - score: 10
+        description: "Implies overclaim without making it explicit."
+      - score: 20
+        description: "Carefully avoids overclaim."
+pass_threshold: 60

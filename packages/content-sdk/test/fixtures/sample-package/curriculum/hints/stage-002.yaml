@@ -1,0 +1,4 @@
+stage_id: S002
+hints:
+  - level: 0
+    body_md: "Compare both approaches against the constraint that matters most."

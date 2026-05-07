@@ -1,0 +1,23 @@
+slug: sample-pkg
+title: "Sample Package"
+paper:
+  title: "Sample Paper"
+  authors:
+    - "Some Author"
+  year: 2024
+  arxiv: "0000.00000"
+status: alpha
+difficulty: easy
+estimated_time_minutes: 30
+skills:
+  - critical thinking
+prerequisites:
+  - basic literacy
+release:
+  free_stage_ids:
+    - S001
+  requires_gpu: false
+review:
+  expert_reviewer: "Reviewer A"
+  last_reviewed_at: "2026-04-01"
+version: "0.1.0"

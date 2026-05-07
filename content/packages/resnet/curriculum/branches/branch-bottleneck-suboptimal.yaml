@@ -1,0 +1,43 @@
+id: branch-bottleneck-suboptimal
+type: suboptimal
+support_level: inferred
+stage: S002
+choice: "Adopt a 1x1 → 3x3 → 1x1 bottleneck topology, but without an identity shortcut."
+expected_by_learner: |
+  The bottleneck reduces parameters and FLOPs per block, so we can train
+  much deeper networks at the same compute budget. That should at least
+  lessen the degradation problem.
+actual_outcome: |
+  Bottleneck topology by itself does not change the identity-recovery
+  property of the block. Parameter savings let you go deeper, but you
+  still inherit the optimization-side degradation that plain stacks
+  suffer. The bottleneck is a pre-condition for ResNet-50/101/152 being
+  practical, but the residual reformulation is what actually fixes
+  degradation.
+source_refs:
+  - artifact/logic/claims.md#bottleneck-tradeoff
+  - artifact/logic/claims.md#branch-bottleneck-without-shortcut
+expert_reconstruction_note: |
+  The original ResNet paper does not run a "bottleneck without shortcut"
+  controlled ablation. We mark this branch `inferred` because the
+  paper's framing implies bottleneck-only is not a fix, but the
+  controlled measurement is not in the paper itself.
+evidence_refs:
+  - artifact/evidence/tables/training-curves.md#bottleneck-vs-basic
+lesson: |
+  Distinguish the *axis of intervention*. Bottleneck changes block
+  topology (parameter cost). Shortcut changes the learning target
+  (optimization reachability). They are independent decisions. ResNet
+  combines both for deeper networks; only the second resolves
+  degradation.
+expert_feedback_md: |
+  This is the *suboptimal* branch. The chosen intervention is real
+  engineering — the bottleneck topology is what makes ResNet-50 to
+  ResNet-152 practical at the original compute budget. The reason it is
+  graded suboptimal here is that on its own it does not address the
+  failure mode you are *trying* to fix. A learner who picks this branch
+  with strong reasoning has identified a useful innovation; they have
+  just not yet identified the operative mechanism behind ResNet's
+  central result.
+next_nodes:
+  - N003

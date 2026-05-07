@@ -1,0 +1,37 @@
+id: branch-deeper-no-residual
+type: failed
+support_level: expert_reconstructed
+stage: S002
+choice: "Keep stacking plain blocks; trust BatchNorm and improved initialization to handle depth."
+expected_by_learner: |
+  More layers should give more capacity; with BatchNorm and He
+  initialization, gradient signals stay alive, so deeper is better.
+actual_outcome: |
+  Training error rises with depth past the degradation threshold. BN and
+  He init are necessary but not sufficient: the optimization problem is
+  intrinsically harder for plain stacks at depth, even when signal scale
+  is well-controlled.
+source_refs:
+  - artifact/logic/claims.md#branch-deeper-fails
+  - artifact/logic/claims.md#vanishing-gradients-not-the-cause
+expert_reconstruction_note: |
+  The paper does not run a separate "BN-only-and-deeper" branch as an
+  ablation; it shows the failure of plain-34 and plain-56 directly.
+  We label this branch `expert_reconstructed` because the package author
+  is making the implicit branch explicit for teaching, while citing the
+  paper's measurements as the evidence.
+evidence_refs:
+  - artifact/evidence/tables/training-curves.md#plain-vs-residual
+lesson: |
+  Fixing signal scale (BN) is not the same as fixing optimization
+  difficulty. A depth dividend you do not get back is a sign that capacity
+  is not the bottleneck.
+expert_feedback_md: |
+  This is the *failed* branch. The educational point is not that
+  BatchNorm and depth are bad. They are necessary. The point is that
+  they are not sufficient for very deep plain stacks: the optimizer can
+  still fail to find good functions even when forward and backward
+  signals scale fine. That's why ResNet's intervention is on the
+  *learning target*, not on the optimizer or normalizer.
+next_nodes:
+  - N003

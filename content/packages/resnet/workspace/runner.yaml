@@ -1,0 +1,62 @@
+version: 1
+image: researchcrafters/runner-python:3.11-slim
+default_mode: test
+network: none
+resources:
+  cpu: 2
+  memory_mb: 2048
+  timeout_seconds: 60
+allowed_writes:
+  - .researchcrafters/results
+  - .researchcrafters/logs
+stages:
+  S001:
+    mode: none
+  S002:
+    mode: none
+  S003:
+    mode: test
+    command:
+      - "pytest"
+      - "workspace/tests/test_residual_block.py"
+      - "-q"
+    resources:
+      cpu: 2
+      memory_mb: 2048
+      timeout_seconds: 60
+      network: false
+    outputs:
+      result_json: .researchcrafters/results/S003.json
+      logs: .researchcrafters/logs/S003.log
+  S004:
+    mode: replay
+    command:
+      - "python"
+      - "scripts/check_replay.py"
+      - "--stage"
+      - "S004"
+    resources:
+      cpu: 2
+      memory_mb: 2048
+      timeout_seconds: 30
+      network: false
+    fixtures:
+      - path: workspace/fixtures/stage-004/training_log.json
+        sha256: "35669084d93dfdf5a901a7420011ccfa4e18342d63672e2e3d07f2c1228b105d"
+    outputs:
+      result_json: .researchcrafters/results/S004.json
+      logs: .researchcrafters/logs/S004.log
+  S005:
+    mode: none
+  S006:
+    mode: none
+  S007:
+    mode: none
+  S008:
+    mode: none
+fixture_notes: |
+  The S004 fixture is currently a hand-authored placeholder; the SHA above
+  matches the placeholder file as committed. Once a maintainer runs the
+  regeneration recipe in workspace/fixtures/README.md, the placeholder
+  will be replaced by an authoritative fixture and the SHA must be
+  updated by re-running `shasum -a 256` on the new file.

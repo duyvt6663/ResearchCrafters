@@ -1,0 +1,482 @@
+// ResearchCrafters relational data model.
+//
+// Source of truth: TODOS/06-data-access-analytics.md.
+//
+// Conventions:
+// - Soft enums via String columns; allowed values documented in the comment
+//   above each field. We avoid Prisma `enum` types to keep migration churn
+//   low while the product is still moving.
+// - JSON columns use Prisma `Json` for flexible payloads mirrored from
+//   package YAML or evaluator output.
+// - Postgres String[] is used for primitive arrays (e.g. free stage ids).
+// - cuid() ids unless otherwise noted.
+// - Timestamps: createdAt on every row; updatedAt where the row mutates.
+// - Cascading deletes are conservative: enabled for clear ownership chains
+//   (Membership -> User, Enrollment -> User, MentorMessage -> Thread, etc.)
+//   and disabled for grading/audit chains where we want a paper trail.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = []
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity & access
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  githubHandle  String?
+  displayName   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  memberships   Membership[]
+  entitlements  Entitlement[]
+  enrollments   Enrollment[]
+  shareCards    ShareCard[]
+  reviews       Review[]      @relation("ReviewReviewer")
+  events        Event[]
+
+  @@index([createdAt])
+}
+
+model Membership {
+  id         String   @id @default(cuid())
+  userId     String
+  // Allowed values: 'free' | 'pro' | 'team' | 'institution'
+  plan       String
+  // Allowed values: 'active' | 'past_due' | 'canceled' | 'paused' | 'trialing'
+  status     String
+  billingRef String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Entitlement {
+  id                String   @id @default(cuid())
+  userId            String
+  // Allowed values: 'package' | 'stage' | 'mentor' | 'team_seat'
+  scope             String
+  packageVersionId  String?
+  stageId           String?
+  // Allowed values: 'membership' | 'trial' | 'coupon' | 'team' | 'manual'
+  source            String
+  expiresAt         DateTime?
+  createdAt         DateTime @default(now())
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  packageVersion PackageVersion? @relation(fields: [packageVersionId], references: [id], onDelete: SetNull)
+  stage          Stage?          @relation(fields: [stageId], references: [id], onDelete: SetNull)
+
+  @@index([userId, scope])
+  @@index([packageVersionId])
+  @@index([stageId])
+}
+
+// ---------------------------------------------------------------------------
+// Packages, versions, and patches
+// ---------------------------------------------------------------------------
+
+model Package {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  versions PackageVersion[]
+}
+
+model PackageVersion {
+  id                   String   @id @default(cuid())
+  packageId            String
+  version              String
+  // Allowed values: 'alpha' | 'beta' | 'live' | 'archived'
+  status               String
+  sourceHash           String
+  manifest             Json
+  releaseFreeStageIds  String[] @default([])
+  requiresGpu          Boolean  @default(false)
+  createdAt            DateTime @default(now())
+
+  package         Package                 @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  patches         PackageVersionPatch[]
+  stages          Stage[]
+  decisionNodes   DecisionNode[]
+  branches        Branch[]
+  enrollments     Enrollment[]
+  branchStats     BranchStat[]
+  shareCards      ShareCard[]
+  reviews         Review[]
+  events          Event[]
+  entitlements    Entitlement[]
+
+  @@unique([packageId, version])
+  @@index([status])
+}
+
+model PackageVersionPatch {
+  id               String   @id @default(cuid())
+  packageVersionId String
+  patchSeq         Int
+  overlays         Json
+  createdAt        DateTime @default(now())
+
+  packageVersion PackageVersion @relation(fields: [packageVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([packageVersionId, patchSeq])
+  @@index([packageVersionId])
+}
+
+// ---------------------------------------------------------------------------
+// Mirrored package contents (denormalized index for product queries)
+// ---------------------------------------------------------------------------
+
+model Stage {
+  id                   String   @id @default(cuid())
+  packageVersionId     String
+  // The YAML stage id (e.g. "S001"). Unique within a package version.
+  stageId              String
+  title                String
+  // Free-form stage type from the package manifest (e.g. 'lesson', 'lab').
+  type                 String
+  // 'easy' | 'medium' | 'hard' | other free-form difficulty label.
+  difficulty           String
+  estimatedTimeMinutes Int
+  // Allowed values: 'tests' | 'replay' | 'rubric' | 'mini_experiment'
+  validationKind       String
+  // Allowed values: 'test' | 'replay' | 'mini_experiment' | 'none'
+  runnerMode           String
+  rubricRef            String?
+  // Mirrored stage policy (entitlement gates, share-card eligibility, etc.).
+  stagePolicy          Json
+  passThreshold        Float?
+  free                 Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  packageVersion PackageVersion @relation(fields: [packageVersionId], references: [id], onDelete: Cascade)
+  entitlements   Entitlement[]
+
+  @@unique([packageVersionId, stageId])
+  @@index([packageVersionId, stageId])
+}
+
+model DecisionNode {
+  id               String   @id @default(cuid())
+  packageVersionId String
+  // The YAML node id (e.g. "N003"). Unique within a package version.
+  nodeId           String
+  title            String
+  // Free-form node type (e.g. 'choice', 'gate', 'milestone').
+  type             String
+  // Optional reference to the stage this node belongs to (the YAML stage id).
+  stageRef         String?
+  createdAt        DateTime @default(now())
+
+  packageVersion PackageVersion  @relation(fields: [packageVersionId], references: [id], onDelete: Cascade)
+  branches       Branch[]
+  traversals     NodeTraversal[]
+  branchStats    BranchStat[]
+
+  @@unique([packageVersionId, nodeId])
+  @@index([packageVersionId, nodeId])
+}
+
+model Branch {
+  id                       String   @id @default(cuid())
+  packageVersionId         String
+  decisionNodeId           String?
+  // The YAML branch id. Unique within a package version.
+  branchId                 String
+  // Allowed values: 'canonical' | 'failed' | 'suboptimal' | 'ambiguous' | 'extension'
+  type                     String
+  // Allowed values: 'supported' | 'partially_supported' | 'unsupported'
+  supportLevel             String
+  choice                   String
+  evidenceRefs             Json
+  sourceRefs               Json?
+  lesson                   String
+  // Allowed values: 'after_attempt' | 'after_pass' | 'after_completion' | 'always' | 'never'
+  gatedFeedbackVisibility  String
+  createdAt                DateTime @default(now())
+
+  packageVersion PackageVersion  @relation(fields: [packageVersionId], references: [id], onDelete: Cascade)
+  decisionNode   DecisionNode?   @relation(fields: [decisionNodeId], references: [id], onDelete: SetNull)
+  traversals     NodeTraversal[]
+  attempts       StageAttempt[]
+
+  @@unique([packageVersionId, branchId])
+  @@index([packageVersionId, branchId])
+  @@index([decisionNodeId])
+}
+
+// ---------------------------------------------------------------------------
+// Learner progress
+// ---------------------------------------------------------------------------
+
+model Enrollment {
+  id                  String   @id @default(cuid())
+  userId              String
+  // Pinned package version. Migrations create a new enrollment.
+  packageVersionId    String
+  // The active stage's YAML id (Stage.stageId), not the cuid.
+  activeStageRef      String?
+  // Array of YAML stage ids the learner has completed for this enrollment.
+  completedStageRefs  Json     @default("[]")
+  // Array of YAML decision node ids that have been unlocked.
+  unlockedNodeRefs    Json     @default("[]")
+  // Allowed values: 'active' | 'completed' | 'abandoned' | 'migrated'
+  status              String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  packageVersion PackageVersion   @relation(fields: [packageVersionId], references: [id], onDelete: Restrict)
+  traversals     NodeTraversal[]
+  attempts       StageAttempt[]
+  mentorThreads  MentorThread[]
+  shareCards     ShareCard[]
+
+  @@index([userId, packageVersionId])
+  @@index([packageVersionId])
+  @@index([status])
+}
+
+model NodeTraversal {
+  id             String   @id @default(cuid())
+  enrollmentId   String
+  decisionNodeId String
+  branchId       String?
+  selectedAt     DateTime @default(now())
+
+  enrollment   Enrollment   @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  decisionNode DecisionNode @relation(fields: [decisionNodeId], references: [id], onDelete: Restrict)
+  branch       Branch?      @relation(fields: [branchId], references: [id], onDelete: SetNull, map: "NodeTraversal_branchId_fkey")
+
+  @@index([enrollmentId])
+  @@index([decisionNodeId])
+}
+
+model StageAttempt {
+  id              String   @id @default(cuid())
+  enrollmentId    String
+  // The YAML stage id this attempt targets.
+  stageRef        String
+  answer          Json
+  branchId        String?
+  score           Float?
+  passed          Boolean  @default(false)
+  // Allowed values: 'queued' | 'running' | 'ok' | 'timeout' | 'oom' | 'crash' | 'exit_nonzero' | 'not_required'
+  executionStatus String?
+  // Convenience pointer to the canonical Grade row (Grade.id).
+  gradeId         String?
+  createdAt       DateTime @default(now())
+
+  enrollment   Enrollment   @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  branch       Branch?      @relation(fields: [branchId], references: [id], onDelete: SetNull, map: "StageAttempt_branchId_fkey")
+  submissions  Submission[]
+  grades       Grade[]
+
+  @@index([enrollmentId, stageRef])
+  @@index([createdAt])
+}
+
+model Submission {
+  id              String   @id @default(cuid())
+  stageAttemptId  String
+  bundleObjectKey String
+  bundleSha       String
+  byteSize        Int
+  fileCount       Int
+  createdAt       DateTime @default(now())
+
+  // Conservative: do NOT cascade Submission deletes. Submissions are an
+  // audit artifact — losing them silently when an attempt is removed would
+  // be the wrong default.
+  stageAttempt StageAttempt @relation(fields: [stageAttemptId], references: [id], onDelete: Restrict)
+  runs         Run[]
+  grades       Grade[]
+
+  @@index([stageAttemptId])
+  @@index([bundleSha])
+}
+
+model Run {
+  id           String    @id @default(cuid())
+  submissionId String
+  // Allowed values: 'queued' | 'running' | 'ok' | 'timeout' | 'oom' | 'crash' | 'exit_nonzero'
+  status       String
+  // Allowed values: 'test' | 'replay' | 'mini_experiment' | 'none'
+  runnerMode   String
+  logObjectKey String?
+  metricsJson  Json?
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Restrict)
+
+  @@index([submissionId])
+  @@index([status, createdAt])
+}
+
+model Grade {
+  id               String   @id @default(cuid())
+  stageAttemptId   String
+  submissionId     String?
+  rubricVersion    String
+  evaluatorVersion String
+  passed           Boolean  @default(false)
+  score            Float?
+  dimensions       Json
+  evidenceRefs     Json
+  modelMeta        Json?
+  // Append-only history of overrides; never mutated in place.
+  history          Json     @default("[]")
+  createdAt        DateTime @default(now())
+
+  stageAttempt StageAttempt @relation(fields: [stageAttemptId], references: [id], onDelete: Restrict)
+  submission   Submission?  @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+
+  // Idempotency: at most one grade per (submission, rubric, evaluator) tuple.
+  @@unique([submissionId, rubricVersion, evaluatorVersion])
+  @@index([stageAttemptId])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Mentor
+// ---------------------------------------------------------------------------
+
+model MentorThread {
+  id           String   @id @default(cuid())
+  enrollmentId String
+  // The YAML stage id this thread is scoped to.
+  stageRef     String
+  createdAt    DateTime @default(now())
+
+  enrollment Enrollment      @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  messages   MentorMessage[]
+
+  @@index([enrollmentId, stageRef])
+}
+
+model MentorMessage {
+  id                  String   @id @default(cuid())
+  threadId            String
+  // Allowed values: 'user' | 'assistant' | 'system'
+  role                String
+  // NOTE: bodyText is sensitive (mentor transcripts) — encryption-at-rest is
+  // tracked in TODOS/08 §Privacy. Stored as plaintext in dev for now.
+  bodyText            String
+  // Free-form tier label (e.g. 'fast' | 'deep' | 'guard').
+  modelTier           String?
+  modelId             String?
+  provider            String?
+  promptTokens        Int?
+  completionTokens    Int?
+  redactionTriggered  Boolean  @default(false)
+  flagged             Boolean  @default(false)
+  createdAt           DateTime @default(now())
+
+  thread MentorThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+  @@index([flagged])
+}
+
+// ---------------------------------------------------------------------------
+// Analytics & sharing
+// ---------------------------------------------------------------------------
+
+model BranchStat {
+  id               String   @id @default(cuid())
+  packageVersionId String
+  decisionNodeId   String
+  // YAML branch id (Branch.branchId), not the cuid, so rollups stay stable
+  // across schema reshuffles.
+  branchId         String
+  // Allowed values: 'all_attempts' | 'completers' | 'entitled_paid' | 'alpha_beta'
+  cohort           String
+  windowStart      DateTime
+  windowEnd        DateTime
+  n                Int
+  percent          Float?
+  createdAt        DateTime @default(now())
+
+  packageVersion PackageVersion @relation(fields: [packageVersionId], references: [id], onDelete: Cascade)
+  decisionNode   DecisionNode   @relation(fields: [decisionNodeId], references: [id], onDelete: Cascade)
+
+  @@index([packageVersionId, decisionNodeId, branchId, cohort, windowStart])
+}
+
+model ShareCard {
+  id               String   @id @default(cuid())
+  userId           String
+  enrollmentId     String
+  packageVersionId String
+  // Immutable snapshot of ShareCardPayload from docs/TECHNICAL.md §5.
+  payload          Json
+  // Set when the share card has a public URL; unique only when present.
+  publicSlug       String?  @unique
+  createdAt        DateTime @default(now())
+
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollment     Enrollment     @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  packageVersion PackageVersion @relation(fields: [packageVersionId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([enrollmentId])
+  @@index([packageVersionId])
+}
+
+model Review {
+  id               String   @id @default(cuid())
+  packageVersionId String
+  reviewerId       String?
+  // Allowed values: 'pending' | 'approved' | 'rejected'
+  status           String
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  packageVersion PackageVersion @relation(fields: [packageVersionId], references: [id], onDelete: Cascade)
+  reviewer       User?          @relation("ReviewReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([packageVersionId])
+  @@index([status])
+}
+
+model Event {
+  id               String   @id @default(cuid())
+  // Telemetry name (e.g. 'grade_created'). See docs/TECHNICAL.md §5
+  // taxonomy and TODOS/06 §Events Storage for audit-grade rules.
+  name             String
+  userId           String?
+  packageVersionId String?
+  // YAML stage id, when relevant.
+  stageRef         String?
+  payload          Json
+  // True for events that affect entitlement, grading, mentor policy,
+  // payments, or moderation. Retained indefinitely.
+  auditGrade       Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  packageVersion PackageVersion? @relation(fields: [packageVersionId], references: [id], onDelete: SetNull)
+
+  @@index([name, createdAt])
+  @@index([userId, createdAt])
+  @@index([auditGrade, createdAt])
+}

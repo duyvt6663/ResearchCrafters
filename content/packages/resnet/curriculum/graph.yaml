@@ -1,0 +1,90 @@
+version: 1
+slug: resnet
+entry: N001
+nodes:
+  - id: N001
+    type: framing
+    title: "Why is going deeper not enough?"
+    stage: stages/001-problem-framing.yaml
+    artifact_refs:
+      - artifact/logic/problem.md
+      - artifact/logic/claims.md#degradation
+      - artifact/logic/claims.md#not-overfitting
+    unlocks: [N002]
+
+  - id: N002
+    type: decision
+    title: "Which fix do you attack first?"
+    stage: stages/002-degradation-decision.yaml
+    artifact_refs:
+      - artifact/logic/related_work.md
+      - artifact/logic/claims.md#identity-is-the-trick
+      - artifact/trace/exploration_tree.yaml
+    choices:
+      - id: branch-residual-canonical
+        branch: branches/branch-residual-canonical.yaml
+      - id: branch-deeper-no-residual
+        branch: branches/branch-deeper-no-residual.yaml
+      - id: branch-bottleneck-suboptimal
+        branch: branches/branch-bottleneck-suboptimal.yaml
+    unlocks_by_choice:
+      branch-residual-canonical: [N003]
+      branch-deeper-no-residual: [N003]
+      branch-bottleneck-suboptimal: [N003]
+
+  - id: N003
+    type: implementation
+    title: "Implement a residual block."
+    stage: stages/003-residual-block.yaml
+    artifact_refs:
+      - artifact/logic/solution/architecture.md
+      - artifact/logic/solution/algorithm.md
+      - artifact/logic/solution/constraints.md
+    unlocks: [N004]
+
+  - id: N004
+    type: experiment
+    title: "Replay a CIFAR-10 mini training run."
+    stage: stages/004-cifar10-replay.yaml
+    artifact_refs:
+      - artifact/logic/experiments.md
+      - artifact/evidence/tables/training-curves.md#plain-vs-residual
+    unlocks: [N005]
+
+  - id: N005
+    type: analysis
+    title: "Interpret training curves: degradation vs residual."
+    stage: stages/005-curve-analysis.yaml
+    artifact_refs:
+      - artifact/evidence/tables/training-curves.md#plain-vs-residual
+      - artifact/logic/claims.md#degradation
+      - artifact/logic/claims.md#residual-helps
+    unlocks: [N006]
+
+  - id: N006
+    type: writing
+    title: "Write a precise claim about residual learning."
+    stage: stages/006-claim-writing.yaml
+    artifact_refs:
+      - artifact/logic/claims.md#residual-helps
+      - artifact/logic/claims.md#identity-is-the-trick
+      - artifact/evidence/tables/training-curves.md#plain-vs-residual
+    unlocks: [N007]
+
+  - id: N007
+    type: review
+    title: "Critique an experimental design alternative."
+    stage: stages/007-experiment-review.yaml
+    artifact_refs:
+      - artifact/logic/experiments.md
+      - artifact/logic/claims.md#vanishing-gradients-not-the-cause
+    unlocks: [N008]
+
+  - id: N008
+    type: reflection
+    title: "Compare your path to the canonical reconstruction."
+    stage: stages/008-reflection.yaml
+    artifact_refs:
+      - artifact/trace/exploration_tree.yaml
+      - artifact/logic/claims.md#identity-is-the-trick
+    unlocks: []

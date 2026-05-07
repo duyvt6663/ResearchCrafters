@@ -1,0 +1,58 @@
+id: rubric-analysis
+title: "Curve-analysis rubric"
+description: |
+  Used by `S004` (hybrid validation) and `S005`. Grades whether the learner
+  can read training curves, isolate the degradation signature, and propose
+  the next experiment.
+applies_to:
+  - S004
+  - S005
+grader: hybrid
+llm_grading_allowed: true
+total_points: 100
+criteria:
+  - id: feature-reading
+    title: "Reads features off the curves"
+    description: "Names specific features (final-epoch error, slope, gap between trajectories)."
+    weight: 25
+    levels:
+      - score: 0
+        description: "No specific features named."
+      - score: 15
+        description: "One feature named, no comparison across trajectories."
+      - score: 25
+        description: "Multiple features named with cross-trajectory comparison."
+  - id: degradation-isolation
+    title: "Isolates degradation from overfitting and from vanishing gradients"
+    description: "Uses the *training* error trajectory to rule out overfitting; uses BatchNorm presence to rule out vanishing gradients as the dominant cause."
+    weight: 30
+    levels:
+      - score: 0
+        description: "Conflates degradation with overfitting or vanishing gradients."
+      - score: 15
+        description: "Rules out one but not the other."
+      - score: 30
+        description: "Rules out both, citing curve features."
+  - id: identity-recovery
+    title: "Maps the residual success to identity-recovery"
+    description: "Connects the residual variant's success at depth to the optimizer's ability to drive `F(x) → 0`."
+    weight: 25
+    levels:
+      - score: 0
+        description: "Attributes residual success to extra capacity."
+      - score: 15
+        description: "Mentions identity but not the optimizer's reachability."
+      - score: 25
+        description: "Explicitly mentions identity-recovery as the operative mechanism."
+  - id: next-experiment
+    title: "Proposes a cheap follow-up"
+    description: "Names a low-cost follow-up experiment that would sharpen the interpretation."
+    weight: 20
+    levels:
+      - score: 0
+        description: "No follow-up."
+      - score: 10
+        description: "Follow-up not clearly cheap or sharp."
+      - score: 20
+        description: "Cheap, sharp follow-up that varies one knob."
+pass_threshold: 60

@@ -1,0 +1,24 @@
+{
+  "name": "@researchcrafters/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "eslint",
+    "tsconfig"
+  ],
+  "exports": {
+    "./eslint": "./eslint/index.js",
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/node.json": "./tsconfig/node.json",
+    "./tsconfig/react.json": "./tsconfig/react.json"
+  },
+  "dependencies": {
+    "eslint": "^9.16.0",
+    "eslint-config-prettier": "^9.1.0",
+    "typescript-eslint": "^8.18.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

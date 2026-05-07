@@ -1,0 +1,11 @@
+id: branch-a
+type: suboptimal
+support_level: inferred
+choice: "Approach A: brute force"
+expected_by_learner: "Brute force should be simpler"
+actual_outcome: "Brute force is too slow on the target inputs"
+evidence_refs:
+  - artifact/evidence/results.md
+lesson: "Simplicity does not always survive contact with the input distribution."
+next_nodes:
+  - N003

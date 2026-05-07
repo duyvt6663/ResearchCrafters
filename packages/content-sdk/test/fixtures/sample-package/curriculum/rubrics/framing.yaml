@@ -1,0 +1,16 @@
+id: framing-rubric
+pass_threshold: 0.7
+dimensions:
+  - id: clarity
+    label: "Clarity"
+    description: "Did the learner state the problem clearly?"
+    weight: 0.5
+    criteria:
+      - "Identifies the core problem"
+      - "Distinguishes symptoms from causes"
+  - id: evidence
+    label: "Evidence"
+    description: "Did the learner cite the artifact?"
+    weight: 0.5
+    criteria:
+      - "Cites at least one passage from artifact/logic/problem.md"

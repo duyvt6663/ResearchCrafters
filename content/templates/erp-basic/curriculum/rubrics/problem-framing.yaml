@@ -1,0 +1,21 @@
+id: rubric-problem-framing
+title: "Problem framing rubric (template)"
+description: "TODO: customize criteria and weights for your paper."
+applies_to:
+  - S001
+grader: hybrid
+llm_grading_allowed: true
+total_points: 100
+criteria:
+  - id: TODO_criterion_id
+    title: "TODO_criterion_title"
+    description: "TODO_criterion_description"
+    weight: 100
+    levels:
+      - score: 0
+        description: "Does not meet bar."
+      - score: 50
+        description: "Partial."
+      - score: 100
+        description: "Fully meets bar."
+pass_threshold: 60

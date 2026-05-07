@@ -1,0 +1,25 @@
+id: hints-stage-001
+stage_id: S001
+levels:
+  - level: 1
+    title: "What does 'naive depth intuition' say?"
+    body_md: |
+      A deeper plain network can always represent the function of a
+      shallower network: just set the extra layers to identity. So a
+      deeper network's *training* error should never strictly exceed
+      the shallower network's training error.
+  - level: 2
+    title: "Distinguish three different failure modes"
+    body_md: |
+      Three things people sometimes confuse:
+      - Overfitting: train error fine, test error worse.
+      - Vanishing gradients: gradients shrink to zero in early layers, training stalls.
+      - Degradation: train error itself rises with depth, even with BatchNorm.
+      Which one is the prompt describing?
+  - level: 3
+    title: "Frame it as an optimization-side problem"
+    body_md: |
+      The deeper network has at least the capacity to match the shallower
+      one. So the failure must be the optimizer's: it cannot find the
+      function the network is capable of representing. State this in one
+      sentence using the word "degradation".

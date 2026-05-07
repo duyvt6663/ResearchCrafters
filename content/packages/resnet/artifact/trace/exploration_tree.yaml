@@ -1,0 +1,90 @@
+version: 1
+description: |
+  Exploration tree for the ResNet ERP. Captures the central decision and the
+  branches a 2015-era researcher could plausibly have considered. Every node
+  references either a logic claim, an evidence artifact, or both. Branch
+  nodes are mirrored in `curriculum/branches/` for the learner-facing graph.
+nodes:
+  - id: T001
+    kind: observation
+    title: "Plain deep CNNs degrade past a depth threshold."
+    refs:
+      - artifact/logic/problem.md
+      - artifact/logic/claims.md#degradation
+      - artifact/logic/claims.md#not-overfitting
+    parents: []
+  - id: T002
+    kind: hypothesis
+    title: "Plain stacks make identity hard for the optimizer to recover."
+    refs:
+      - artifact/logic/concepts.md
+      - artifact/logic/claims.md#identity-is-the-trick
+    parents: [T001]
+  - id: T003
+    kind: decision
+    title: "Choose a fix for the degradation problem."
+    refs:
+      - artifact/logic/related_work.md
+    parents: [T002]
+    children: [T004A, T004B, T004C]
+  - id: T004A
+    kind: branch
+    branch_type: canonical
+    title: "Reformulate as residual learning F(x) + x."
+    branch_id: branch-residual-canonical
+    refs:
+      - artifact/logic/claims.md#residual-helps
+      - artifact/logic/claims.md#identity-is-the-trick
+      - artifact/evidence/tables/training-curves.md#plain-vs-residual
+    parents: [T003]
+  - id: T004B
+    kind: branch
+    branch_type: failed
+    title: "Just add more layers; trust BN to handle signal scale."
+    branch_id: branch-deeper-no-residual
+    refs:
+      - artifact/logic/claims.md#branch-deeper-fails
+      - artifact/logic/claims.md#vanishing-gradients-not-the-cause
+      - artifact/evidence/tables/training-curves.md#plain-vs-residual
+    parents: [T003]
+  - id: T004C
+    kind: branch
+    branch_type: suboptimal
+    title: "Adopt bottleneck topology without an identity shortcut."
+    branch_id: branch-bottleneck-suboptimal
+    refs:
+      - artifact/logic/claims.md#bottleneck-tradeoff
+      - artifact/logic/claims.md#branch-bottleneck-without-shortcut
+    parents: [T003]
+  - id: T005
+    kind: synthesis
+    title: "Identity shortcut is the operative mechanism, not topology change."
+    refs:
+      - artifact/logic/claims.md#identity-is-the-trick
+      - artifact/logic/claims.md#residual-helps
+    parents: [T004A, T004B, T004C]
+edges:
+  - from: T001
+    to: T002
+    kind: motivates
+  - from: T002
+    to: T003
+    kind: requires_decision
+  - from: T003
+    to: T004A
+    kind: branch_canonical
+  - from: T003
+    to: T004B
+    kind: branch_failed
+  - from: T003
+    to: T004C
+    kind: branch_suboptimal
+  - from: T004A
+    to: T005
+    kind: confirms
+  - from: T004B
+    to: T005
+    kind: counter_evidence
+  - from: T004C
+    to: T005
+    kind: counter_evidence

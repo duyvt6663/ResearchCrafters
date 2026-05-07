@@ -1,0 +1,29 @@
+slug: TODO_paper_slug
+title: "TODO_paper_title"
+version: "0.1.0"
+paper:
+  title: "TODO_paper_title"
+  authors: []
+  year: 0
+  arxiv: ""
+  venue: ""
+status: alpha
+difficulty: intermediate
+estimated_time_minutes: 120
+skills:
+  - TODO_skill_1
+  - TODO_skill_2
+prerequisites:
+  - TODO_prerequisite_1
+release:
+  free_stage_ids:
+    - S001
+  free_stages: 1
+  requires_gpu: false
+safety:
+  redaction_targets:
+    - "TODO_canonical_phrase"
+review:
+  expert_reviewer: ""
+  last_reviewed_at: ""
+fixture_refresh_cadence: "annual"

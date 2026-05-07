@@ -1,0 +1,17 @@
+id: problem-framing
+dimensions:
+  - id: clarity
+    label: "Clarity of problem statement"
+    description: "Did the learner identify the dominant bottleneck precisely?"
+    weight: 0.6
+    criteria:
+      - "Names the IO bottleneck explicitly"
+      - "References memory hierarchy"
+  - id: evidence
+    label: "Evidence usage"
+    description: "Did the learner cite the relevant profile data?"
+    weight: 0.4
+    criteria:
+      - "Cites the GPU memory profile"
+pass_threshold: 0.7
+hidden_correct: "HBM bandwidth is the dominant bottleneck"

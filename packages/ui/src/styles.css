@@ -1,0 +1,108 @@
+/**
+ * Tailwind v4 token surface for @researchcrafters/ui.
+ *
+ * Consumers should import this file once at the app entry:
+ *   import "@researchcrafters/ui/styles.css";
+ *
+ * Tokens are exposed as CSS variables via `@theme` so Tailwind utilities pick
+ * them up (e.g. `bg-[--color-surface]` or `text-rc-accent`).
+ *
+ * Light mode is the default; switching to `[data-theme="dark"]` flips the
+ * variables. Do not override these directly; modify packages/ui/src/tokens.ts.
+ */
+
+@theme {
+  /* ---------- Color (light) ---------- */
+  --color-rc-bg: #ffffff;
+  --color-rc-surface: #f7f8fa;
+  --color-rc-surface-muted: #eef0f4;
+  --color-rc-border: #dcdfe6;
+  --color-rc-border-strong: #c2c7d1;
+  --color-rc-text: #0f1115;
+  --color-rc-text-muted: #5b6473;
+  --color-rc-text-subtle: #828b99;
+  --color-rc-accent: #1f5fff;
+  --color-rc-accent-hover: #1a4fd6;
+  --color-rc-accent-subtle: #e7eeff;
+  --color-rc-on-accent: #ffffff;
+  --color-rc-success: #1f9d55;
+  --color-rc-success-subtle: #e3f5ea;
+  --color-rc-warning: #b45f00;
+  --color-rc-warning-subtle: #fbeed0;
+  --color-rc-danger: #c0362c;
+  --color-rc-danger-subtle: #fbe5e3;
+  --color-rc-info: #1a72c6;
+  --color-rc-info-subtle: #e2f0fb;
+  --color-rc-neutral: #6b7280;
+  --color-rc-neutral-subtle: #eceef2;
+  --color-rc-locked: #9aa3b2;
+  --color-rc-locked-subtle: #eceff5;
+
+  /* ---------- Typography ---------- */
+  --font-rc-sans: "Inter", "Helvetica Neue", Arial, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-rc-mono: "JetBrains Mono", "Fira Code", "SFMono-Regular", Menlo,
+    Consolas, monospace;
+  --text-rc-xs: 12px;
+  --text-rc-sm: 13px;
+  --text-rc-base: 14px;
+  --text-rc-md: 15px;
+  --text-rc-lg: 17px;
+  --text-rc-xl: 20px;
+  --text-rc-2xl: 24px;
+  --text-rc-3xl: 30px;
+
+  /* ---------- Radius ---------- */
+  --radius-rc-sm: 4px;
+  --radius-rc-md: 6px;
+  --radius-rc-lg: 8px;
+
+  /* ---------- Motion ---------- */
+  --duration-rc-fast: 120ms;
+  --duration-rc-base: 180ms;
+  --duration-rc-slow: 260ms;
+  --ease-rc-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-rc-emphasized: cubic-bezier(0.3, 0, 0, 1);
+
+  /* ---------- Breakpoints ---------- */
+  --breakpoint-rc-tablet: 768px;
+  --breakpoint-rc-desktop: 1100px;
+}
+
+/* Dark mode override. Activated by setting `data-theme="dark"` on <html>. */
+:where([data-theme="dark"]) {
+  --color-rc-bg: #0b0d11;
+  --color-rc-surface: #13161c;
+  --color-rc-surface-muted: #1a1e26;
+  --color-rc-border: #262b35;
+  --color-rc-border-strong: #3a414f;
+  --color-rc-text: #f3f5f8;
+  --color-rc-text-muted: #a8b0bd;
+  --color-rc-text-subtle: #7c8492;
+  --color-rc-accent: #5b8bff;
+  --color-rc-accent-hover: #7aa1ff;
+  --color-rc-accent-subtle: #1a2440;
+  --color-rc-on-accent: #0b0d11;
+  --color-rc-success: #3dd17a;
+  --color-rc-success-subtle: #0f2a1c;
+  --color-rc-warning: #e8a64a;
+  --color-rc-warning-subtle: #3a2810;
+  --color-rc-danger: #ef6a60;
+  --color-rc-danger-subtle: #3a1816;
+  --color-rc-info: #5fb3ee;
+  --color-rc-info-subtle: #0f2638;
+  --color-rc-neutral: #8a93a3;
+  --color-rc-neutral-subtle: #1c2028;
+  --color-rc-locked: #5b6373;
+  --color-rc-locked-subtle: #1a1d24;
+}
+
+/*
+ * Anti-pattern enforcement: nested cards.
+ * Authors mark cards with `data-card` so this rule paints a debug outline
+ * around any card nested inside another. Strip in production via PostCSS.
+ */
+[data-card] [data-card] {
+  outline: 2px dashed var(--color-rc-danger);
+  outline-offset: 2px;
+}

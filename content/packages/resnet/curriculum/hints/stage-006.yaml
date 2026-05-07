@@ -1,0 +1,21 @@
+id: hints-stage-006
+stage_id: S006
+levels:
+  - level: 1
+    title: "Anchor mechanism, scope, evidence"
+    body_md: |
+      Strong claim sentences answer three questions in order: what is the
+      mechanism, under what conditions does it work, and what evidence
+      supports it? Sketch each before writing the sentence.
+  - level: 2
+    title: "Cite an evidence path"
+    body_md: |
+      Use a concrete path inside the package, e.g.
+      `artifact/evidence/tables/training-curves.md#plain-vs-residual`,
+      not a vague "as shown in the experiments".
+  - level: 3
+    title: "Avoid the two overclaims"
+    body_md: |
+      The two most common overclaims are "solves vanishing gradients" and
+      "always outperforms plain at every depth". Your evidence supports
+      neither — write the claim so it is consistent with what you measured.

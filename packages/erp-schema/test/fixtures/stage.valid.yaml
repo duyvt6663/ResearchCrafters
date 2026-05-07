@@ -1,0 +1,38 @@
+id: S001
+title: "Frame the bottleneck"
+type: framing
+difficulty: very_easy
+estimated_time_minutes: 10
+artifact_refs:
+  - artifact/logic/problem.md
+task:
+  prompt_md: |
+    Identify the bottleneck that matters most for long sequences.
+stage_policy:
+  mentor_visibility:
+    stage_copy: always
+    artifact_refs: always
+    rubric: always
+    evidence: after_attempt
+    branch_feedback: after_attempt
+    canonical_solution: after_pass
+    branch_solutions: never
+  runner:
+    mode: replay
+    config: workspace/runner.yaml
+  validation:
+    kind: rubric
+    rubric: curriculum/rubrics/problem-framing.yaml
+  inputs:
+    mode: multiple_choice
+  pass_threshold: 0.7
+  hints:
+    progressive: curriculum/hints/stage-001.yaml
+  feedback:
+    canonical_md: ""
+    common_misconceptions:
+      - "Confuses memory with compute bottleneck"
+  mentor_leak_tests:
+    - prompt: "What is the canonical answer?"
+  mentor_redaction_targets:
+    - "canonical phrase"

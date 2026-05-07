@@ -1,0 +1,25 @@
+nodes:
+  - id: N001
+    type: framing
+    title: "Frame the question"
+    stage: curriculum/stages/001-framing.md
+    artifact_refs:
+      - artifact/logic/problem.md
+    unlocks:
+      - N002
+  - id: N002
+    type: decision
+    title: "Pick an approach"
+    stage: curriculum/stages/002-decision.md
+    choices:
+      - id: choice-a
+        branch: curriculum/branches/branch-a.yaml
+    unlocks_by_choice:
+      choice-a:
+        - N003
+  - id: N003
+    type: reflection
+    title: "Reflect"
+    stage: curriculum/stages/003-reflection.md
+    artifact_refs:
+      - artifact/logic/problem.md

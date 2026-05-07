@@ -1,0 +1,9 @@
+id: branch-canonical-bad
+type: canonical
+support_level: explicit
+choice: "Tile attention to fit on-chip SRAM"
+expected_by_learner: "Reduces HBM traffic"
+actual_outcome: "Achieves both speedup and memory reduction"
+evidence_refs:
+  - artifact/evidence/tables/runtime.md
+lesson: "Missing source_refs should fail validation."

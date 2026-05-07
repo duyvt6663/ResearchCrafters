@@ -1,0 +1,18 @@
+image: ghcr.io/researchcrafters/runner-base:0.0.1
+default_mode: test
+allowed_commands:
+  - "node test/run.js"
+resources:
+  cpu: 1
+  memory_mb: 512
+  wall_clock_seconds: 30
+network: none
+stages:
+  S001:
+    mode: replay
+    command: "node test/run.js --stage S001"
+    fixtures:
+      - path: workspace/fixtures/profile_case_01.json
+        sha256: cc75dd0605d43626a45132c9ec0890b6bf2bcab0aaa31fddfcc5751ac23fddf1
+    output_paths:
+      - workspace/out/s001.json

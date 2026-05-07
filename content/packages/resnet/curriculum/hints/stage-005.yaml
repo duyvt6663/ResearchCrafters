@@ -1,0 +1,22 @@
+id: hints-stage-005
+stage_id: S005
+levels:
+  - level: 1
+    title: "Use the curve features explicitly"
+    body_md: |
+      Reference at least one specific curve feature — final-epoch error,
+      slope around the LR drop, or the training/test error gap.
+  - level: 2
+    title: "Two ruleouts"
+    body_md: |
+      Your argument needs two ruleouts:
+      - Why this is not overfitting (training error rises too).
+      - Why this is not vanishing gradients (BatchNorm is on, signals
+        scale OK).
+  - level: 3
+    title: "Cheap follow-up"
+    body_md: |
+      A cheap follow-up varies a single knob. Examples: initialize the
+      plain network's last conv near zero; train a residual variant with
+      the shortcut weights frozen at random small values; train a plain
+      network with explicit identity-initialized blocks.

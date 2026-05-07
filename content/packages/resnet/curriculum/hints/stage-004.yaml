@@ -1,0 +1,20 @@
+id: hints-stage-004
+stage_id: S004
+levels:
+  - level: 1
+    title: "Open the fixture"
+    body_md: |
+      The fixture is JSON. Each top-level key is a variant id. Each variant
+      has an `epochs` array with `train_err` and `test_err` per epoch.
+  - level: 2
+    title: "Look for the depth comparison, not the absolute number"
+    body_md: |
+      The interesting comparison is `plain_56_train_err - plain_20_train_err`
+      and `residual_56_train_err - residual_20_train_err`. Their *signs*
+      are the load-bearing signal.
+  - level: 3
+    title: "State the gap"
+    body_md: |
+      The "degradation gap at depth 56" is roughly
+      `plain_56_train_err - residual_56_train_err`. State that number and
+      one sentence about its sign.

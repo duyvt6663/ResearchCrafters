@@ -1,0 +1,80 @@
+{
+  "_meta": {
+    "fixture_kind": "training_log",
+    "stage_id": "S004",
+    "schema_version": 1,
+    "note": "Hand-authored placeholder. Replace via the regeneration recipe in workspace/fixtures/README.md before releasing the package.",
+    "provenance": {
+      "hardware": "PLACEHOLDER",
+      "command": "PLACEHOLDER",
+      "environment_hash": "PLACEHOLDER",
+      "git_sha": "PLACEHOLDER",
+      "date": "PLACEHOLDER",
+      "seed": 0
+    }
+  },
+  "variants": {
+    "plain-20": {
+      "depth": 20,
+      "shortcut": false,
+      "epochs": [
+        {"epoch": 0, "train_err": 0.610, "test_err": 0.620},
+        {"epoch": 40, "train_err": 0.180, "test_err": 0.205},
+        {"epoch": 82, "train_err": 0.110, "test_err": 0.135},
+        {"epoch": 123, "train_err": 0.075, "test_err": 0.105},
+        {"epoch": 163, "train_err": 0.060, "test_err": 0.092}
+      ],
+      "final": {"train_err": 0.060, "test_err": 0.092}
+    },
+    "plain-56": {
+      "depth": 56,
+      "shortcut": false,
+      "epochs": [
+        {"epoch": 0, "train_err": 0.640, "test_err": 0.650},
+        {"epoch": 40, "train_err": 0.220, "test_err": 0.235},
+        {"epoch": 82, "train_err": 0.140, "test_err": 0.160},
+        {"epoch": 123, "train_err": 0.095, "test_err": 0.130},
+        {"epoch": 163, "train_err": 0.080, "test_err": 0.115}
+      ],
+      "final": {"train_err": 0.080, "test_err": 0.115}
+    },
+    "residual-20": {
+      "depth": 20,
+      "shortcut": true,
+      "epochs": [
+        {"epoch": 0, "train_err": 0.595, "test_err": 0.605},
+        {"epoch": 40, "train_err": 0.150, "test_err": 0.180},
+        {"epoch": 82, "train_err": 0.090, "test_err": 0.120},
+        {"epoch": 123, "train_err": 0.060, "test_err": 0.095},
+        {"epoch": 163, "train_err": 0.050, "test_err": 0.085}
+      ],
+      "final": {"train_err": 0.050, "test_err": 0.085}
+    },
+    "residual-56": {
+      "depth": 56,
+      "shortcut": true,
+      "epochs": [
+        {"epoch": 0, "train_err": 0.605, "test_err": 0.615},
+        {"epoch": 40, "train_err": 0.110, "test_err": 0.150},
+        {"epoch": 82, "train_err": 0.060, "test_err": 0.095},
+        {"epoch": 123, "train_err": 0.040, "test_err": 0.078},
+        {"epoch": 163, "train_err": 0.030, "test_err": 0.069}
+      ],
+      "final": {"train_err": 0.030, "test_err": 0.069}
+    }
+  },
+  "comparisons": {
+    "degradation_gap_at_56": {
+      "definition": "plain_56_train_err - residual_56_train_err",
+      "value": 0.050
+    },
+    "depth_dividend_residual": {
+      "definition": "residual_20_train_err - residual_56_train_err",
+      "value": 0.020
+    },
+    "depth_penalty_plain": {
+      "definition": "plain_56_train_err - plain_20_train_err",
+      "value": 0.020
+    }
+  }
+}

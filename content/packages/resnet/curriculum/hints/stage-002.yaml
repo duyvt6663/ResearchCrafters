@@ -1,0 +1,22 @@
+id: hints-stage-002
+stage_id: S002
+levels:
+  - level: 1
+    title: "Eliminate, do not pick"
+    body_md: |
+      Ask yourself: which branches *cannot* be the right answer given that
+      degradation persists with BatchNorm? That alone narrows the field
+      from three to two.
+  - level: 2
+    title: "Separate topology from shortcut"
+    body_md: |
+      Branch C changes the *block topology* (basic vs bottleneck). Branch A
+      changes the *learning target* (residual vs unconstrained). These
+      are orthogonal axes. Which axis does degradation actually live on?
+  - level: 3
+    title: "Frame as identity-recovery"
+    body_md: |
+      The hypothesis is that plain stacks fail because the optimizer cannot
+      reach the identity mapping when the optimum is near identity. Which
+      branch makes the identity mapping the network's *default* behavior
+      with zero learned parameters?

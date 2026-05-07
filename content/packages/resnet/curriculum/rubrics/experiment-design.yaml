@@ -1,0 +1,57 @@
+id: rubric-experiment-design
+title: "Experiment-design critique rubric"
+description: |
+  Used by `S007`. Grades a critique of a proposed experimental design,
+  rewarding identification of confounders and proposal of cheaper, sharper
+  experiments.
+applies_to:
+  - S007
+grader: hybrid
+llm_grading_allowed: true
+total_points: 100
+criteria:
+  - id: distinguishability
+    title: "Identifies what the design can and cannot distinguish"
+    description: "Names the specific hypothesis the proposed swap could resolve and the hypotheses it cannot."
+    weight: 30
+    levels:
+      - score: 0
+        description: "Treats the design as cleanly testing 'vanishing gradients caused degradation'."
+      - score: 15
+        description: "Notices ambiguity but does not separate distinguishable from indistinguishable cases."
+      - score: 30
+        description: "Cleanly states which conclusion is licensed by which outcome and why."
+  - id: confounders
+    title: "Names confounders"
+    description: "Identifies at least one specific confounder that prevents the design from cleanly isolating the gradient story."
+    weight: 25
+    levels:
+      - score: 0
+        description: "No confounders identified."
+      - score: 15
+        description: "Names a confounder but does not explain how it muddles the conclusion."
+      - score: 25
+        description: "Names a specific confounder (e.g., LayerNorm changes regularization, batch dependence, statistics) and explains the consequence."
+  - id: cheaper-experiment
+    title: "Proposes a cheaper sharper experiment"
+    description: "Suggests an alternative experiment that more directly tests the identity-recovery hypothesis."
+    weight: 25
+    levels:
+      - score: 0
+        description: "No alternative proposed."
+      - score: 15
+        description: "Alternative proposed but not clearly cheaper or sharper."
+      - score: 25
+        description: "Concrete, low-cost experiment that varies one knob and isolates a single mechanism."
+  - id: scope-discipline
+    title: "Stays within what the evidence licenses"
+    description: "Avoids overclaiming what a null or positive result of the swap would imply."
+    weight: 20
+    levels:
+      - score: 0
+        description: "Asserts that a null result implies a single specific mechanism."
+      - score: 10
+        description: "Treats the design as informative but does not bound implications carefully."
+      - score: 20
+        description: "Carefully bounds what each outcome would license."
+pass_threshold: 60

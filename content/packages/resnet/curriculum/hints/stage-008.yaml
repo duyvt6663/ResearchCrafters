@@ -1,0 +1,22 @@
+id: hints-stage-008
+stage_id: S008
+levels:
+  - level: 1
+    title: "Pick *one* divergence"
+    body_md: |
+      Don't try to compare every step. Identify the single point where
+      your reasoning differed most from the expert reconstruction.
+  - level: 2
+    title: "If–then rule"
+    body_md: |
+      Convert your insight into a portable rule of the form:
+      "If I see X (curve feature, decision context), then I will Y." This
+      is the format that travels to other papers.
+  - level: 3
+    title: "An honest extension"
+    body_md: |
+      The package can become more honest by adding a branch that
+      *limits* the residual story (e.g., a dataset where shortcut
+      connections do not help, or a depth at which residual vs plain
+      ties). Pick one extension and explain why it would teach more than
+      another claim of success.

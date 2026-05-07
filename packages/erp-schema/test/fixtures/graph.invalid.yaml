@@ -1,0 +1,5 @@
+nodes:
+  - id: N001
+    type: not_a_real_type
+    title: "Bad node"
+    stage: stages/001.md

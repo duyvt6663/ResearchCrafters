@@ -1,0 +1,24 @@
+id: S002
+title: "Stage missing pass_threshold"
+type: framing
+difficulty: easy
+estimated_time_minutes: 5
+artifact_refs: []
+task:
+  prompt_md: "Do the thing."
+stage_policy:
+  mentor_visibility:
+    stage_copy: always
+    artifact_refs: always
+    rubric: always
+    evidence: always
+    branch_feedback: always
+    canonical_solution: after_pass
+    branch_solutions: never
+  runner:
+    mode: none
+  validation:
+    kind: rubric
+  inputs:
+    mode: free_text
+  feedback: {}

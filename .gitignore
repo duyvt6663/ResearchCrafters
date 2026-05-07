@@ -2,3 +2,37 @@
 .codex/
 AGENTS.md
 CLAUDE.md
+
+# Node / monorepo
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# Test output
+coverage/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Local CLI state
+.researchcrafters/
