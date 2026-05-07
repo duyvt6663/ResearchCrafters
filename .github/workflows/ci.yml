@@ -62,6 +62,17 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # Playwright e2e smoke tests run against the Next.js dev server defined
+      # in `playwright.config.ts`. The flagship browser flows (catalog →
+      # package overview → enroll → first stage) currently rely on the stub
+      # data layer and don't need a live Postgres; once the data layer lands
+      # on Prisma we'll add a `services:` section here for postgres/redis.
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E (Playwright)
+        run: pnpm test:e2e
+
       - name: Validate ERP packages
         shell: bash
         run: |

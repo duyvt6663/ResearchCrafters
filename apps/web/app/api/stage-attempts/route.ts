@@ -22,7 +22,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   const session = await getSession();
-  const access = permissions.canAccess({
+  const access = await permissions.canAccess({
     user: session,
     packageVersionId: enr.packageVersionId,
     stage: { ref: stage.ref, isFreePreview: stage.isFreePreview, isLocked: stage.isLocked },

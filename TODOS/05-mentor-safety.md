@@ -2,7 +2,7 @@
 
 Goal: provide useful AI mentorship without turning the mentor into an answer oracle.
 
-Status (2026-05-07): see `PROGRESS.md` for the snapshot. Checkboxes below
+Status (2026-05-08): see `PROGRESS.md` for the snapshot. Checkboxes below
 reflect that snapshot.
 
 ## Stage Policy

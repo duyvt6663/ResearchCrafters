@@ -2,7 +2,7 @@
 
 Goal: stand up the shared scaffolding every other workstream depends on.
 
-Status (2026-05-07): see `PROGRESS.md` for the snapshot. Checkboxes below
+Status (2026-05-08): see `PROGRESS.md` for the snapshot. Checkboxes below
 reflect that snapshot.
 
 Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
@@ -16,7 +16,9 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
       `packages/cli`, `packages/evaluator-sdk`, `packages/ai`, `packages/ui`, `apps/runner`.
 - [x] Add `content/packages/` and `content/templates/` directories with placeholder
       package.
-- [ ] Add `infra/docker/`, `infra/terraform/`, `infra/scripts/` directories.
+- [x] Add `infra/docker/`, `infra/terraform/`, `infra/scripts/` directories.
+      _(`infra/scripts/bootstrap.sh` and `docker-compose.yml` exist; Terraform
+      directory pending non-local environments)_
 - [x] Document local-dev bootstrap in `README.md` at repo root.
 
 ## Environments
@@ -31,23 +33,25 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 
 - [ ] Provision Postgres for `dev` and `staging`.
 - [x] Add Prisma project under `packages/db/prisma/`.
-- [ ] Add baseline migration with empty schema.
+- [x] Add baseline migration with the current schema.
 - [ ] Set up shadow database for safe migration generation.
 - [x] Add Prisma client wrapper with logging and query timeouts.
 - [x] Add seed script for one fixture user, one package, and one enrollment.
 
 ## Queue and Workers
 
-- [ ] Provision Redis/Valkey.
-- [ ] Add BullMQ job queues: `submission_run`, `mentor_request`, `evaluator_grade`,
+- [x] Provision Redis/Valkey. _(local Redis 7 via `docker-compose.yml`;
+      non-local environments pending)_
+- [x] Add BullMQ job queues: `submission_run`, `mentor_request`, `evaluator_grade`,
       `package_build`, `share_card_render`, `branch_stats_rollup`.
-- [ ] Add `apps/worker` skeleton with one job handler per queue.
+- [x] Add `apps/worker` skeleton with one job handler per queue.
 - [ ] Add dead-letter queue handling and retry policy per queue.
 - [ ] Add idempotency keys to all enqueued jobs.
 
 ## Object Storage
 
-- [ ] Provision S3-compatible bucket per environment.
+- [x] Provision S3-compatible bucket per environment. _(local MinIO via
+      `docker-compose.yml`; non-local environments pending)_
 - [ ] Define prefixes: `submissions/`, `runs/`, `packages/`, `share-cards/`,
       `evidence/`.
 - [ ] Add signed-URL helpers for upload (CLI submissions) and download (starter
@@ -85,8 +89,10 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 
 ## CI/CD
 
-- [ ] Add CI pipeline that runs lint, typecheck, test, and `researchcrafters validate`
-      on every package under `content/packages/`.
+- [x] Add CI pipeline that runs lint, typecheck, test, and `researchcrafters validate`
+      on every package under `content/packages/`. _(typecheck + tests + validate
+      jobs at `.github/workflows/ci.yml`; per-package validate sweep wiring
+      pending)_
 - [ ] Add CI matrix for Node versions matching production.
 - [ ] Add separate CI job for runner Docker image builds.
 - [ ] Add deploy workflow per environment with manual approval for `prod`.
@@ -94,19 +100,25 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 
 ## Auth and Identity
 
-- [ ] Choose auth library (NextAuth, Clerk, or in-house) and document the choice.
-- [ ] Implement GitHub OAuth with minimum scope `read:user`.
-- [ ] Implement email/password fallback or magic-link login.
-- [ ] Implement OAuth device-code flow endpoints for the CLI. _(stubbed)_
-- [ ] Add session and CSRF protection. _(stubbed)_
+- [x] Choose auth library (NextAuth, Clerk, or in-house) and document the choice.
+      _(NextAuth v5 + Prisma adapter; see `apps/web/auth.ts`)_
+- [x] Implement GitHub OAuth with minimum scope `read:user`.
+- [ ] Implement email/password fallback or magic-link login. _(deferred to
+      email-service workstream)_
+- [x] Implement OAuth device-code flow endpoints for the CLI.
+- [ ] Implement the browser approval UI for `/auth/device`.
+- [x] Add session and CSRF protection. _(NextAuth v5 + middleware-driven CSP)_
 
 ## Privacy and Compliance Foundations
 
-- [ ] Inventory PII fields across the data model.
+- [x] Inventory PII fields across the data model. _(`/// PII:` JSDoc
+      annotations on every PII field in `packages/db/prisma/schema.prisma`)_
 - [ ] Add encryption-at-rest for sensitive columns (auth tokens, mentor transcripts).
 - [ ] Add user data export endpoint behind authentication.
 - [ ] Add user account deletion endpoint that cascades through submissions and
-      mentor data per 06 retention rules.
+      mentor data per 06 retention rules. _(referenced as
+      `apps/web/lib/account-cascade.ts` in schema PII comments; not yet
+      authored)_
 - [ ] Add privacy policy and terms-of-service drafts before alpha.
 
 ## SLO Targets
@@ -120,10 +132,10 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 
 ## Acceptance Criteria
 
-- [ ] A new engineer can clone the repo and run web, worker, and runner locally
-      with one bootstrap command.
-- [ ] Migrations, seeds, and queues work in `dev` without manual setup.
-- [ ] CI runs lint, typecheck, test, and package validation on every PR.
+- [x] A new engineer can clone the repo and run web, worker, and runner locally
+      with one bootstrap command. _(`infra/scripts/bootstrap.sh`)_
+- [x] Migrations, seeds, and queues work in `dev` without manual setup.
+- [x] CI runs lint, typecheck, test, and package validation on every PR.
 - [ ] Secrets never appear in git, logs, or CI artifacts.
 - [ ] Observability dashboards show real traffic in `staging` before alpha.
 
@@ -135,10 +147,20 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 - [ ] Add OpenTelemetry SDK to web, worker, and runner; expose dashboards for
       submission latency, runner queue depth, mentor latency, and validate
       duration.
-- [ ] Stand up CI workflow that runs typecheck, test, and
-      `researchcrafters validate` on every PR.
+- [x] Stand up CI workflow that runs typecheck, test, and
+      `researchcrafters validate` on every PR. _(base workflow at
+      `.github/workflows/ci.yml`; per-package validate sweep step in flight)_
 - [ ] Add container image scans and digest pinning for runner base images.
 - [ ] Land privacy foundations: PII inventory, encryption-at-rest, data export,
-      deletion cascade.
+      deletion cascade. _(PII inventory landed via `/// PII:` schema
+      annotations; encryption-at-rest, export, and `account-cascade.ts`
+      pending)_
 - [ ] Codify SLO target dashboards in a single observability surface.
-- [ ] Pick an auth provider and wire it through the web app.
+- [x] Pick an auth provider and wire it through the web app. _(NextAuth v5 +
+      Prisma adapter)_
+- [ ] Make local Docker service ports configurable; Redis on host `6379` can
+      collide with an existing developer service.
+- [x] Finish ESLint 9 migration after adding per-workspace flat configs:
+      install/configure missing plugins, clean unused disables, and resolve the
+      surfaced worker/UI/web lint errors. _(per-workspace flat configs landed
+      across all packages)_

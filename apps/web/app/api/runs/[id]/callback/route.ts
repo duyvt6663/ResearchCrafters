@@ -23,7 +23,7 @@ export async function POST(
   // policy with a synthetic admin-style call so every API path uses the
   // single canAccess surface.
   const session = await getSession();
-  const access = permissions.canAccess({
+  const access = await permissions.canAccess({
     user: session,
     packageVersionId: "runner-callback",
     stage: { ref: "runner-callback", isFreePreview: true, isLocked: false },

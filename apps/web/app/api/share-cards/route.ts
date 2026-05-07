@@ -19,7 +19,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   if (!enr) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const session = await getSession();
-  const access = permissions.canAccess({
+  const access = await permissions.canAccess({
     user: session,
     packageVersionId: enr.packageVersionId,
     stage: { ref: enr.activeStageRef, isFreePreview: false, isLocked: false },

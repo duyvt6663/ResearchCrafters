@@ -14,6 +14,10 @@ export default tseslint.config(
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
       '@typescript-eslint/consistent-type-imports': 'error',
+      // We intentionally use `interface X extends Y {}` for forward-compat
+      // marker types. The default error here is too aggressive for a
+      // workspace that shares prop interfaces across components.
+      '@typescript-eslint/no-empty-object-type': 'off',
     },
   },
 );

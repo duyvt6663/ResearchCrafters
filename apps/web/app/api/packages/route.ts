@@ -10,7 +10,7 @@ export async function GET(): Promise<NextResponse> {
   // Catalog is treated as a free `view_stage` action against a synthetic
   // "preview" stage so we route through the same policy surface every other
   // route uses. Real impl will move catalog visibility into the policy.
-  const access = permissions.canAccess({
+  const access = await permissions.canAccess({
     user: session,
     packageVersionId: "catalog",
     stage: { ref: "catalog", isFreePreview: true, isLocked: false },

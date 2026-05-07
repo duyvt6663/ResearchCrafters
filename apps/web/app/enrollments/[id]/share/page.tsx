@@ -7,6 +7,13 @@ import { getPackageBySlug } from "@/lib/data/packages";
 
 type Params = { id: string };
 
+/**
+ * Opt out of static prerender: this page reads enrollment + package rows from
+ * Prisma. Static prerender would try to query the DB at build time without a
+ * `DATABASE_URL`; force-dynamic defers it to request time.
+ */
+export const dynamic = "force-dynamic";
+
 export default async function SharePage({
   params,
 }: {

@@ -11,7 +11,7 @@ export async function GET(
   const { id } = await params;
   const session = await getSession();
 
-  const access = permissions.canAccess({
+  const access = await permissions.canAccess({
     user: session,
     packageVersionId: "unknown",
     stage: { ref: "grade", isFreePreview: false, isLocked: false },

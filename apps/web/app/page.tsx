@@ -4,6 +4,14 @@ import { copy } from "@researchcrafters/ui/copy";
 import { listPackages } from "@/lib/data/packages";
 import { track } from "@/lib/telemetry";
 
+/**
+ * Opt out of static prerender: this page reads the package catalog from Prisma
+ * (via `lib/data/packages`), and Prisma must not run at build time without a
+ * live `DATABASE_URL`. Forcing dynamic rendering moves the query to request
+ * time so `pnpm build` does not crash on a missing env.
+ */
+export const dynamic = "force-dynamic";
+
 export default async function CatalogPage(): Promise<ReactElement> {
   const packages = await listPackages();
 

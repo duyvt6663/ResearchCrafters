@@ -2,7 +2,7 @@
 
 Goal: make progress, decisions, entitlement, privacy, and share loops reliable.
 
-Status (2026-05-07): see `PROGRESS.md` for the snapshot. Checkboxes below
+Status (2026-05-08): see `PROGRESS.md` for the snapshot. Checkboxes below
 reflect that snapshot.
 
 ## Core Data Model
@@ -51,7 +51,10 @@ reflect that snapshot.
 - [x] Support `view_branch_feedback`.
 - [x] Support `create_share_card`.
 - [x] Support `view_solution`.
-- [ ] Use memberships, entitlements, package status, free stages, stage gates, and roles. _(stubbed)_
+- [ ] Use memberships, entitlements, package status, free stages, stage gates,
+      and roles. _(route policy exists, but still has stubbed `u-paid` logic;
+      async/Prisma rewrite in flight — call sites updated, source/test cleanup
+      pending)_
 - [x] Add tests that every route calls the policy.
 
 ## Version and Patch Policy
@@ -142,17 +145,18 @@ reflect that snapshot.
 
 ## Acceptance Criteria
 
-- [ ] Branch selections can power safe share-card percentages.
+- [x] Branch selections can power safe share-card percentages.
 - [x] Free-stage access cannot drift between routes.
 - [x] Package versions and patches are auditable.
 - [ ] Analytics map directly to PRD success metrics.
 
 ## Open gaps from snapshot
 
-- [ ] Generate the baseline Prisma migration and make `pnpm db:migrate`
+- [x] Generate the baseline Prisma migration and make `pnpm db:migrate`
       runnable.
-- [ ] Replace the web `lib/data/*` in-memory stubs with real Prisma queries
-      through `@researchcrafters/db`.
+- [x] Replace the web package/enrollment/stage in-memory stubs with Prisma-backed
+      queries through `@researchcrafters/db`.
+- [ ] Fix `/api/packages` to await the Prisma-backed package list.
 - [ ] Wire `permissions.canAccess` to live `Membership` and `Entitlement` rows.
 - [ ] Build the branch-stats rollup job (per-branch N>=5, per-node N>=20, 5%
       rounding).

@@ -32,6 +32,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
 const RESNET_DIR = path.join(REPO_ROOT, "content", "packages", "resnet");
 
+// The fixture email lives on the @researchcrafters.dev domain so it matches
+// the admin allowlist convention used by the auth-db-agent and the planned
+// Auth.js admin gate. Do NOT change to fixture@example.com or similar — the
+// allowlist treats non-@researchcrafters.dev addresses as unprivileged users
+// and the seeded fixture would lose admin scope.
 const FIXTURE_USER_EMAIL = "fixture@researchcrafters.dev";
 const FIXTURE_PACKAGE_SLUG = "resnet";
 // Canonical free stages for the ResNet ERP. The package YAML's release block
@@ -613,13 +618,13 @@ async function main(): Promise<void> {
       },
     }));
 
-  // eslint-disable-next-line no-console
+   
   console.log(
     `seeded ${FIXTURE_PACKAGE_SLUG}@${loaded.package.version} with ` +
       `${build.stages.length} stages, ${build.branches.length} branches, ` +
       `1 enrollment`,
   );
-  // eslint-disable-next-line no-console
+   
   console.log("Seed details", {
     userId: user.id,
     membershipId: membership.id,
@@ -632,7 +637,7 @@ async function main(): Promise<void> {
 
 main()
   .catch((err: unknown) => {
-    // eslint-disable-next-line no-console
+     
     console.error("Seed failed:", err);
     process.exitCode = 1;
   })

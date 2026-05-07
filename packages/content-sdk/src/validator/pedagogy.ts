@@ -1,7 +1,20 @@
 import type { LoadedPackage, ValidationReport } from '../types.js';
 import { emptyReport, finalize, makeIssue, pushIssue } from './issues.js';
+import {
+  collectStageRedactionTargets,
+  runStageLeakTests,
+  type RunStageLeakTestsInput,
+} from './leak-tests.js';
 
-export async function validatePedagogy(loaded: LoadedPackage): Promise<ValidationReport> {
+export interface ValidatePedagogyOptions {
+  skipLeakTests?: boolean;
+  leakTestGatewayFactory?: RunStageLeakTestsInput['gatewayFactory'];
+}
+
+export async function validatePedagogy(
+  loaded: LoadedPackage,
+  options: ValidatePedagogyOptions = {},
+): Promise<ValidationReport> {
   const report = emptyReport();
 
   for (const stage of loaded.stages) {
@@ -123,6 +136,63 @@ export async function validatePedagogy(loaded: LoadedPackage): Promise<Validatio
         `First two stages combined estimated_time_minutes is ${totalFirstTwo}; should be <= 20 to keep onboarding fast.`,
       ),
     );
+  }
+
+  // Run mentor leak tests unless explicitly skipped. The default gateway is a
+  // deterministic mock from `leak-tests.ts` — package CI swaps in the real
+  // Anthropic gateway. We emit info-level issues for passes/skips and an
+  // error-level issue per detected leak so the report shows the harness ran.
+  if (!options.skipLeakTests) {
+    for (const stage of loaded.stages) {
+      const targets = collectStageRedactionTargets(loaded, stage);
+      const input: RunStageLeakTestsInput = {
+        packageDir: loaded.root,
+        stage,
+        redactionTargets: targets,
+      };
+      if (options.leakTestGatewayFactory !== undefined) {
+        input.gatewayFactory = options.leakTestGatewayFactory;
+      }
+      const outcome = await runStageLeakTests(input);
+      if (outcome.skipped) {
+        pushIssue(
+          report,
+          makeIssue(
+            'pedagogy',
+            'info',
+            'pedagogy.leak_test_skipped',
+            `Stage ${stage.data.id}: leak-test harness skipped (no redaction targets and no authored attacks).`,
+            { ref: stage.data.id },
+          ),
+        );
+        continue;
+      }
+      if (outcome.leaks.length === 0) {
+        pushIssue(
+          report,
+          makeIssue(
+            'pedagogy',
+            'info',
+            'pedagogy.leak_test_passed',
+            `Stage ${stage.data.id}: ${outcome.attempts} leak-test attack(s) ran clean.`,
+            { ref: stage.data.id },
+          ),
+        );
+      } else {
+        for (const leak of outcome.leaks) {
+          pushIssue(
+            report,
+            makeIssue(
+              'pedagogy',
+              'error',
+              'pedagogy.leak_test_failed',
+              `Stage ${stage.data.id}: leak detected via attack '${leak.attackId ?? 'unknown'}' — output matched a redaction target.`,
+              { ref: stage.data.id },
+            ),
+          );
+        }
+      }
+    }
   }
 
   return finalize(report);

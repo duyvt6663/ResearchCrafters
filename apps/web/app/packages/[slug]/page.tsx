@@ -11,6 +11,14 @@ import { track } from "@/lib/telemetry";
 
 type Params = { slug: string };
 
+/**
+ * Opt out of static prerender: this page resolves the package by slug through
+ * `getPackageBySlug`, which is backed by Prisma. Building statically would try
+ * to run the query without a `DATABASE_URL`; force-dynamic defers it to
+ * request time.
+ */
+export const dynamic = "force-dynamic";
+
 export default async function PackageOverviewPage({
   params,
 }: {

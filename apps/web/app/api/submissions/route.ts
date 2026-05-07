@@ -7,6 +7,7 @@ import { prisma, withQueryTimeout } from "@researchcrafters/db";
 import { getSessionFromRequest } from "@/lib/auth";
 import { denialHttpStatus, permissions } from "@/lib/permissions";
 import { track } from "@/lib/telemetry";
+import { getStorageEnv, signUploadUrl } from "@/lib/storage";
 import {
   submissionInitRequestSchema,
   submissionInitResponseSchema,
@@ -115,12 +116,21 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   let submissionId = `sub-${Date.now()}`;
+  // Pre-compute the bundle object key from the submissionId. Shape is
+  // deterministic (`submissions/<id>/bundle.tar`) so the runner workstream
+  // can derive the key from the submissionId without a second round trip.
+  // We rewrite the key once Prisma assigns the real id below.
+  let bundleObjectKey = `submissions/${submissionId}/bundle.tar`;
+
   try {
     const submission = await withQueryTimeout(
       prisma.submission.create({
         data: {
           stageAttemptId,
-          bundleObjectKey: `pending-${stageAttemptId}`,
+          // Persist a placeholder key first; we update it below with the real
+          // submission id once Prisma assigns it. This keeps a NOT NULL column
+          // satisfied without requiring a two-phase write.
+          bundleObjectKey,
           bundleSha: body.sha256.toLowerCase(),
           byteSize: body.byteSize,
           fileCount: body.fileCount,
@@ -129,9 +139,21 @@ export async function POST(req: Request): Promise<NextResponse> {
       }),
     );
     submissionId = submission.id;
+    bundleObjectKey = `submissions/${submissionId}/bundle.tar`;
+    try {
+      await withQueryTimeout(
+        prisma.submission.update({
+          where: { id: submissionId },
+          data: { bundleObjectKey },
+        }),
+      );
+    } catch {
+      // best-effort: the placeholder key already round-trips the contract.
+    }
   } catch {
     // DB unreachable: keep the synthesized id so the CLI loop can finish
     // round-tripping the contract shape.
+    bundleObjectKey = `submissions/${submissionId}/bundle.tar`;
   }
 
   await track("stage_attempt_submitted", {
@@ -139,10 +161,21 @@ export async function POST(req: Request): Promise<NextResponse> {
     stageRef: body.stageRef,
   });
 
+  const storageEnv = getStorageEnv();
+  const { uploadUrl, headers: signedHeaders } = await signUploadUrl({
+    bucket: storageEnv.buckets.submissions,
+    key: bundleObjectKey,
+    expiresIn: 600,
+    contentType: "application/octet-stream",
+  });
+
   const responseBody = submissionInitResponseSchema.parse({
     submissionId,
-    uploadUrl: `https://stub-storage.local/upload/${submissionId}`,
-    uploadHeaders: { "x-rc-submission-id": submissionId },
+    uploadUrl,
+    uploadHeaders: {
+      ...signedHeaders,
+      "x-rc-submission-id": submissionId,
+    },
   });
   return NextResponse.json(responseBody);
 }

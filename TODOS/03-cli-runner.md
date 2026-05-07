@@ -2,7 +2,7 @@
 
 Goal: support local-first CodeCrafters-style work for code and experiment stages.
 
-Status (2026-05-07): see `PROGRESS.md` for the snapshot. Checkboxes below
+Status (2026-05-08): see `PROGRESS.md` for the snapshot. Checkboxes below
 reflect that snapshot.
 
 Depends on: 08 (auth, signed URLs, runner base images). Used by: 01, 04.
@@ -14,7 +14,8 @@ behavior by the user's role and entitlement.
 
 Learner commands:
 
-- [x] `researchcrafters login` (OAuth device code flow). _(stubbed)_
+- [x] `researchcrafters login` (OAuth device code flow). _(API endpoints exist;
+      browser approval UI is still pending)_
 - [x] `researchcrafters logout` (revoke and clear local token).
 - [x] `researchcrafters start <package>`.
 - [x] `researchcrafters test` (local smoke tests).
@@ -39,7 +40,8 @@ Common:
 
 - [x] Decide CLI package name and distribution path.
 - [ ] Implement npm distribution first: `npx researchcrafters` or `npm create researchcrafters`.
-- [x] Use OAuth device code flow for login. _(stubbed)_
+- [x] Use OAuth device code flow for login. _(API endpoints exist; browser
+      approval UI is still pending)_
 - [x] Store auth token securely in local keychain or config fallback.
 - [x] Refresh tokens transparently; prompt re-login when refresh fails.
 - [x] On `start`, resolve package version, entitlement, stage manifest, and signed
@@ -102,7 +104,7 @@ Common:
 
 ## Acceptance Criteria
 
-- [ ] Learner can start a package locally and submit code.
+- [x] Learner can start a package locally and submit code.
 - [x] Runner returns structured execution status and raw artifacts.
 - [x] Evaluator receives artifacts only after successful execution.
 - [x] Replay fixture hashes make cached-evidence stages reproducible.
@@ -111,10 +113,12 @@ Common:
 
 - [ ] Land real Docker isolation (cgroup limits, network deny, secret stripping
       wired and tested) so `RUNNER_DOCKER_ENABLED=true` can run safely.
+      _(LocalFsSandbox covers dev — `apps/runner/src/sandboxes/local-fs.ts`)_
 - [ ] Wire `AnthropicGateway` to a real `ANTHROPIC_API_KEY` once a budget cap is
       in place.
 - [ ] Plug BullMQ workers into a live Redis broker.
-- [ ] Replace the OAuth device-code stub endpoint with real device-code polling.
+- [ ] Replace the development-only device-code force-approve path with the real
+      `/auth/device` browser approval flow.
 - [ ] Evaluate gVisor / Modal / E2B integration once Docker isolation is solid.
 - [ ] Publish CLI to npm with a release channel and versioning policy.
 - [ ] Decide per-stage GPU policy beyond the MVP CPU-only stance.
