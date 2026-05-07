@@ -119,6 +119,10 @@ prerequisites:
 release:
   free_stages: 2
   requires_gpu: false
+safety:
+  redaction_targets:
+    - "canonical answer phrase"
+    - "hidden implementation key"
 review:
   expert_reviewer: ""
   last_reviewed_at: ""
@@ -185,6 +189,19 @@ inputs:
 validation:
   kind: rubric # test | metric | rubric | hybrid
   rubric: curriculum/rubrics/problem-framing.yaml
+runner:
+  mode: replay # test | replay | mini_experiment
+  config: workspace/runner.yaml
+  fixtures:
+    - path: workspace/fixtures/profile_case_01.json
+      sha256: "..."
+stage_policy:
+  mentor_visibility:
+    artifact_refs: true
+    rubric: true
+    branch_feedback: after_attempt
+    canonical_solution: after_pass
+    branch_solutions: never
 hints:
   progressive: curriculum/hints/stage-001.yaml
 feedback:
@@ -196,6 +213,17 @@ feedback:
 Stage copy should follow the CodeCrafters pattern: hook, explanation, tests or rubric,
 and notes. The first 2-3 stages should be intentionally lightweight so the learner reaches
 the core loop quickly.
+
+`stage_policy` is mandatory for mentor safety. It controls when branch feedback,
+canonical solutions, branch solutions, and evidence are visible to the mentor context
+builder and to the learner.
+
+`safety.redaction_targets` is mandatory when any stage uses LLM mentor feedback or LLM
+grading. It lists canonical phrases, answer keys, and hidden implementation snippets that
+must be removed from mentor/evaluator output before display.
+
+Replay stages must declare fixture hashes. The runner refuses to execute a replay stage if
+any fixture hash mismatches.
 
 ## 7. Branch Types
 
@@ -254,6 +282,14 @@ ERP quality should be validated in layers:
 5. Expert review: a qualified reviewer checks correctness, branch fairness, and evidence
    calibration.
 6. Beta cohort review: early learners expose confusing stages and missing hints.
+
+Implementation rule:
+
+- `researchcrafters validate` runs layers 1-4 locally and in CI.
+- Expert review and beta cohort review are release gates.
+- Mentor leak tests are part of layer 4: each stage receives adversarial mentor prompts,
+  and the package fails validation if restricted canonical answers are revealed.
+- Evaluator leak tests are also part of layer 4 for any rubric that allows LLM grading.
 
 ## 10. Authoring Workflow
 
