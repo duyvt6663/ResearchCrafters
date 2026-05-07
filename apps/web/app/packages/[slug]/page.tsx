@@ -5,6 +5,7 @@ import {
   CardBody,
   CardHeader,
   DecisionChoiceList,
+  DecisionGraphMobile,
   PackageOverview,
   StatusBadge,
 } from "@researchcrafters/ui/components";
@@ -111,9 +112,12 @@ export default async function PackageOverviewPage({
           </div>
 
           <aside className="flex flex-col gap-6">
-            {/* Decision graph preview placeholder. The real React Flow graph
-                lives in @researchcrafters/ui and consumes the
-                /api/enrollments/:id/graph payload once the user enrolls. */}
+            {/* Decision graph preview. We render the package's sample decision
+                as a single-node `DecisionGraphMobile` here — same component
+                the live stage player uses on narrow viewports. Hidden branches
+                stay redacted by the component's own spoiler discipline. The
+                full multi-stage graph is loaded from /api/enrollments/:id/graph
+                once the learner enrolls. */}
             <section>
               <header className="mb-3">
                 <h2 className="text-[--text-rc-md] font-semibold text-[--color-rc-text]">
@@ -124,13 +128,33 @@ export default async function PackageOverviewPage({
                 </p>
               </header>
               <Card>
-                <CardBody className="p-0">
-                  <div
-                    className={
-                      "rc-graph-placeholder aspect-[4/3] w-full rounded-b-[--radius-rc-lg] " +
-                      "bg-[--color-rc-surface-muted]"
-                    }
-                    aria-label="decision graph preview"
+                <CardBody className="p-4">
+                  <DecisionGraphMobile
+                    nodes={[
+                      {
+                        ref: "preview",
+                        title: pkg.sampleDecision.prompt,
+                        type: "decision",
+                        status: "current",
+                        branches: pkg.sampleDecision.branches.map(
+                          (b, idx) => ({
+                            // Sample-decision branches don't carry a stable
+                            // id in the data layer; derive a stable key
+                            // from the index + type so React reconciles
+                            // cleanly without ever leaking the label.
+                            id: `preview-${idx}-${b.type}`,
+                            label: b.label,
+                            // Spoiler discipline lives in the component
+                            // too, but we double-down: only forward
+                            // `summary` when the branch is revealed by
+                            // stage_policy.
+                            summary: b.revealed ? b.summary : "",
+                            type: b.type,
+                            revealed: b.revealed,
+                          }),
+                        ),
+                      },
+                    ]}
                   />
                 </CardBody>
               </Card>

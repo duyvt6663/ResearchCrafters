@@ -8,10 +8,12 @@ status mirror. The latest verified state is listed first.
 
 ## Status today
 
-- `pnpm lint` — green. It still prints one cached UI warning for an unused
-  eslint-disable in `packages/ui/src/components/RunStatusPanel.tsx`.
+- `pnpm lint` — green across all 11 tasks.
 - `pnpm typecheck` — green across all 19 tasks.
-- `pnpm test` — green across all 18 tasks.
+- `pnpm test` — green across all 18 tasks. **Workspace total: 372 tests
+  passing + 9 skipped.** Per-package: web 133+9, cli 43, runner 42,
+  erp-schema 41, worker 28, content-sdk 23, ai 22, ui 19, evaluator-sdk 14,
+  telemetry 7.
 - `@researchcrafters/web` production build — green with local dev env
   (`DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`,
   `RESEARCHCRAFTERS_API_URL`).
@@ -44,7 +46,19 @@ status mirror. The latest verified state is listed first.
   submission init/finalize, run status, and run logs all respond. The
   unresolved-promise contract bugs are now fixed: `/api/packages` now
   `await`s `listPackages()` and `/api/enrollments/:id/graph` now `await`s
-  `getDecisionGraph(id)`.
+  `getDecisionGraph(id)`. **Route-handler regression suite is now 60+ tests
+  across 9 files**: `route-packages`, `route-stage-attempts`,
+  `route-share-cards`, `route-node-traversals`, `route-runs-callback`,
+  `route-mentor-messages`, `route-auth-device-code`,
+  `route-auth-device-token`, `route-runs-id` — pinning Bearer auth, body
+  validation 400 paths, the four-state device-code polling protocol,
+  `developer_force_approve` NODE_ENV gating (security stop pinned),
+  `mentor_policy` denial → authored-refusal-attached responses, runner
+  callback `X-Runner-Secret` constant-time gate, and the synthesized
+  `queued` Run row that lets the CLI's poll-loop survive missing rows.
+  CLI submit bundle policy (deny-list, 50 MiB / 5 MiB / 5000-file caps,
+  sorted-output sha256 determinism) covered by 10 tests in
+  `packages/cli/test/submit-bundle.test.ts`.
 - CLI smoke — validated `--version`, package validation, device-token auth,
   `researchcrafters start resnet`, and `researchcrafters submit`. The CLI can
   upload/finalize a submission. CLI/entitlements polish (persist `lastRunId`,
@@ -155,19 +169,26 @@ end-to-end is:
 Genuinely-open items not currently being closed by the in-flight sibling
 agents:
 
-- **`/api/runs/[id]/callback` still unauthenticated end-to-end.** It now
-  uses `getSessionFromRequest`, but has no service-token / runner-secret
-  gate. _(runner-loop agent is wiring `X-Runner-Secret`; until that lands the
-  route is open.)_
-- **No API route handler tests** — every `apps/web/app/api/**/route.ts`
-  lacks `Request -> Response` tests. test-coverage QA listed top-10
-  candidates (denial-status mapping, anonymized-email, stage-attempt 400
-  paths, mentor messages 4xx, submission-init bad sha256 propagation, etc.).
-- **CLI submit bundle policy untested.** The `.env` / `node_modules` /
-  `*.pem` / `.git` deny-list, the 50 MiB total cap, the 5 MiB per-file cap,
-  and the 5000-file cap are enforced inside `collectFiles` but no test ever
-  exercises them. A regression here could silently include `.env` files in
-  submissions and leak developer secrets.
+- ~~`/api/runs/[id]/callback` still unauthenticated end-to-end.~~ **Closed.**
+  The route now requires `X-Runner-Secret`, validated with a constant-time
+  compare; anonymous callers get 401 with a `WWW-Authenticate` hint and
+  zero DB writes. Pinned by `route-runs-callback.test.ts` (7 cases).
+- ~~No API route handler tests.~~ **Closed.** 9 route-handler test files
+  cover the highest-risk surface; 60+ tests pin contract shapes, auth
+  gates, body validation, and known regression vectors. Routes still
+  uncovered (lower-risk read-only endpoints): `/api/packages/[slug]`,
+  `/api/packages/[slug]/enroll`, `/api/enrollments/[id]/state`,
+  `/api/enrollments/[id]/graph`, `/api/grades/[id]`, `/api/entitlements`,
+  `/api/runs/[id]/logs`, `/api/cli/version`, `/api/auth/revoke`,
+  `/api/health`, `/api/admin/*`, `/api/account/*`, `/api/submissions`,
+  `/api/submissions/[id]/finalize`. Worth filing as a follow-up rather
+  than blocking MVP.
+- ~~CLI submit bundle policy untested.~~ **Closed.** 10 cases in
+  `packages/cli/test/submit-bundle.test.ts` pin every `.env` /
+  `node_modules` / `.git` / `.next` / `.turbo` / `dist` / `*.pem` /
+  `*.key` exclusion, the 50 MiB total cap, the 5 MiB per-file cap, the
+  5000-file cap (with the at-cap edge case held), and the sorted-output
+  sha256 determinism. A regression here would now break CI.
 - **`AnthropicGateway` real-provider path is mock-only.** Every mentor and
   grader test runs through `MockLLMGateway`; the wire shape, error handling
   (`rate_limit_error`, `overloaded_error`), and token-counting glue have
