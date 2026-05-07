@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Lock, Sparkles, Compass, ChevronRight } from "lucide-react";
 import { cn } from "../lib/cn.js";
+import { Prose } from "./Prose.js";
 import { StatusBadge } from "./StatusBadge.js";
 
 /**
@@ -173,7 +174,7 @@ export function DecisionGraphMobile({
                   <StatusBadge status={statusKey(node.status)} size="sm" />
                 </span>
                 <span className="mt-1 block text-(--text-rc-sm) font-medium text-(--color-rc-text)">
-                  {node.title}
+                  <Prose inline>{node.title}</Prose>
                 </span>
                 {node.branches && node.branches.length > 0 ? (
                   <ul className="mt-2 flex flex-col gap-1.5">
@@ -206,10 +207,12 @@ export function DecisionGraphMobile({
                                 : "text-(--color-rc-text-subtle)",
                             )}
                           >
-                            <span className="block font-medium">{b.label}</span>
+                            <span className="block font-medium">
+                              <Prose inline>{b.label}</Prose>
+                            </span>
                             {visible && b.summary ? (
                               <span className="block text-(--color-rc-text-muted)">
-                                {b.summary}
+                                <Prose inline>{b.summary}</Prose>
                               </span>
                             ) : null}
                           </span>

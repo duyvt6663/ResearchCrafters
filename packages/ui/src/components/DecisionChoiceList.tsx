@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "../lib/cn.js";
+import { Prose } from "./Prose.js";
 
 /**
  * DecisionChoiceList — row-based list of choices for a decision stage.
@@ -99,10 +100,12 @@ export function DecisionChoiceList({
                 className="mt-0.5"
               />
               <div className="flex-1">
-                <div className="text-(--text-rc-sm) font-medium">{label}</div>
+                <div className="text-(--text-rc-sm) font-medium">
+                  <Prose inline>{label}</Prose>
+                </div>
                 {tradeoff && revealed ? (
                   <div className="text-(--text-rc-xs) text-(--color-rc-text-muted) mt-0.5">
-                    {tradeoff}
+                    <Prose inline>{tradeoff}</Prose>
                   </div>
                 ) : null}
               </div>

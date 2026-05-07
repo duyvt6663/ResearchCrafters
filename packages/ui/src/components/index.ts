@@ -160,6 +160,9 @@ export type {
 export { ErrorPanel } from "./ErrorPanel.js";
 export type { ErrorPanelProps, ErrorPanelKind } from "./ErrorPanel.js";
 
+export { Prose } from "./Prose.js";
+export type { ProseProps } from "./Prose.js";
+
 export { DerivationStepList } from "./DerivationStepList.js";
 export type {
   DerivationStepListProps,

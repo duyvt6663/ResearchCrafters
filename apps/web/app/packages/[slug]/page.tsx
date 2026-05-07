@@ -9,6 +9,7 @@ import {
   DecisionChoiceList,
   DecisionGraphMobile,
   EvidenceCard,
+  Prose,
   StatusBadge,
 } from "@researchcrafters/ui/components";
 import { copy } from "@researchcrafters/ui/copy";
@@ -200,9 +201,7 @@ export default async function PackageOverviewPage({
               </header>
               <Card>
                 <CardBody className="flex flex-col gap-4 p-5">
-                  <p className="text-(--text-rc-sm) leading-relaxed text-(--color-rc-text)">
-                    {pkg.sampleDecision.prompt}
-                  </p>
+                  <Prose size="md">{pkg.sampleDecision.prompt}</Prose>
                   <DecisionChoiceList
                     choices={pkg.sampleDecision.branches.map((b, idx) => ({
                       id: `sample-${idx}`,
@@ -230,9 +229,9 @@ export default async function PackageOverviewPage({
               <h2 className="text-(--text-rc-md) font-semibold text-(--color-rc-text)">
                 {pkg.failedBranchLesson.title}
               </h2>
-              <p className="text-(--text-rc-sm) leading-relaxed text-(--color-rc-text-muted)">
+              <Prose size="sm" className="prose-rc text-(--color-rc-text-muted)">
                 {pkg.failedBranchLesson.redactedSummary}
-              </p>
+              </Prose>
             </section>
 
             <section>

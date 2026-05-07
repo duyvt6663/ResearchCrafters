@@ -2,8 +2,8 @@
 
 ## Choice (visible to learners)
 
-> Reformulate each block as `H(x) = F(x) + x`, where `F` is the learned
-> residual and `+ x` is an identity shortcut. Increase depth, train end-to-end.
+> Reformulate each block as $H(x) = F(x) + x$, where `F` is the learned
+> residual and $+ x$ is an identity shortcut. Increase depth, train end-to-end.
 
 ## Why this is canonical
 
@@ -19,7 +19,7 @@ the residual reformulation the right answer:
    zero is far easier than learning identity from scratch through a
    nonlinear stack. The reparameterisation moves the *easy* solution to
    the *initialisation distribution*.
-2. **Gradient reason.** `dH/dx = dF/dx + 1`. The constant `1` survives
+2. **Gradient reason.** $dH/dx = dF/dx + 1$. The constant `1` survives
    backprop through every block, so signal still flows through the
    shortcut even when `dF/dx` is small. Stacks of 50+ blocks remain
    trainable end-to-end without auxiliary losses or careful warm-up.
