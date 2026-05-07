@@ -53,12 +53,12 @@ export function StagePlayer({
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-col bg-[--color-rc-bg] text-[--color-rc-text]",
+        "flex h-full min-h-0 flex-col bg-(--color-rc-bg) text-(--color-rc-text)",
         className,
       )}
     >
       {header ? (
-        <div className="border-b border-[--color-rc-border] px-4 py-2">
+        <div className="border-b border-(--color-rc-border) px-4 py-2">
           {header}
         </div>
       ) : null}
@@ -68,7 +68,7 @@ export function StagePlayer({
         <aside
           aria-label="Stage map"
           className={cn(
-            "border-r border-[--color-rc-border] bg-[--color-rc-surface] overflow-auto",
+            "border-r border-(--color-rc-border) bg-(--color-rc-surface) overflow-auto",
             "hidden lg:block",
             mobileMapOpen ? "fixed inset-0 z-40 block lg:static" : "",
           )}
@@ -82,7 +82,7 @@ export function StagePlayer({
           {primaryAction ? (
             <div
               className={cn(
-                "sticky bottom-0 z-10 border-t border-[--color-rc-border] bg-[--color-rc-bg] p-3",
+                "sticky bottom-0 z-10 border-t border-(--color-rc-border) bg-(--color-rc-bg) p-3",
                 "flex items-center justify-end gap-2",
               )}
             >
@@ -95,7 +95,7 @@ export function StagePlayer({
         <aside
           aria-label="Stage context"
           className={cn(
-            "border-l border-[--color-rc-border] bg-[--color-rc-surface] overflow-auto",
+            "border-l border-(--color-rc-border) bg-(--color-rc-surface) overflow-auto",
             "hidden lg:block",
             mobileContextOpen ? "fixed inset-0 z-40 block lg:static" : "",
           )}

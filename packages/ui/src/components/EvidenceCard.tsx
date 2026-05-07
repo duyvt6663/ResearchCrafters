@@ -182,19 +182,19 @@ function TrainingCurve({
       </svg>
 
       {/* Legend underneath. */}
-      <ul className="flex flex-wrap gap-3 text-[--text-rc-xs] text-[--color-rc-text-muted]">
+      <ul className="flex flex-wrap gap-3 text-(--text-rc-xs) text-(--color-rc-text-muted)">
         {trajectories.map((t) => (
           <li
             key={t.name}
-            className="inline-flex items-center gap-1.5 font-[--font-rc-mono]"
+            className="inline-flex items-center gap-1.5 font-(--font-rc-mono)"
           >
             <span
               aria-hidden
               className={cn(
                 "block h-[2px] w-4 rounded-full",
                 t.tone === "residual"
-                  ? "bg-[--color-rc-accent]"
-                  : "bg-[--color-rc-text-subtle]",
+                  ? "bg-(--color-rc-accent)"
+                  : "bg-(--color-rc-text-subtle)",
               )}
             />
             {t.name}
@@ -213,17 +213,17 @@ function MetricTable({
   const rows = data.rows ?? [];
   const columns = data.columns ?? [];
   return (
-    <table className="w-full border-collapse text-[--text-rc-sm]">
+    <table className="w-full border-collapse text-(--text-rc-sm)">
       {columns.length > 0 ? (
         <thead>
           <tr>
-            <th className="border-b border-[--color-rc-border] py-1.5 text-left text-[--text-rc-xs] font-[--font-rc-mono] uppercase tracking-wide text-[--color-rc-text-subtle]">
+            <th className="border-b border-(--color-rc-border) py-1.5 text-left text-(--text-rc-xs) font-(--font-rc-mono) uppercase tracking-wide text-(--color-rc-text-subtle)">
               metric
             </th>
             {columns.map((c) => (
               <th
                 key={c}
-                className="border-b border-[--color-rc-border] py-1.5 text-right text-[--text-rc-xs] font-[--font-rc-mono] uppercase tracking-wide text-[--color-rc-text-subtle]"
+                className="border-b border-(--color-rc-border) py-1.5 text-right text-(--text-rc-xs) font-(--font-rc-mono) uppercase tracking-wide text-(--color-rc-text-subtle)"
               >
                 {c}
               </th>
@@ -234,13 +234,13 @@ function MetricTable({
       <tbody>
         {rows.map((row) => (
           <tr key={row.label}>
-            <td className="border-b border-[--color-rc-border]/60 py-1.5 pr-3 text-[--color-rc-text]">
+            <td className="border-b border-(--color-rc-border)/60 py-1.5 pr-3 text-(--color-rc-text)">
               {row.label}
             </td>
             {row.values.map((v, i) => (
               <td
                 key={`${row.label}-${i}`}
-                className="border-b border-[--color-rc-border]/60 py-1.5 text-right font-[--font-rc-mono] text-[--color-rc-text]"
+                className="border-b border-(--color-rc-border)/60 py-1.5 text-right font-(--font-rc-mono) text-(--color-rc-text)"
               >
                 {v}
               </td>
@@ -259,13 +259,13 @@ function FigurePlaceholder({ alt }: { alt?: string }) {
       aria-label={alt ?? "Figure placeholder"}
       className={cn(
         "relative flex aspect-[16/9] w-full items-center justify-center",
-        "rounded-[--radius-rc-md] border border-dashed border-[--color-rc-border]",
-        "bg-[--color-rc-surface]",
+        "rounded-(--radius-rc-md) border border-dashed border-(--color-rc-border)",
+        "bg-(--color-rc-surface)",
       )}
     >
       <span
         aria-hidden
-        className="absolute inset-0 rounded-[--radius-rc-md]"
+        className="absolute inset-0 rounded-(--radius-rc-md)"
         style={{
           backgroundImage:
             "radial-gradient(circle at 1px 1px, var(--color-rc-border) 1px, transparent 0)",
@@ -273,7 +273,7 @@ function FigurePlaceholder({ alt }: { alt?: string }) {
           opacity: 0.6,
         }}
       />
-      <span className="relative font-[--font-rc-mono] text-[--text-rc-xs] uppercase tracking-[0.1em] text-[--color-rc-text-subtle]">
+      <span className="relative font-(--font-rc-mono) text-(--text-rc-xs) uppercase tracking-[0.1em] text-(--color-rc-text-subtle)">
         figure
       </span>
     </div>
@@ -289,8 +289,8 @@ export function EvidenceCard({
   return (
     <figure
       className={cn(
-        "flex flex-col gap-3 rounded-[--radius-rc-lg] border border-[--color-rc-border]",
-        "bg-[--color-rc-surface] p-4",
+        "flex flex-col gap-3 rounded-(--radius-rc-lg) border border-(--color-rc-border)",
+        "bg-(--color-rc-surface) p-4",
         className,
       )}
       data-evidence-kind={kind}
@@ -304,7 +304,7 @@ export function EvidenceCard({
           {...(data?.alt !== undefined ? { alt: data.alt } : {})}
         />
       )}
-      <figcaption className="text-[--text-rc-xs] leading-relaxed text-[--color-rc-text-muted]">
+      <figcaption className="text-(--text-rc-xs) leading-relaxed text-(--color-rc-text-muted)">
         {caption}
       </figcaption>
     </figure>

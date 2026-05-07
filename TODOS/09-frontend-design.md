@@ -50,9 +50,9 @@ branch-stats suppression), 03 (CLI surface).
 - [ ] Learning session player desktop.
 - [ ] Learning session player mobile.
 - [ ] Decision stage.
-- [ ] Interactive math stage.
-- [ ] Writing stage.
-- [ ] Academic writing workshop stage.
+- [x] Interactive math stage.
+- [x] Writing stage.
+- [x] Academic writing workshop stage.
 - [ ] Analysis stage.
 - [ ] Code stage with CLI commands.
 - [ ] Experiment stage with run status.
@@ -140,32 +140,54 @@ failed branches, suboptimal branches, evidence, and synthesis.
 
 ## Interactive Math UI
 
-- [ ] Define `MathWorkspace` layout for derivation, shape, numeric, and
+- [x] Define `MathWorkspace` layout for derivation, shape, numeric, and
       explanation inputs.
-- [ ] Define `DerivationStepList` with locked givens, editable blanks, per-step
+- [x] Define `DerivationStepList` with locked givens, editable blanks, per-step
       validation, and per-step hints.
-- [ ] Define `ShapeTableEditor` for tensor dimensions, parameter counts, and
+- [x] Define `ShapeTableEditor` for tensor dimensions, parameter counts, and
       memory-layout reasoning.
-- [ ] Define `ToyExamplePanel` for small numeric examples with immediate sanity
+- [x] Define `ToyExamplePanel` for small numeric examples with immediate sanity
       feedback.
-- [ ] Define how math grades display partial credit without revealing canonical
+- [x] Define how math grades display partial credit without revealing canonical
       derivations before policy allows it.
-- [ ] Verify equations render cleanly on desktop and mobile; prefer
+- [x] Verify equations render cleanly on desktop and mobile; prefer
       Markdown/KaTeX before adding a full symbolic editor.
+
+_Iteration: math+rich-text agent (2026-05-08) — `packages/ui/src/components/MathWorkspace.tsx`,
+`DerivationStepList.tsx`, `ShapeTableEditor.tsx`, `ToyExamplePanel.tsx`,
+`packages/ui/src/lib/math.tsx`. KaTeX (`react-katex`) wrapped behind a runtime
+resolver so the surface degrades to a `<code>` fallback when the dep is not
+yet installed; `katex/dist/katex.min.css` documented as a host-app import in
+`packages/ui/src/styles.css`. Validation chips never reveal canonical answers —
+the public step shape carries no `expectedLatex` slot for the wrong-answer
+diff. Stage-player wiring: data layer currently maps "math" stage type onto
+the "code" mode (see `apps/web/lib/data/enrollment.ts:84`); follow-up =
+expose a richer "math" mode + per-stage derivation/shape/toy seeds before the
+host page can swap in `MathWorkspace`._
 
 ## Academic Writing UI
 
-- [ ] Define `WritingWorkbench` layout with evidence, draft, rubric, mentor
+- [x] Define `WritingWorkbench` layout with evidence, draft, rubric, mentor
       review, and revision panes.
 - [ ] Define `ClaimEvidenceMatrix` so sentence-level claims map to evidence
       refs or explicit caveats.
-- [ ] Define citation insertion from the evidence panel with verification
+- [x] Define citation insertion from the evidence panel with verification
       status.
 - [ ] Define `RevisionDiff` for claim surgery and reviewer-rebuttal edits.
 - [ ] Define `ReviewerPanel` for fixed reviewer criticism and response
       constraints.
-- [ ] Ensure writing modules feel like active editorial drills, not generic
+- [x] Ensure writing modules feel like active editorial drills, not generic
       essay boxes.
+
+_Iteration: math+rich-text agent (2026-05-08) — `packages/ui/src/components/WritingWorkbench.tsx`,
+`RichAnswerEditor.tsx`, `RichTextToolbar.tsx`. The 4-pane workbench wraps
+`EvidencePanel` + `RichAnswerEditor` + `RubricPanel` + `MentorPanel`. The
+"Insert ref" affordance from the evidence panel injects `[ref:<id>]` into
+the draft at the textarea caret, satisfying the citation-insertion row
+above and the corresponding `AnswerEditor` checkbox below. ClaimEvidenceMatrix
+and RevisionDiff are intentionally NOT shipped — the TODO calls them out as
+separate components and they need a sentence-level claim parsing model
+that's out of scope for this iteration._
 
 ## Mentor UI
 
@@ -189,12 +211,12 @@ failed branches, suboptimal branches, evidence, and synthesis.
 - [x] `StagePlayer`.
 - [x] `StageMap`.
 - [x] `DecisionChoiceList`.
-- [ ] `MathWorkspace`.
-- [ ] `DerivationStepList`.
-- [ ] `ShapeTableEditor`.
-- [ ] `ToyExamplePanel`.
+- [x] `MathWorkspace`.
+- [x] `DerivationStepList`.
+- [x] `ShapeTableEditor`.
+- [x] `ToyExamplePanel`.
 - [x] `AnswerEditor`.
-- [ ] `WritingWorkbench`.
+- [x] `WritingWorkbench`.
 - [ ] `ClaimEvidenceMatrix`.
 - [ ] `RevisionDiff`.
 - [ ] `ReviewerPanel`.
@@ -217,11 +239,19 @@ The named components above need explicit interaction specs.
 `AnswerEditor`:
 
 - [x] Draft autosave to backend with debounce.
-- [ ] Insert evidence/citation refs from the evidence panel.
+- [x] Insert evidence/citation refs from the evidence panel.
 - [ ] Word count and rubric-criterion live indicator.
 - [x] Sanitize paste-from-clipboard.
 - [x] Undo/redo and keyboard shortcuts.
 - [x] Restore drafts on reload.
+
+_Iteration: math+rich-text agent (2026-05-08) — citation insertion is wired
+through the `WritingWorkbench` host: `EvidencePanel.onInsertRef` triggers
+`WritingWorkbench`'s default callback, which writes `[ref:<id>]` at the
+textarea caret of the wrapped `RichAnswerEditor`. The autosave path
+(`AnswerEditor`'s `onAutoSave`) is unchanged and continues to fire
+debounced — see `packages/ui/src/components/RichAnswerEditor.tsx` and
+`WritingWorkbench.tsx`._
 
 `RunStatusPanel`:
 

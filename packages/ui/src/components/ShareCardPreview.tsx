@@ -126,43 +126,43 @@ export function ShareCardPreview({
     <article
       data-card="true"
       className={cn(
-        "w-[320px] rounded-[--radius-rc-lg] border border-[--color-rc-border] bg-[--color-rc-bg] p-4",
+        "w-[320px] rounded-(--radius-rc-lg) border border-(--color-rc-border) bg-(--color-rc-bg) p-4",
         className,
       )}
     >
       <header className="flex items-start justify-between gap-2 mb-3">
-        <h3 className="text-[--text-rc-md] font-semibold leading-snug">
+        <h3 className="text-(--text-rc-md) font-semibold leading-snug">
           {derivedTitle}
         </h3>
         <StatusBadge status={derivedStatus} size="sm" />
       </header>
 
-      <dl className="grid grid-cols-2 gap-2 text-[--text-rc-xs]">
+      <dl className="grid grid-cols-2 gap-2 text-(--text-rc-xs)">
         {derivedScore ? (
           <div>
-            <dt className="text-[--color-rc-text-muted]">Score</dt>
-            <dd className="font-[--font-rc-mono] text-[--color-rc-text]">
+            <dt className="text-(--color-rc-text-muted)">Score</dt>
+            <dd className="font-(--font-rc-mono) text-(--color-rc-text)">
               {derivedScore}
             </dd>
           </div>
         ) : null}
         {derivedBranch ? (
           <div>
-            <dt className="text-[--color-rc-text-muted]">Branch</dt>
-            <dd className="text-[--color-rc-text]">
+            <dt className="text-(--color-rc-text-muted)">Branch</dt>
+            <dd className="text-(--color-rc-text)">
               {BRANCH_LABEL[derivedBranch]}
             </dd>
           </div>
         ) : null}
         {derivedHardest ? (
           <div className="col-span-2">
-            <dt className="text-[--color-rc-text-muted]">Hardest decision</dt>
-            <dd className="text-[--color-rc-text]">{derivedHardest}</dd>
+            <dt className="text-(--color-rc-text-muted)">Hardest decision</dt>
+            <dd className="text-(--color-rc-text)">{derivedHardest}</dd>
           </div>
         ) : null}
         <div className="col-span-2">
-          <dt className="text-[--color-rc-text-muted]">Cohort</dt>
-          <dd className="text-[--color-rc-text]">
+          <dt className="text-(--color-rc-text-muted)">Cohort</dt>
+          <dd className="text-(--color-rc-text)">
             {cohortCopy ? (
               <span title={cohortCopy.description}>{cohortCopy.label}</span>
             ) : (
@@ -173,11 +173,11 @@ export function ShareCardPreview({
       </dl>
 
       {derivedInsight ? (
-        <p className="mt-3 text-[--text-rc-sm] text-[--color-rc-text]">
+        <p className="mt-3 text-(--text-rc-sm) text-(--color-rc-text)">
           “{derivedInsight}”
         </p>
       ) : captureLabel ? (
-        <p className="mt-3 text-[--text-rc-xs] text-[--color-rc-text-muted]">
+        <p className="mt-3 text-(--text-rc-xs) text-(--color-rc-text-muted)">
           {captureLabel}
         </p>
       ) : null}
@@ -187,7 +187,7 @@ export function ShareCardPreview({
           {publishLabel ? (
             <button
               type="button"
-              className="rounded-[--radius-rc-md] border border-[--color-rc-border] px-3 py-1.5 text-[--text-rc-sm] font-medium text-[--color-rc-text] hover:bg-[--color-rc-surface-muted]"
+              className="rounded-(--radius-rc-md) border border-(--color-rc-border) px-3 py-1.5 text-(--text-rc-sm) font-medium text-(--color-rc-text) hover:bg-(--color-rc-surface-muted)"
             >
               {publishLabel}
             </button>
@@ -195,7 +195,7 @@ export function ShareCardPreview({
           {unshareLabel ? (
             <button
               type="button"
-              className="rounded-[--radius-rc-md] border border-[--color-rc-border] px-3 py-1.5 text-[--text-rc-sm] font-medium text-[--color-rc-text-muted] hover:bg-[--color-rc-surface-muted]"
+              className="rounded-(--radius-rc-md) border border-(--color-rc-border) px-3 py-1.5 text-(--text-rc-sm) font-medium text-(--color-rc-text-muted) hover:bg-(--color-rc-surface-muted)"
             >
               {unshareLabel}
             </button>

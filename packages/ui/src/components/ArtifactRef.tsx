@@ -28,16 +28,16 @@ export function ArtifactRef({
     <>
       <FileText size={12} aria-hidden />
       {kind ? (
-        <span className="font-[--font-rc-mono] text-[--color-rc-text-subtle]">
+        <span className="font-(--font-rc-mono) text-(--color-rc-text-subtle)">
           {kind}
         </span>
       ) : null}
-      <span className="font-[--font-rc-mono]">{label}</span>
+      <span className="font-(--font-rc-mono)">{label}</span>
       {!inert && href ? <ExternalLink size={10} aria-hidden /> : null}
     </>
   );
   const baseClass = cn(
-    "inline-flex items-center gap-1 rounded-[--radius-rc-sm] border border-[--color-rc-border] bg-[--color-rc-surface] px-1.5 py-0.5 text-[--text-rc-xs] text-[--color-rc-text]",
+    "inline-flex items-center gap-1 rounded-(--radius-rc-sm) border border-(--color-rc-border) bg-(--color-rc-surface) px-1.5 py-0.5 text-(--text-rc-xs) text-(--color-rc-text)",
     className,
   );
   if (inert || !href) {
@@ -46,7 +46,7 @@ export function ArtifactRef({
   return (
     <a
       href={href}
-      className={cn(baseClass, "hover:bg-[--color-rc-surface-muted]")}
+      className={cn(baseClass, "hover:bg-(--color-rc-surface-muted)")}
       {...rest}
     >
       {inner}

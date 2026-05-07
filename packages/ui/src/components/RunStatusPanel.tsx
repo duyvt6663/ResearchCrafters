@@ -59,9 +59,9 @@ export interface RunStatusPanelProps {
 }
 
 const SEVERITY_CLASS: Record<LogSeverity, string> = {
-  info: "text-[--color-rc-text]",
-  warn: "text-[--color-rc-warning]",
-  error: "text-[--color-rc-danger]",
+  info: "text-(--color-rc-text)",
+  warn: "text-(--color-rc-warning)",
+  error: "text-(--color-rc-danger)",
 };
 
 const EXECUTION_BADGE: Record<RunExecutionStatus, StatusKey | null> = {
@@ -239,12 +239,12 @@ export function RunStatusPanel({
     <section
       aria-label="Run status"
       className={cn(
-        "flex h-full min-h-0 flex-col rounded-[--radius-rc-md] border border-[--color-rc-border] bg-[--color-rc-bg]",
+        "flex h-full min-h-0 flex-col rounded-(--radius-rc-md) border border-(--color-rc-border) bg-(--color-rc-bg)",
         className,
       )}
     >
       {/* Toolbar */}
-      <header className="flex flex-wrap items-center gap-2 border-b border-[--color-rc-border] px-2 py-1.5">
+      <header className="flex flex-wrap items-center gap-2 border-b border-(--color-rc-border) px-2 py-1.5">
         <div className="flex items-center gap-1.5">
           {execBadge ? (
             <StatusBadge status={execBadge} size="sm" />
@@ -253,14 +253,14 @@ export function RunStatusPanel({
           )}
         </div>
 
-        <label className="ml-auto inline-flex items-center gap-1 rounded-[--radius-rc-sm] border border-[--color-rc-border] bg-[--color-rc-surface] px-2 h-7 text-[--text-rc-sm]">
+        <label className="ml-auto inline-flex items-center gap-1 rounded-(--radius-rc-sm) border border-(--color-rc-border) bg-(--color-rc-surface) px-2 h-7 text-(--text-rc-sm)">
           <Search size={12} aria-hidden />
           <input
             type="search"
             placeholder="Search logs"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="bg-transparent outline-none w-32 placeholder:text-[--color-rc-text-subtle]"
+            className="bg-transparent outline-none w-32 placeholder:text-(--color-rc-text-subtle)"
             aria-label="Search log lines"
           />
         </label>
@@ -273,7 +273,7 @@ export function RunStatusPanel({
           <Filter
             size={12}
             aria-hidden
-            className="text-[--color-rc-text-muted] mr-1"
+            className="text-(--color-rc-text-muted) mr-1"
           />
           {(["info", "warn", "error"] as LogSeverity[]).map((sev) => (
             <button
@@ -282,10 +282,10 @@ export function RunStatusPanel({
               onClick={() => toggleSeverity(sev)}
               aria-pressed={severities.has(sev)}
               className={cn(
-                "rounded-[--radius-rc-sm] px-1.5 h-7 text-[--text-rc-xs] capitalize",
+                "rounded-(--radius-rc-sm) px-1.5 h-7 text-(--text-rc-xs) capitalize",
                 severities.has(sev)
-                  ? "bg-[--color-rc-surface] text-[--color-rc-text]"
-                  : "text-[--color-rc-text-subtle]",
+                  ? "bg-(--color-rc-surface) text-(--color-rc-text)"
+                  : "text-(--color-rc-text-subtle)",
               )}
             >
               {sev}
@@ -322,10 +322,10 @@ export function RunStatusPanel({
       {/* Log body */}
       <div
         ref={scrollRef}
-        className="min-h-0 flex-1 overflow-auto p-2 font-[--font-rc-mono] text-[--text-rc-xs] leading-snug"
+        className="min-h-0 flex-1 overflow-auto p-2 font-(--font-rc-mono) text-(--text-rc-xs) leading-snug"
       >
         {filtered.length === 0 ? (
-          <p className="text-[--color-rc-text-muted]">No log lines.</p>
+          <p className="text-(--color-rc-text-muted)">No log lines.</p>
         ) : (
           <ul>
             {filtered.map((line, i) => {
@@ -340,7 +340,7 @@ export function RunStatusPanel({
                 >
                   <span
                     aria-hidden
-                    className="flex-none select-none text-[--color-rc-text-subtle]"
+                    className="flex-none select-none text-(--color-rc-text-subtle)"
                   >
                     {formatTimestamp(line.ts)}
                   </span>
@@ -363,7 +363,7 @@ export function RunStatusPanel({
                       void copyLine(line);
                     }}
                     aria-label="Copy line with timestamp"
-                    className="flex-none opacity-0 group-hover:opacity-100 text-[--color-rc-text-subtle] hover:text-[--color-rc-text]"
+                    className="flex-none opacity-0 group-hover:opacity-100 text-(--color-rc-text-subtle) hover:text-(--color-rc-text)"
                   >
                     <Copy size={12} aria-hidden />
                   </button>

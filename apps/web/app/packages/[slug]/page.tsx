@@ -93,24 +93,24 @@ export default async function PackageOverviewPage({
     <main className="rc-page rc-page--package-overview">
       {/* Hero band — display headline + paper eyebrow + summary CTA on a
           dot-grid surface. The hero is the marketing surface. */}
-      <header className="relative overflow-hidden border-b border-[--color-rc-border] bg-[--color-rc-surface]">
+      <header className="relative overflow-hidden border-b border-(--color-rc-border) bg-(--color-rc-surface)">
         <div className="rc-hero-grid absolute inset-0 opacity-50" aria-hidden />
         <div className="relative mx-auto w-full max-w-[1280px] px-6 py-14 lg:px-8 lg:py-20">
           <div className="flex flex-col gap-5">
             <span className="rc-eyebrow">{pkg.paperTitle}</span>
             <div className="flex items-start justify-between gap-4">
-              <h1 className="rc-display max-w-3xl text-[--color-rc-text]">
+              <h1 className="rc-display max-w-3xl text-(--color-rc-text)">
                 {pkg.title}
               </h1>
               {pkg.releaseStatus ? (
                 <span
-                  className="flex-none rounded-[--radius-rc-sm] border border-[--color-rc-border] bg-[--color-rc-bg] px-2 py-0.5 font-[--font-rc-mono] text-[--text-rc-xs] uppercase tracking-[0.08em] text-[--color-rc-text-muted]"
+                  className="flex-none rounded-(--radius-rc-sm) border border-(--color-rc-border) bg-(--color-rc-bg) px-2 py-0.5 font-(--font-rc-mono) text-(--text-rc-xs) uppercase tracking-[0.08em] text-(--color-rc-text-muted)"
                 >
                   {pkg.releaseStatus}
                 </span>
               ) : null}
             </div>
-            <p className="max-w-2xl text-[--text-rc-lg] leading-[1.6] text-[--color-rc-text-muted]">
+            <p className="max-w-2xl text-(--text-rc-lg) leading-[1.6] text-(--color-rc-text-muted)">
               {pkg.oneLinePromise}
             </p>
           </div>
@@ -124,7 +124,7 @@ export default async function PackageOverviewPage({
           <div className="flex min-w-0 flex-col gap-10 md:col-span-7">
             <section>
               <span className="rc-eyebrow mb-3 block">Here's a taste</span>
-              <h2 className="mb-4 text-[--text-rc-xl] font-bold text-[--color-rc-text]">
+              <h2 className="mb-4 text-(--text-rc-xl) font-bold text-(--color-rc-text)">
                 What you will practice
               </h2>
               {/* Server-rendered Shiki snippet — this is the "you'll write
@@ -139,12 +139,12 @@ export default async function PackageOverviewPage({
                 />
               </div>
               {pkg.whatYouWillPractice.length > 0 ? (
-                <ul className="prose-rc flex flex-col gap-2 text-[--text-rc-sm] text-[--color-rc-text]">
+                <ul className="prose-rc flex flex-col gap-2 text-(--text-rc-sm) text-(--color-rc-text)">
                   {pkg.whatYouWillPractice.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span
                         aria-hidden
-                        className="mt-2 h-1 w-1 flex-none rounded-full bg-[--color-rc-accent]"
+                        className="mt-2 h-1 w-1 flex-none rounded-full bg-(--color-rc-accent)"
                       />
                       <span>{item}</span>
                     </li>
@@ -155,14 +155,14 @@ export default async function PackageOverviewPage({
 
             {pkg.skills.length > 0 ? (
               <section>
-                <h2 className="mb-3 text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+                <h2 className="mb-3 text-(--text-rc-md) font-semibold text-(--color-rc-text)">
                   Skills trained
                 </h2>
                 <ul className="flex flex-wrap gap-1.5">
                   {pkg.skills.map((s) => (
                     <li
                       key={s}
-                      className="inline-flex items-center rounded-[--radius-rc-sm] border border-[--color-rc-border] bg-[--color-rc-surface] px-2 py-0.5 text-[--text-rc-xs] text-[--color-rc-text-muted]"
+                      className="inline-flex items-center rounded-(--radius-rc-sm) border border-(--color-rc-border) bg-(--color-rc-surface) px-2 py-0.5 text-(--text-rc-xs) text-(--color-rc-text-muted)"
                     >
                       {s}
                     </li>
@@ -173,14 +173,14 @@ export default async function PackageOverviewPage({
 
             {pkg.prerequisites.length > 0 ? (
               <section>
-                <h2 className="mb-3 text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+                <h2 className="mb-3 text-(--text-rc-md) font-semibold text-(--color-rc-text)">
                   Prerequisites
                 </h2>
                 <ul className="flex flex-wrap gap-1.5">
                   {pkg.prerequisites.map((p) => (
                     <li
                       key={p}
-                      className="inline-flex items-center rounded-[--radius-rc-sm] border border-[--color-rc-border] bg-[--color-rc-surface] px-2 py-0.5 text-[--text-rc-xs] text-[--color-rc-text-muted]"
+                      className="inline-flex items-center rounded-(--radius-rc-sm) border border-(--color-rc-border) bg-(--color-rc-surface) px-2 py-0.5 text-(--text-rc-xs) text-(--color-rc-text-muted)"
                     >
                       {p}
                     </li>
@@ -191,16 +191,16 @@ export default async function PackageOverviewPage({
 
             <section>
               <header className="mb-3 flex items-baseline justify-between gap-3">
-                <h2 className="text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+                <h2 className="text-(--text-rc-md) font-semibold text-(--color-rc-text)">
                   {copy.packageOverview.sampleDecisionTitle}
                 </h2>
-                <span className="text-[--text-rc-xs] text-[--color-rc-text-subtle]">
+                <span className="text-(--text-rc-xs) text-(--color-rc-text-subtle)">
                   Read-only preview
                 </span>
               </header>
               <Card>
                 <CardBody className="flex flex-col gap-4 p-5">
-                  <p className="text-[--text-rc-sm] leading-relaxed text-[--color-rc-text]">
+                  <p className="text-(--text-rc-sm) leading-relaxed text-(--color-rc-text)">
                     {pkg.sampleDecision.prompt}
                   </p>
                   <DecisionChoiceList
@@ -219,24 +219,24 @@ export default async function PackageOverviewPage({
 
             <section
               className={
-                "flex flex-col gap-2 rounded-[--radius-rc-md] " +
-                "border border-[--color-rc-warning]/30 bg-[--color-rc-warning-subtle] " +
+                "flex flex-col gap-2 rounded-(--radius-rc-md) " +
+                "border border-(--color-rc-warning)/30 bg-(--color-rc-warning-subtle) " +
                 "px-5 py-5"
               }
             >
-              <span className="font-[--font-rc-mono] text-[--text-rc-xs] uppercase tracking-wide text-[--color-rc-warning]">
+              <span className="font-(--font-rc-mono) text-(--text-rc-xs) uppercase tracking-wide text-(--color-rc-warning)">
                 Failed-branch lesson
               </span>
-              <h2 className="text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+              <h2 className="text-(--text-rc-md) font-semibold text-(--color-rc-text)">
                 {pkg.failedBranchLesson.title}
               </h2>
-              <p className="text-[--text-rc-sm] leading-relaxed text-[--color-rc-text-muted]">
+              <p className="text-(--text-rc-sm) leading-relaxed text-(--color-rc-text-muted)">
                 {pkg.failedBranchLesson.redactedSummary}
               </p>
             </section>
 
             <section>
-              <h2 className="mb-3 text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+              <h2 className="mb-3 text-(--text-rc-md) font-semibold text-(--color-rc-text)">
                 Stages
               </h2>
               <ol className="flex flex-col">
@@ -244,19 +244,19 @@ export default async function PackageOverviewPage({
                   <li
                     key={stage.ref}
                     className={
-                      "flex items-center justify-between gap-3 py-3 text-[--text-rc-sm]" +
-                      (idx > 0 ? " border-t border-[--color-rc-border]" : "")
+                      "flex items-center justify-between gap-3 py-3 text-(--text-rc-sm)" +
+                      (idx > 0 ? " border-t border-(--color-rc-border)" : "")
                     }
                   >
                     <div className="flex min-w-0 flex-1 items-baseline gap-3">
-                      <span className="w-7 flex-none font-[--font-rc-mono] text-[--text-rc-xs] text-[--color-rc-text-subtle]">
+                      <span className="w-7 flex-none font-(--font-rc-mono) text-(--text-rc-xs) text-(--color-rc-text-subtle)">
                         {String(idx + 1).padStart(2, "0")}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium text-[--color-rc-text]">
+                        <div className="truncate font-medium text-(--color-rc-text)">
                           {stage.title}
                         </div>
-                        <div className="text-[--text-rc-xs] text-[--color-rc-text-muted]">
+                        <div className="text-(--text-rc-xs) text-(--color-rc-text-muted)">
                           {stage.type} · {stage.estimatedMinutes} min
                         </div>
                       </div>
@@ -278,33 +278,33 @@ export default async function PackageOverviewPage({
             <div className="md:sticky md:top-20 flex flex-col gap-6">
               <Card>
                 <CardHeader>
-                  <h2 className="text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+                  <h2 className="text-(--text-rc-md) font-semibold text-(--color-rc-text)">
                     Summary
                   </h2>
                 </CardHeader>
                 <CardBody className="flex flex-col gap-4 p-5">
-                  <dl className="grid grid-cols-3 gap-3 text-[--text-rc-sm]">
+                  <dl className="grid grid-cols-3 gap-3 text-(--text-rc-sm)">
                     <div className="flex flex-col gap-0.5">
-                      <dt className="text-[--text-rc-xs] uppercase tracking-wide text-[--color-rc-text-subtle]">
+                      <dt className="text-(--text-rc-xs) uppercase tracking-wide text-(--color-rc-text-subtle)">
                         Difficulty
                       </dt>
-                      <dd className="font-medium text-[--color-rc-text]">
+                      <dd className="font-medium text-(--color-rc-text)">
                         {pkg.difficulty}
                       </dd>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <dt className="text-[--text-rc-xs] uppercase tracking-wide text-[--color-rc-text-subtle]">
+                      <dt className="text-(--text-rc-xs) uppercase tracking-wide text-(--color-rc-text-subtle)">
                         Time
                       </dt>
-                      <dd className="font-medium text-[--color-rc-text]">
+                      <dd className="font-medium text-(--color-rc-text)">
                         {pkg.estimatedMinutes} min
                       </dd>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <dt className="text-[--text-rc-xs] uppercase tracking-wide text-[--color-rc-text-subtle]">
+                      <dt className="text-(--text-rc-xs) uppercase tracking-wide text-(--color-rc-text-subtle)">
                         Free
                       </dt>
-                      <dd className="font-medium text-[--color-rc-text]">
+                      <dd className="font-medium text-(--color-rc-text)">
                         {pkg.freeStageCount} stages
                       </dd>
                     </div>
@@ -312,15 +312,15 @@ export default async function PackageOverviewPage({
                   <a
                     href={ctaHref}
                     className={
-                      "inline-flex w-full items-center justify-center rounded-[--radius-rc-md] " +
-                      "bg-[--color-rc-accent] px-4 py-2.5 text-[--text-rc-sm] font-semibold " +
-                      "text-[--color-rc-accent-foreground] transition-colors duration-[--duration-rc-fast] " +
-                      "hover:bg-[--color-rc-accent-hover]"
+                      "inline-flex w-full items-center justify-center rounded-(--radius-rc-md) " +
+                      "bg-(--color-rc-accent) px-4 py-2.5 text-(--text-rc-sm) font-semibold " +
+                      "text-(--color-rc-accent-foreground) transition-colors duration-(--duration-rc-fast) " +
+                      "hover:bg-(--color-rc-accent-hover)"
                     }
                   >
                     {copy.packageOverview.startCta}
                   </a>
-                  <p className="text-[--text-rc-xs] leading-relaxed text-[--color-rc-text-subtle]">
+                  <p className="text-(--text-rc-xs) leading-relaxed text-(--color-rc-text-subtle)">
                     Get started in your editor:
                   </p>
                   <CommandBlock
@@ -336,10 +336,10 @@ export default async function PackageOverviewPage({
 
               <section>
                 <header className="mb-3">
-                  <h2 className="text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+                  <h2 className="text-(--text-rc-md) font-semibold text-(--color-rc-text)">
                     {copy.packageOverview.graphPreviewTitle}
                   </h2>
-                  <p className="text-[--text-rc-xs] text-[--color-rc-text-muted]">
+                  <p className="text-(--text-rc-xs) text-(--color-rc-text-muted)">
                     {copy.packageOverview.graphPreviewBody}
                   </p>
                 </header>
@@ -370,7 +370,7 @@ export default async function PackageOverviewPage({
 
               <section>
                 <header className="mb-3">
-                  <h2 className="text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+                  <h2 className="text-(--text-rc-md) font-semibold text-(--color-rc-text)">
                     {copy.packageOverview.evidenceTitle}
                   </h2>
                 </header>
@@ -386,7 +386,7 @@ export default async function PackageOverviewPage({
 
               <Card>
                 <CardHeader>
-                  <h2 className="text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+                  <h2 className="text-(--text-rc-md) font-semibold text-(--color-rc-text)">
                     Pricing
                   </h2>
                 </CardHeader>

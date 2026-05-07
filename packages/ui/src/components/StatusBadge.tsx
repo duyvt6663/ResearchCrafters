@@ -118,8 +118,8 @@ export const StatusBadge = React.forwardRef<HTMLSpanElement, StatusBadgeProps>(
         role="status"
         {...(tone !== undefined ? { "data-tone": tone } : {})}
         className={cn(
-          "inline-flex items-center gap-1 rounded-[--radius-rc-sm] font-medium",
-          size === "sm" ? "h-5 px-1.5 text-[--text-rc-xs]" : "h-6 px-2 text-[--text-rc-sm]",
+          "inline-flex items-center gap-1 rounded-(--radius-rc-sm) font-medium",
+          size === "sm" ? "h-5 px-1.5 text-(--text-rc-xs)" : "h-6 px-2 text-(--text-rc-sm)",
           className,
         )}
         style={{

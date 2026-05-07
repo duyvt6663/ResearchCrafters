@@ -63,10 +63,10 @@ async function copyToClipboard(text: string): Promise<boolean> {
 }
 
 const TONE_CLASSES: Record<NonNullable<CommandBlockOutput["tone"]>, string> = {
-  success: "text-[--color-rc-success]",
-  warning: "text-[--color-rc-warning]",
-  danger: "text-[--color-rc-danger]",
-  muted: "text-[--color-rc-code-muted]",
+  success: "text-(--color-rc-success)",
+  warning: "text-(--color-rc-warning)",
+  danger: "text-(--color-rc-danger)",
+  muted: "text-(--color-rc-code-muted)",
 };
 
 export const CommandBlock = React.forwardRef<HTMLDivElement, CommandBlockProps>(
@@ -100,8 +100,8 @@ export const CommandBlock = React.forwardRef<HTMLDivElement, CommandBlockProps>(
       <div
         ref={ref}
         className={cn(
-          "overflow-hidden rounded-[--radius-rc-lg] border border-[--color-rc-border-strong]",
-          "bg-[--color-rc-code-bg] text-[--color-rc-code-text]",
+          "overflow-hidden rounded-(--radius-rc-lg) border border-(--color-rc-border-strong)",
+          "bg-(--color-rc-code-bg) text-(--color-rc-code-text)",
           "shadow-[0_8px_24px_-12px_rgba(15,20,35,0.45)]",
           className,
         )}
@@ -111,7 +111,7 @@ export const CommandBlock = React.forwardRef<HTMLDivElement, CommandBlockProps>(
         <div
           className={cn(
             "flex h-7 items-center justify-between gap-3 border-b border-black/40 px-3",
-            "bg-[--color-rc-code-bg]",
+            "bg-(--color-rc-code-bg)",
           )}
         >
           <div className="flex items-center gap-1.5" aria-hidden>
@@ -131,14 +131,14 @@ export const CommandBlock = React.forwardRef<HTMLDivElement, CommandBlockProps>(
           {title ? (
             <span
               className={cn(
-                "truncate text-[11px] font-[--font-rc-mono]",
-                "text-[--color-rc-code-muted]",
+                "truncate text-[11px] font-(--font-rc-mono)",
+                "text-(--color-rc-code-muted)",
               )}
             >
               {title}
             </span>
           ) : (
-            <span className="text-[11px] font-[--font-rc-mono] text-[--color-rc-code-muted]">
+            <span className="text-[11px] font-(--font-rc-mono) text-(--color-rc-code-muted)">
               {caption ?? ""}
             </span>
           )}
@@ -149,9 +149,9 @@ export const CommandBlock = React.forwardRef<HTMLDivElement, CommandBlockProps>(
             }}
             aria-label={copied ? "Copied" : "Copy commands"}
             className={cn(
-              "inline-flex h-5 w-5 items-center justify-center rounded-[--radius-rc-sm]",
-              "text-[--color-rc-code-muted] transition-colors duration-[--duration-rc-fast]",
-              "hover:bg-white/5 hover:text-[--color-rc-code-text]",
+              "inline-flex h-5 w-5 items-center justify-center rounded-(--radius-rc-sm)",
+              "text-(--color-rc-code-muted) transition-colors duration-(--duration-rc-fast)",
+              "hover:bg-white/5 hover:text-(--color-rc-code-text)",
             )}
           >
             {copied ? <Check size={12} /> : <Copy size={12} />}
@@ -161,7 +161,7 @@ export const CommandBlock = React.forwardRef<HTMLDivElement, CommandBlockProps>(
         {/* Body — commands then output. */}
         <pre
           className={cn(
-            "m-0 overflow-x-auto px-4 py-3 font-[--font-rc-mono] text-[--text-rc-sm]",
+            "m-0 overflow-x-auto px-4 py-3 font-(--font-rc-mono) text-(--text-rc-sm)",
             "leading-[1.65] whitespace-pre-wrap",
           )}
         >
@@ -173,14 +173,14 @@ export const CommandBlock = React.forwardRef<HTMLDivElement, CommandBlockProps>(
                   <div key={j} className="flex items-baseline">
                     <span
                       aria-hidden
-                      className="mr-2 select-none text-[--color-rc-accent]"
+                      className="mr-2 select-none text-(--color-rc-accent)"
                     >
                       {j === 0 ? promptSymbol : ">"}
                     </span>
                     {typing && i === 0 && j === 0 ? (
                       <TypingLine text={ln} />
                     ) : (
-                      <code className="text-[--color-rc-code-text]">{ln}</code>
+                      <code className="text-(--color-rc-code-text)">{ln}</code>
                     )}
                   </div>
                 ))}
@@ -219,7 +219,7 @@ function TypingLine({ text }: { text: string }) {
   return (
     <span className="relative inline-flex items-center">
       <code
-        className="overflow-hidden whitespace-pre text-[--color-rc-code-text]"
+        className="overflow-hidden whitespace-pre text-(--color-rc-code-text)"
         style={{
           display: "inline-block",
           animation: `rc-typing ${Math.min(2400, 60 * charCount)}ms steps(${charCount}, end) 200ms 1 both`,
@@ -232,7 +232,7 @@ function TypingLine({ text }: { text: string }) {
       </code>
       <span
         aria-hidden
-        className="ml-0.5 inline-block h-[1.1em] w-[2px] bg-[--color-rc-accent]"
+        className="ml-0.5 inline-block h-[1.1em] w-[2px] bg-(--color-rc-accent)"
         style={{ animation: "rc-blink 1s steps(2, start) infinite" }}
       />
     </span>

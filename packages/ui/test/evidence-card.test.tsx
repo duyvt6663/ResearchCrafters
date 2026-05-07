@@ -62,7 +62,7 @@ describe("EvidenceCard", () => {
     expect(html).toContain("12.4");
     expect(html).toContain("0.80");
     // Mono treatment for the numeric cells.
-    expect(html).toContain("font-[--font-rc-mono]");
+    expect(html).toContain("font-(--font-rc-mono)");
   });
 
   it("renders the figure placeholder with an accessible role", () => {

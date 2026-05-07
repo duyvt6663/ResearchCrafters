@@ -59,7 +59,7 @@ export function GradePanel({
         <div className="flex items-center gap-2">
           <StatusBadge status={status} />
           {overallScore !== undefined ? (
-            <span className="font-[--font-rc-mono] text-[--text-rc-sm] text-[--color-rc-text-muted]">
+            <span className="font-(--font-rc-mono) text-(--text-rc-sm) text-(--color-rc-text-muted)">
               {formatPct(overallScore)}
             </span>
           ) : null}
@@ -68,23 +68,23 @@ export function GradePanel({
       </header>
 
       <div>
-        <h3 className="text-[--text-rc-sm] font-semibold text-[--color-rc-text] mb-1.5">
+        <h3 className="text-(--text-rc-sm) font-semibold text-(--color-rc-text) mb-1.5">
           Rubric
         </h3>
         <ul className="flex flex-col gap-1.5">
           {rubric.map((d) => (
             <li
               key={d.id}
-              className="rounded-[--radius-rc-sm] border border-[--color-rc-border] p-2"
+              className="rounded-(--radius-rc-sm) border border-(--color-rc-border) p-2"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[--text-rc-sm]">{d.name}</span>
-                <span className="font-[--font-rc-mono] text-[--text-rc-sm] text-[--color-rc-text-muted]">
+                <span className="text-(--text-rc-sm)">{d.name}</span>
+                <span className="font-(--font-rc-mono) text-(--text-rc-sm) text-(--color-rc-text-muted)">
                   {formatPct(d.score * 100)}
                 </span>
               </div>
               {d.comment ? (
-                <p className="mt-1 text-[--text-rc-xs] text-[--color-rc-text-muted]">
+                <p className="mt-1 text-(--text-rc-xs) text-(--color-rc-text-muted)">
                   {d.comment}
                 </p>
               ) : null}
@@ -95,7 +95,7 @@ export function GradePanel({
 
       {evidence.length > 0 ? (
         <div>
-          <h3 className="text-[--text-rc-sm] font-semibold mb-1.5">
+          <h3 className="text-(--text-rc-sm) font-semibold mb-1.5">
             Evidence cited
           </h3>
           <ul className="flex flex-wrap gap-1">
@@ -104,12 +104,12 @@ export function GradePanel({
                 {e.href ? (
                   <a
                     href={e.href}
-                    className="inline-flex items-center rounded-[--radius-rc-sm] border border-[--color-rc-border] px-1.5 py-0.5 text-[--text-rc-xs] text-[--color-rc-text] hover:bg-[--color-rc-surface-muted]"
+                    className="inline-flex items-center rounded-(--radius-rc-sm) border border-(--color-rc-border) px-1.5 py-0.5 text-(--text-rc-xs) text-(--color-rc-text) hover:bg-(--color-rc-surface-muted)"
                   >
                     {e.label}
                   </a>
                 ) : (
-                  <span className="inline-flex items-center rounded-[--radius-rc-sm] border border-[--color-rc-border] px-1.5 py-0.5 text-[--text-rc-xs] text-[--color-rc-text]">
+                  <span className="inline-flex items-center rounded-(--radius-rc-sm) border border-(--color-rc-border) px-1.5 py-0.5 text-(--text-rc-xs) text-(--color-rc-text)">
                     {e.label}
                   </span>
                 )}
@@ -121,10 +121,10 @@ export function GradePanel({
 
       {strengths && strengths.length > 0 ? (
         <div>
-          <h3 className="text-[--text-rc-sm] font-semibold mb-1.5">
+          <h3 className="text-(--text-rc-sm) font-semibold mb-1.5">
             What was strong
           </h3>
-          <ul className="list-disc pl-4 text-[--text-rc-sm] text-[--color-rc-text-muted]">
+          <ul className="list-disc pl-4 text-(--text-rc-sm) text-(--color-rc-text-muted)">
             {strengths.map((s, i) => (
               <li key={i}>{s}</li>
             ))}
@@ -134,10 +134,10 @@ export function GradePanel({
 
       {revisionPoints && revisionPoints.length > 0 ? (
         <div>
-          <h3 className="text-[--text-rc-sm] font-semibold mb-1.5">
+          <h3 className="text-(--text-rc-sm) font-semibold mb-1.5">
             What to revise
           </h3>
-          <ul className="list-disc pl-4 text-[--text-rc-sm] text-[--color-rc-text-muted]">
+          <ul className="list-disc pl-4 text-(--text-rc-sm) text-(--color-rc-text-muted)">
             {revisionPoints.map((s, i) => (
               <li key={i}>{s}</li>
             ))}

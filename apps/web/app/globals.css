@@ -13,8 +13,8 @@
 
 /* Tailwind v4 only auto-scans the app's own files. We have to explicitly
  * point it at the workspace package whose components carry our utility
- * classes. Without this, classes like `flex`, `text-[--color-rc-text]`, and
- * `bg-[--color-rc-surface]` never make it into the generated stylesheet —
+ * classes. Without this, classes like `flex`, `text-(--color-rc-text)`, and
+ * `bg-(--color-rc-surface)` never make it into the generated stylesheet —
  * which produces the "bland page" symptom we hit before this fix. */
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 

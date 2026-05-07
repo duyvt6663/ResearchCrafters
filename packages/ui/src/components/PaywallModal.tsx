@@ -66,18 +66,18 @@ export function PaywallModal({
       }}
     >
       <DialogContent title={copy.title} description={copy.body}>
-        <ul className="my-4 flex flex-col gap-2.5 text-[--text-rc-sm] leading-relaxed text-[--color-rc-text]">
+        <ul className="my-4 flex flex-col gap-2.5 text-(--text-rc-sm) leading-relaxed text-(--color-rc-text)">
           {copy.bullets.map((line, i) => (
             <li key={i} className="flex gap-3">
               <span
                 aria-hidden
-                className="mt-2 h-1.5 w-1.5 rounded-full bg-[--color-rc-accent] flex-none"
+                className="mt-2 h-1.5 w-1.5 rounded-full bg-(--color-rc-accent) flex-none"
               />
               <span>{line}</span>
             </li>
           ))}
         </ul>
-        <div className="mt-6 flex items-center justify-end gap-2 border-t border-[--color-rc-border] pt-4">
+        <div className="mt-6 flex items-center justify-end gap-2 border-t border-(--color-rc-border) pt-4">
           <Button variant="ghost" size="md" onClick={onClose}>
             {copy.secondaryCta}
           </Button>

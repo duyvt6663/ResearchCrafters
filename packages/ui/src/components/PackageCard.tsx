@@ -127,8 +127,8 @@ export function PackageCard({
       data-hover-lift={href ? "true" : undefined}
       className={cn(
         "group relative flex h-full flex-col overflow-hidden",
-        "rounded-[--radius-rc-lg] border border-[--color-rc-border]",
-        "bg-[--color-rc-surface] text-[--color-rc-text]",
+        "rounded-(--radius-rc-lg) border border-(--color-rc-border)",
+        "bg-(--color-rc-surface) text-(--color-rc-text)",
         className,
       )}
     >
@@ -144,11 +144,11 @@ export function PackageCard({
         onClick={onClick}
         className={cn(
           "flex h-full flex-col gap-3 p-5 pt-6",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-rc-accent] focus-visible:ring-offset-2 focus-visible:ring-offset-[--color-rc-bg]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--color-rc-accent) focus-visible:ring-offset-2 focus-visible:ring-offset-(--color-rc-bg)",
         )}
       >
         {paperTitle ? (
-          <p className="font-[--font-rc-mono] text-[10px] uppercase tracking-[0.12em] text-[--color-rc-text-subtle]">
+          <p className="font-(--font-rc-mono) text-[10px] uppercase tracking-[0.12em] text-(--color-rc-text-subtle)">
             {paperTitle}
           </p>
         ) : null}
@@ -156,9 +156,9 @@ export function PackageCard({
         <div className="flex items-start justify-between gap-3">
           <h3
             className={cn(
-              "text-[--text-rc-2xl] font-bold leading-[1.15] tracking-[-0.01em]",
-              "text-[--color-rc-text] transition-colors duration-[--duration-rc-fast]",
-              href && "group-hover:text-[--color-rc-accent]",
+              "text-(--text-rc-2xl) font-bold leading-[1.15] tracking-[-0.01em]",
+              "text-(--color-rc-text) transition-colors duration-(--duration-rc-fast)",
+              href && "group-hover:text-(--color-rc-accent)",
             )}
           >
             {title}
@@ -168,8 +168,8 @@ export function PackageCard({
           releaseStatus !== "live" ? (
             <span
               className={cn(
-                "flex-none rounded-[--radius-rc-sm] border px-1.5 py-0.5",
-                "text-[10px] font-[--font-rc-mono] uppercase tracking-[0.08em]",
+                "flex-none rounded-(--radius-rc-sm) border px-1.5 py-0.5",
+                "text-[10px] font-(--font-rc-mono) uppercase tracking-[0.08em]",
               )}
               style={{
                 color: RELEASE_TINT[releaseStatus],
@@ -182,7 +182,7 @@ export function PackageCard({
         </div>
 
         {pitch ? (
-          <p className="text-[--text-rc-sm] leading-[1.6] text-[--color-rc-text-muted]">
+          <p className="text-(--text-rc-sm) leading-[1.6] text-(--color-rc-text-muted)">
             {pitch}
           </p>
         ) : null}
@@ -193,15 +193,15 @@ export function PackageCard({
               <li
                 key={s}
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-[--radius-rc-sm]",
-                  "border border-[--color-rc-border] bg-[--color-rc-bg]",
-                  "px-2 py-0.5 text-[--text-rc-xs] text-[--color-rc-text-muted]",
+                  "inline-flex items-center gap-1 rounded-(--radius-rc-sm)",
+                  "border border-(--color-rc-border) bg-(--color-rc-bg)",
+                  "px-2 py-0.5 text-(--text-rc-xs) text-(--color-rc-text-muted)",
                 )}
               >
                 <Sparkles
                   size={10}
                   aria-hidden
-                  className="text-[--color-rc-accent]"
+                  className="text-(--color-rc-accent)"
                 />
                 {s}
               </li>
@@ -213,12 +213,12 @@ export function PackageCard({
         <div
           className={cn(
             "mt-auto flex items-center justify-between gap-2 pt-3",
-            "border-t border-[--color-rc-border] text-[--text-rc-xs]",
-            "text-[--color-rc-text-muted]",
+            "border-t border-(--color-rc-border) text-(--text-rc-xs)",
+            "text-(--color-rc-text-muted)",
           )}
         >
-          <span className="inline-flex items-center gap-1.5 font-[--font-rc-mono]">
-            <span className="font-medium uppercase tracking-wide text-[--color-rc-text]">
+          <span className="inline-flex items-center gap-1.5 font-(--font-rc-mono)">
+            <span className="font-medium uppercase tracking-wide text-(--color-rc-text)">
               {difficulty}
             </span>
             {timeLabel ? (
@@ -241,16 +241,16 @@ export function PackageCard({
               label={STATE_LABEL[state]}
             />
           ) : (
-            <span className="text-[--color-rc-text-subtle]">
+            <span className="text-(--color-rc-text-subtle)">
               {STATE_LABEL[state]}
             </span>
           )}
         </div>
 
         {state === "in_progress" && progress !== undefined ? (
-          <div className="h-1 w-full overflow-hidden rounded-[--radius-rc-sm] bg-[--color-rc-surface-muted]">
+          <div className="h-1 w-full overflow-hidden rounded-(--radius-rc-sm) bg-(--color-rc-surface-muted)">
             <div
-              className="h-full bg-[--color-rc-accent]"
+              className="h-full bg-(--color-rc-accent)"
               style={{
                 width: `${Math.max(0, Math.min(100, progress))}%`,
               }}

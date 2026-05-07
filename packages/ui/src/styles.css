@@ -5,10 +5,25 @@
  *   import "@researchcrafters/ui/styles.css";
  *
  * Tokens are exposed as CSS variables via `@theme` so Tailwind utilities pick
- * them up (e.g. `bg-[--color-surface]` or `text-rc-accent`).
+ * them up (e.g. `bg-(--color-surface)` or `text-rc-accent`).
  *
  * Light mode is the default; switching to `[data-theme="dark"]` flips the
  * variables. Do not override these directly; modify packages/ui/src/tokens.ts.
+ */
+
+/*
+ * KaTeX styles — required for `BlockMath` / `InlineMath` from `react-katex`.
+ *
+ * After `pnpm install` once `katex` is on disk, the host app should add
+ *   import "katex/dist/katex.min.css";
+ * to its root layout (Next: `app/layout.tsx`) so the math primitives in
+ * `MathWorkspace` / `DerivationStepList` / `ShapeTableEditor` render with
+ * proper formula glyph metrics. We deliberately do NOT `@import` it here
+ * because the bundler resolves CSS imports at compile-time even before
+ * the workspace install completes, which would crash the dev server in a
+ * pre-install state. The `react-katex` JS itself is loaded via the
+ * runtime resolver in `lib/math.tsx`, so the components fall back
+ * gracefully to mono `<code>` until both packages are installed.
  */
 
 @theme {
@@ -51,6 +66,32 @@
   --color-rc-code-bg: #1b2433;
   --color-rc-code-text: #f1e8da;
   --color-rc-code-muted: #7c8597;
+
+  /* ---------- Icon signal accent (emerald/mint) ----------
+   * The complementary tint to coral. Coral remains the brand primary (CTAs,
+   * focus rings); this green is for lucide icons that mean
+   * "runnable / passed / next / available / completed".
+   * Pairs as `text-(--color-rc-icon-accent)` and `bg-(--color-rc-icon-accent-soft)`.
+   */
+  --color-rc-icon-accent: #2ec27e;
+  --color-rc-icon-accent-soft: rgba(46, 194, 126, 0.12);
+
+  /* ---------- Language palette (CodeBlock chrome) ----------
+   * Each language's brand hue. Used as the CodeBlock left edge stripe and the
+   * lang chip color. Authors should not invent new lang colors — extend
+   * `tokens.ts#langColor` and add the matching CSS var here.
+   */
+  --color-rc-lang-python: #3776ab;
+  --color-rc-lang-typescript: #3178c6;
+  --color-rc-lang-javascript: #f7df1e;
+  --color-rc-lang-bash: #4eaa25;
+  --color-rc-lang-shell: #4eaa25;
+  --color-rc-lang-rust: #dea584;
+  --color-rc-lang-go: #00add8;
+  --color-rc-lang-markdown: #519aba;
+  --color-rc-lang-yaml: #cb171e;
+  --color-rc-lang-sql: #e48e00;
+  --color-rc-lang-json: #5c6bc0;
 
   /* ---------- Typography ---------- */
   --font-rc-sans: var(
@@ -146,6 +187,10 @@
   --color-rc-code-bg: #0a0f1c;
   --color-rc-code-text: #f1e8da;
   --color-rc-code-muted: #7c8597;
+
+  /* Icon-accent flips brighter in dark mode so it pops on the deep navy. */
+  --color-rc-icon-accent: #5ee9b5;
+  --color-rc-icon-accent-soft: rgba(94, 233, 181, 0.14);
 }
 
 /*
@@ -384,4 +429,123 @@ button:hover > [data-card],
     font-size: var(--text-rc-sm);
     line-height: 1.65;
   }
+
+  /*
+   * RichAnswerEditor preview prose. Tighter than `.prose-rc` (which is for
+   * marketing prose) because writing-stage previews live in narrow columns
+   * and need tight spacing for the editor split-view to feel responsive.
+   */
+  .rc-rich-prose {
+    color: var(--color-rc-text);
+    line-height: 1.55;
+    font-size: var(--text-rc-base);
+  }
+  .rc-rich-prose h1,
+  .rc-rich-prose h2,
+  .rc-rich-prose h3 {
+    color: var(--color-rc-text);
+    font-weight: 600;
+    line-height: 1.25;
+    margin-top: 1em;
+    margin-bottom: 0.4em;
+  }
+  .rc-rich-prose h1 { font-size: var(--text-rc-xl); }
+  .rc-rich-prose h2 { font-size: var(--text-rc-lg); }
+  .rc-rich-prose h3 { font-size: var(--text-rc-md); }
+  .rc-rich-prose p { margin: 0.5em 0; }
+  .rc-rich-prose ul,
+  .rc-rich-prose ol { margin: 0.5em 0; padding-left: 1.4em; }
+  .rc-rich-prose ul { list-style: disc; }
+  .rc-rich-prose ol { list-style: decimal; }
+  .rc-rich-prose li { margin: 0.15em 0; }
+  .rc-rich-prose strong { font-weight: 600; color: var(--color-rc-text); }
+  .rc-rich-prose em { font-style: italic; }
+  .rc-rich-prose code {
+    background: var(--color-rc-surface-muted);
+    padding: 1px 5px;
+    border-radius: var(--radius-rc-sm);
+    font-family: var(--font-rc-mono);
+    font-size: 0.92em;
+  }
+  .rc-rich-prose blockquote {
+    border-left: 3px solid var(--color-rc-accent);
+    padding-left: 0.8em;
+    margin: 0.6em 0;
+    color: var(--color-rc-text-muted);
+    font-style: italic;
+  }
+  .rc-rich-prose a {
+    color: var(--color-rc-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .rc-rich-prose pre {
+    background: var(--color-rc-code-bg);
+    color: var(--color-rc-code-text);
+    padding: 0.7em 0.9em;
+    border-radius: var(--radius-rc-md);
+    overflow-x: auto;
+    font-family: var(--font-rc-mono);
+    font-size: var(--text-rc-sm);
+  }
+  .rc-rich-prose pre code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+  }
+
+  /*
+   * Toolbar button visual — used by `RichTextToolbar`. Provides a 32px hit
+   * target, hover lift on the icon, and a green-tinted "active" state when
+   * the wrapped editor reports the formatting is currently applied.
+   */
+  .rc-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    width: 32px;
+    border-radius: var(--radius-rc-sm);
+    border: 1px solid var(--color-rc-border);
+    background: var(--color-rc-bg);
+    color: var(--color-rc-text-muted);
+    transition:
+      background-color var(--duration-rc-fast) var(--ease-rc-standard),
+      color var(--duration-rc-fast) var(--ease-rc-standard),
+      border-color var(--duration-rc-fast) var(--ease-rc-standard);
+  }
+  .rc-toolbar-btn:hover {
+    background: var(--color-rc-surface-muted);
+    color: var(--color-rc-text);
+    border-color: var(--color-rc-border-strong);
+  }
+  .rc-toolbar-btn[data-active="true"] {
+    color: var(--color-rc-icon-accent);
+    background: var(--color-rc-icon-accent-soft);
+    border-color: var(--color-rc-icon-accent);
+  }
+  .rc-toolbar-btn--sm {
+    height: 28px;
+    width: 28px;
+  }
+
+  /*
+   * Math workbench specifics. KaTeX defaults are fine for most surfaces but
+   * the derivation list needs a slightly tighter inline math sizing so it
+   * doesn't tower over surrounding 14px body copy.
+   */
+  .rc-math-step {
+    border-left: 2px solid var(--color-rc-border);
+    padding-left: 0.8em;
+  }
+  .rc-math-step[data-validation="passed"] {
+    border-left-color: var(--color-rc-icon-accent);
+  }
+  .rc-math-step[data-validation="wrong"] {
+    border-left-color: var(--color-rc-danger);
+  }
+  .rc-math-step[data-validation="partial"] {
+    border-left-color: var(--color-rc-warning);
+  }
+  .rc-math-step .katex { font-size: 1.05em; }
 }

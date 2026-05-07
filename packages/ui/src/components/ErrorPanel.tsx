@@ -38,33 +38,33 @@ const KIND_TONE: Record<
   { bg: string; border: string; fg: string; Icon: typeof AlertTriangle }
 > = {
   "runner-offline": {
-    bg: "bg-[--color-rc-warning-subtle]",
-    border: "border-[--color-rc-warning]/30",
-    fg: "text-[--color-rc-warning]",
+    bg: "bg-(--color-rc-warning-subtle)",
+    border: "border-(--color-rc-warning)/30",
+    fg: "text-(--color-rc-warning)",
     Icon: WifiOff,
   },
   "mentor-unavailable": {
-    bg: "bg-[--color-rc-warning-subtle]",
-    border: "border-[--color-rc-warning]/30",
-    fg: "text-[--color-rc-warning]",
+    bg: "bg-(--color-rc-warning-subtle)",
+    border: "border-(--color-rc-warning)/30",
+    fg: "text-(--color-rc-warning)",
     Icon: MessageSquareOff,
   },
   "stage-locked": {
-    bg: "bg-[--color-rc-locked-subtle]",
-    border: "border-[--color-rc-locked]/30",
-    fg: "text-[--color-rc-locked]",
+    bg: "bg-(--color-rc-locked-subtle)",
+    border: "border-(--color-rc-locked)/30",
+    fg: "text-(--color-rc-locked)",
     Icon: Lock,
   },
   "stale-cli": {
-    bg: "bg-[--color-rc-warning-subtle]",
-    border: "border-[--color-rc-warning]/30",
-    fg: "text-[--color-rc-warning]",
+    bg: "bg-(--color-rc-warning-subtle)",
+    border: "border-(--color-rc-warning)/30",
+    fg: "text-(--color-rc-warning)",
     Icon: AlertTriangle,
   },
   generic: {
-    bg: "bg-[--color-rc-surface]",
-    border: "border-[--color-rc-border]",
-    fg: "text-[--color-rc-text-muted]",
+    bg: "bg-(--color-rc-surface)",
+    border: "border-(--color-rc-border)",
+    fg: "text-(--color-rc-text-muted)",
     Icon: AlertTriangle,
   },
 };
@@ -85,7 +85,7 @@ export function ErrorPanel({
       role="alert"
       data-error-kind={kind}
       className={cn(
-        "flex gap-4 rounded-[--radius-rc-md] border px-5 py-5",
+        "flex gap-4 rounded-(--radius-rc-md) border px-5 py-5",
         tone.bg,
         tone.border,
         className,
@@ -95,25 +95,25 @@ export function ErrorPanel({
         aria-hidden
         className={cn(
           "mt-0.5 inline-flex h-8 w-8 flex-none items-center justify-center rounded-full",
-          "bg-[--color-rc-bg]/60",
+          "bg-(--color-rc-bg)/60",
           tone.fg,
         )}
       >
         <Icon size={16} />
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <h2 className="text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+        <h2 className="text-(--text-rc-md) font-semibold text-(--color-rc-text)">
           {title}
         </h2>
-        <p className="text-[--text-rc-sm] leading-relaxed text-[--color-rc-text-muted]">
+        <p className="text-(--text-rc-sm) leading-relaxed text-(--color-rc-text-muted)">
           {body}
         </p>
         {details ? (
           <pre
             className={cn(
-              "rounded-[--radius-rc-sm] border border-[--color-rc-border]",
-              "bg-[--color-rc-bg] p-2 font-[--font-rc-mono] text-[--text-rc-xs]",
-              "text-[--color-rc-text-muted] whitespace-pre-wrap",
+              "rounded-(--radius-rc-sm) border border-(--color-rc-border)",
+              "bg-(--color-rc-bg) p-2 font-(--font-rc-mono) text-(--text-rc-xs)",
+              "text-(--color-rc-text-muted) whitespace-pre-wrap",
             )}
           >
             {details}
@@ -124,11 +124,11 @@ export function ErrorPanel({
             <a
               href={retryHref}
               className={cn(
-                "mt-1 inline-flex w-fit items-center rounded-[--radius-rc-md]",
-                "border border-[--color-rc-border] bg-[--color-rc-bg]",
-                "px-3 py-1.5 text-[--text-rc-sm] font-medium text-[--color-rc-text]",
-                "transition-colors duration-[--duration-rc-fast]",
-                "hover:bg-[--color-rc-surface-muted]",
+                "mt-1 inline-flex w-fit items-center rounded-(--radius-rc-md)",
+                "border border-(--color-rc-border) bg-(--color-rc-bg)",
+                "px-3 py-1.5 text-(--text-rc-sm) font-medium text-(--color-rc-text)",
+                "transition-colors duration-(--duration-rc-fast)",
+                "hover:bg-(--color-rc-surface-muted)",
               )}
             >
               {cta}
@@ -137,11 +137,11 @@ export function ErrorPanel({
             <button
               type="button"
               className={cn(
-                "mt-1 inline-flex w-fit items-center rounded-[--radius-rc-md]",
-                "border border-[--color-rc-border] bg-[--color-rc-bg]",
-                "px-3 py-1.5 text-[--text-rc-sm] font-medium text-[--color-rc-text]",
-                "transition-colors duration-[--duration-rc-fast]",
-                "hover:bg-[--color-rc-surface-muted]",
+                "mt-1 inline-flex w-fit items-center rounded-(--radius-rc-md)",
+                "border border-(--color-rc-border) bg-(--color-rc-bg)",
+                "px-3 py-1.5 text-(--text-rc-sm) font-medium text-(--color-rc-text)",
+                "transition-colors duration-(--duration-rc-fast)",
+                "hover:bg-(--color-rc-surface-muted)",
               )}
             >
               {cta}

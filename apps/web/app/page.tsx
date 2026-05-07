@@ -32,7 +32,7 @@ export default async function CatalogPage(): Promise<ReactElement> {
           Two-column split: display headline + CTA on the left, terminal
           CommandBlock on the right with a typing animation that introduces
           the canonical CLI loop. */}
-      <header className="relative overflow-hidden border-b border-[--color-rc-border] bg-[--color-rc-surface]">
+      <header className="relative overflow-hidden border-b border-(--color-rc-border) bg-(--color-rc-surface)">
         <div className="rc-hero-grid absolute inset-0 opacity-60" aria-hidden />
         <div className="relative mx-auto w-full max-w-[1280px] px-6 py-20 lg:px-8 lg:py-28">
           <div className="grid gap-10 lg:grid-cols-[7fr_5fr] lg:items-center">
@@ -40,10 +40,10 @@ export default async function CatalogPage(): Promise<ReactElement> {
               <span className="rc-eyebrow">
                 The research-engineering gym
               </span>
-              <h1 className="rc-display-xl text-[--color-rc-text]">
+              <h1 className="rc-display-xl text-(--color-rc-text)">
                 {copy.landing.heroTitle}
               </h1>
-              <p className="max-w-xl text-[--text-rc-lg] leading-[1.6] text-[--color-rc-text-muted]">
+              <p className="max-w-xl text-(--text-rc-lg) leading-[1.6] text-(--color-rc-text-muted)">
                 {copy.landing.heroSubtitle}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -51,10 +51,10 @@ export default async function CatalogPage(): Promise<ReactElement> {
                   <a
                     href={`/packages/${firstPackage.slug}`}
                     className={
-                      "inline-flex items-center gap-1.5 rounded-[--radius-rc-md] " +
-                      "bg-[--color-rc-accent] px-4 py-2.5 text-[--text-rc-md] font-semibold " +
-                      "text-[--color-rc-accent-foreground] transition-colors duration-[--duration-rc-fast] " +
-                      "hover:bg-[--color-rc-accent-hover]"
+                      "inline-flex items-center gap-1.5 rounded-(--radius-rc-md) " +
+                      "bg-(--color-rc-accent) px-4 py-2.5 text-(--text-rc-md) font-semibold " +
+                      "text-(--color-rc-accent-foreground) transition-colors duration-(--duration-rc-fast) " +
+                      "hover:bg-(--color-rc-accent-hover)"
                     }
                   >
                     <span>Try the first decision</span>
@@ -64,11 +64,11 @@ export default async function CatalogPage(): Promise<ReactElement> {
                 <a
                   href="#catalog"
                   className={
-                    "inline-flex items-center gap-1.5 rounded-[--radius-rc-md] " +
-                    "border border-[--color-rc-border] bg-[--color-rc-bg] px-4 py-2.5 " +
-                    "text-[--text-rc-md] font-medium text-[--color-rc-text] " +
-                    "transition-colors duration-[--duration-rc-fast] " +
-                    "hover:border-[--color-rc-border-strong]"
+                    "inline-flex items-center gap-1.5 rounded-(--radius-rc-md) " +
+                    "border border-(--color-rc-border) bg-(--color-rc-bg) px-4 py-2.5 " +
+                    "text-(--text-rc-md) font-medium text-(--color-rc-text) " +
+                    "transition-colors duration-(--duration-rc-fast) " +
+                    "hover:border-(--color-rc-border-strong)"
                   }
                 >
                   Browse the catalog
@@ -104,7 +104,7 @@ export default async function CatalogPage(): Promise<ReactElement> {
           marketing-grade without any asset dependency. */}
       <section
         aria-label="How ResearchCrafters works"
-        className="border-b border-[--color-rc-border] bg-[--color-rc-bg]"
+        className="border-b border-(--color-rc-border) bg-(--color-rc-bg)"
       >
         <div className="mx-auto grid w-full max-w-[1280px] gap-6 px-6 py-12 sm:grid-cols-3 lg:px-8">
           <HowStep
@@ -135,12 +135,12 @@ export default async function CatalogPage(): Promise<ReactElement> {
         <div className="mb-8 flex flex-col gap-1">
           <span className="rc-eyebrow">Catalog</span>
           <div className="flex flex-wrap items-end justify-between gap-4">
-            <h2 className="text-[--text-rc-3xl] font-bold leading-tight tracking-[-0.01em] text-[--color-rc-text]">
+            <h2 className="text-(--text-rc-3xl) font-bold leading-tight tracking-[-0.01em] text-(--color-rc-text)">
               Pick a paper, rebuild its research.
             </h2>
             <CatalogFilters className="hidden md:flex" />
           </div>
-          <p className="max-w-2xl text-[--text-rc-md] text-[--color-rc-text-muted]">
+          <p className="max-w-2xl text-(--text-rc-md) text-(--color-rc-text-muted)">
             {packages.length === 1
               ? "One package, fully tested end-to-end."
               : `${packages.length} packages available — each with a free preview stage.`}
@@ -197,23 +197,23 @@ function HowStep({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <span className="font-[--font-rc-mono] text-[--text-rc-xs] text-[--color-rc-accent]">
+        <span className="font-(--font-rc-mono) text-(--text-rc-xs) text-(--color-rc-accent)">
           {index}
         </span>
-        <span aria-hidden className="h-px flex-1 bg-[--color-rc-border]" />
+        <span aria-hidden className="h-px flex-1 bg-(--color-rc-border)" />
       </div>
       <div className="flex items-start gap-3">
         <span
           aria-hidden
-          className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-[--radius-rc-md] border border-[--color-rc-border] bg-[--color-rc-surface] text-[--color-rc-accent]"
+          className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-(--radius-rc-md) border border-(--color-rc-border) bg-(--color-rc-surface) text-(--color-rc-accent)"
         >
           {icon}
         </span>
         <div className="flex flex-col gap-1.5">
-          <h3 className="text-[--text-rc-lg] font-semibold text-[--color-rc-text]">
+          <h3 className="text-(--text-rc-lg) font-semibold text-(--color-rc-text)">
             {title}
           </h3>
-          <p className="text-[--text-rc-sm] leading-[1.6] text-[--color-rc-text-muted]">
+          <p className="text-(--text-rc-sm) leading-[1.6] text-(--color-rc-text-muted)">
             {body}
           </p>
         </div>

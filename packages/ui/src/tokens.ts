@@ -15,6 +15,25 @@
  *    style terminal block (traffic-light dots, prompt prefix) needs its own
  *    surface tokens to live on.
  *
+ * Icon-accent decision (2026-05-08): coral remains the **brand primary** —
+ * CTAs, focus rings, the "this is the active stage" rail. We additionally
+ * surface an emerald/mint **icon-signal tint** (`--color-rc-icon-accent`):
+ *
+ *  - Light mode: `#2EC27E` (calm emerald — readable on cream).
+ *  - Dark mode:  `#5EE9B5` (bright mint — pops on deep navy).
+ *
+ * Use it ONLY on lucide icons that mean "runnable / passed / next / available
+ * / completed" (Play, CircleCheck, CheckCircle2, Sparkles, ArrowRight, Zap,
+ * Rocket, Terminal-as-runnable, Code2-in-CodeBlock-chip, step-number badges
+ * on the StageMap). Do NOT use it for warning (amber), danger (red), locked
+ * (muted gray), or primary CTA buttons — those keep coral.
+ *
+ * Language palette (2026-05-08): each Shiki language gets a distinct hue
+ * applied to the CodeBlock left edge stripe + lang chip. Coral stays the
+ * brand; the per-language colors are a navigational tint only — readers
+ * should be able to glance at a code block and tell "that's Python" vs
+ * "that's a shell command".
+ *
  * Single source of truth for color, typography, spacing, radius, motion,
  * breakpoints, and the canonical status palette. Consumers compose Tailwind
  * with these tokens (also exposed as CSS variables in `styles.css`).
@@ -62,6 +81,8 @@ export const colors = {
     codeBg: "#1B2433",
     codeText: "#F1E8DA",
     codeMuted: "#7C8597",
+    iconAccent: "#2EC27E",
+    iconAccentSoft: "rgba(46, 194, 126, 0.12)",
   },
   dark: {
     bg: "#0E1320",
@@ -96,6 +117,8 @@ export const colors = {
     codeBg: "#0A0F1C",
     codeText: "#F1E8DA",
     codeMuted: "#7C8597",
+    iconAccent: "#5EE9B5",
+    iconAccentSoft: "rgba(94, 233, 181, 0.14)",
   },
 } as const;
 
@@ -278,6 +301,76 @@ export const statusPalette = {
 
 export type StatusPaletteEntry = (typeof statusPalette)[StatusKey];
 
+/**
+ * Language-color palette for `CodeBlock` chrome. Each entry is the canonical
+ * brand hue for a language (used as the left edge stripe + lang chip text);
+ * the chip background uses the same hue at 12% alpha so the chip stays calm
+ * on light surfaces and readable on the dark `--color-rc-code-bg`.
+ *
+ * Anti-pattern: do not author new lang entries inline in components — extend
+ * this map so the entire codebase tags Python with the same blue.
+ */
+export const langColor = {
+  python: "#3776AB",
+  typescript: "#3178C6",
+  javascript: "#F7DF1E",
+  bash: "#4EAA25",
+  shell: "#4EAA25",
+  sh: "#4EAA25",
+  rust: "#DEA584",
+  go: "#00ADD8",
+  markdown: "#519ABA",
+  md: "#519ABA",
+  yaml: "#CB171E",
+  yml: "#CB171E",
+  sql: "#E48E00",
+  json: "#5C6BC0",
+} as const;
+
+export type LangColorKey = keyof typeof langColor;
+
+/**
+ * Resolve a Shiki language id to its brand hue. Falls back to `defaultColor`
+ * (the coral accent) for unknown languages so the chip is still visible.
+ */
+export function getLangColor(
+  lang: string | undefined,
+  defaultColor: string = "var(--color-rc-accent)",
+): string {
+  if (!lang) return defaultColor;
+  const key = lang.toLowerCase() as LangColorKey;
+  return (langColor as Record<string, string>)[key] ?? defaultColor;
+}
+
+/**
+ * Short uppercase chip label for a language id. Single-word languages
+ * collapse to their first 2-3 chars (`python` -> `PY`, `typescript` -> `TS`,
+ * `bash` -> `SH`). Falls back to the lang id uppercased, capped at 4 chars.
+ */
+const LANG_CHIP_LABEL: Record<string, string> = {
+  python: "PY",
+  typescript: "TS",
+  javascript: "JS",
+  bash: "SH",
+  shell: "SH",
+  sh: "SH",
+  rust: "RS",
+  go: "GO",
+  markdown: "MD",
+  md: "MD",
+  yaml: "YML",
+  yml: "YML",
+  sql: "SQL",
+  json: "JSON",
+  text: "TXT",
+};
+
+export function getLangChipLabel(lang: string | undefined): string {
+  if (!lang) return "TXT";
+  const key = lang.toLowerCase();
+  return LANG_CHIP_LABEL[key] ?? key.slice(0, 4).toUpperCase();
+}
+
 export const tokens = {
   colors,
   typography,
@@ -287,6 +380,7 @@ export const tokens = {
   motion,
   breakpoints,
   statusPalette,
+  langColor,
 } as const;
 
 export type Tokens = typeof tokens;

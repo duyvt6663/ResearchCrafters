@@ -35,24 +35,24 @@ export function MetricTable<Row>({
   return (
     <div
       className={cn(
-        "overflow-auto rounded-[--radius-rc-sm] border border-[--color-rc-border]",
+        "overflow-auto rounded-(--radius-rc-sm) border border-(--color-rc-border)",
         className,
       )}
     >
-      <table className="w-full border-collapse font-[--font-rc-mono] text-[--text-rc-xs]">
+      <table className="w-full border-collapse font-(--font-rc-mono) text-(--text-rc-xs)">
         {caption ? (
-          <caption className="text-left text-[--text-rc-sm] text-[--color-rc-text-muted] py-1.5 px-2">
+          <caption className="text-left text-(--text-rc-sm) text-(--color-rc-text-muted) py-1.5 px-2">
             {caption}
           </caption>
         ) : null}
-        <thead className="bg-[--color-rc-surface]">
+        <thead className="bg-(--color-rc-surface)">
           <tr>
             {columns.map((c) => (
               <th
                 key={c.id}
                 scope="col"
                 className={cn(
-                  "px-2 py-1 text-[--text-rc-xs] font-medium text-[--color-rc-text-muted] border-b border-[--color-rc-border]",
+                  "px-2 py-1 text-(--text-rc-xs) font-medium text-(--color-rc-text-muted) border-b border-(--color-rc-border)",
                   c.align === "right" ? "text-right" : "text-left",
                 )}
                 style={c.width ? { width: c.width } : undefined}
@@ -66,13 +66,13 @@ export function MetricTable<Row>({
           {rows.map((row, i) => (
             <tr
               key={rowKey(row, i)}
-              className="border-b border-[--color-rc-border] last:border-b-0"
+              className="border-b border-(--color-rc-border) last:border-b-0"
             >
               {columns.map((c) => (
                 <td
                   key={c.id}
                   className={cn(
-                    "px-2 py-1 text-[--color-rc-text]",
+                    "px-2 py-1 text-(--color-rc-text)",
                     c.align === "right" ? "text-right" : "text-left",
                   )}
                   style={c.width ? { width: c.width } : undefined}

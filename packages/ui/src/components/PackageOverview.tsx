@@ -68,27 +68,27 @@ export function PackageOverview({
         className,
       )}
     >
-      <header className="flex flex-col gap-3 border-b border-[--color-rc-border] pb-8">
-        <p className="font-[--font-rc-mono] text-[--text-rc-xs] uppercase tracking-[0.08em] text-[--color-rc-text-subtle]">
+      <header className="flex flex-col gap-3 border-b border-(--color-rc-border) pb-8">
+        <p className="font-(--font-rc-mono) text-(--text-rc-xs) uppercase tracking-[0.08em] text-(--color-rc-text-subtle)">
           {paperTitle}
         </p>
         <div className="flex items-start justify-between gap-4">
-          <h1 className="text-[--text-rc-3xl] font-bold leading-tight text-[--color-rc-text]">
+          <h1 className="text-(--text-rc-3xl) font-bold leading-tight text-(--color-rc-text)">
             {title}
           </h1>
           {releaseStatus ? (
             <span
               className={cn(
-                "flex-none rounded-[--radius-rc-sm] border border-[--color-rc-border]",
-                "px-1.5 py-0.5 text-[--text-rc-xs] uppercase tracking-wide",
-                "text-[--color-rc-text-muted]",
+                "flex-none rounded-(--radius-rc-sm) border border-(--color-rc-border)",
+                "px-1.5 py-0.5 text-(--text-rc-xs) uppercase tracking-wide",
+                "text-(--color-rc-text-muted)",
               )}
             >
               {releaseStatus}
             </span>
           ) : null}
         </div>
-        <p className="max-w-2xl text-[--text-rc-lg] leading-relaxed text-[--color-rc-text-muted]">
+        <p className="max-w-2xl text-(--text-rc-lg) leading-relaxed text-(--color-rc-text-muted)">
           {oneLinePromise}
         </p>
       </header>
@@ -98,15 +98,15 @@ export function PackageOverview({
         <div className="flex min-w-0 flex-col gap-8">
           {whatYouWillPractice.length > 0 ? (
             <section>
-              <h2 className="mb-3 text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+              <h2 className="mb-3 text-(--text-rc-md) font-semibold text-(--color-rc-text)">
                 What you will practice
               </h2>
-              <ul className="flex flex-col gap-2 text-[--text-rc-sm] leading-relaxed text-[--color-rc-text]">
+              <ul className="flex flex-col gap-2 text-(--text-rc-sm) leading-relaxed text-(--color-rc-text)">
                 {whatYouWillPractice.map((item) => (
                   <li key={item} className="flex gap-2">
                     <span
                       aria-hidden
-                      className="mt-2 h-1 w-1 flex-none rounded-full bg-[--color-rc-accent]"
+                      className="mt-2 h-1 w-1 flex-none rounded-full bg-(--color-rc-accent)"
                     />
                     <span>{item}</span>
                   </li>
@@ -117,7 +117,7 @@ export function PackageOverview({
 
           {skills.length > 0 ? (
             <section>
-              <h2 className="mb-3 text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+              <h2 className="mb-3 text-(--text-rc-md) font-semibold text-(--color-rc-text)">
                 Skills trained
               </h2>
               <ul className="flex flex-wrap gap-1.5">
@@ -125,9 +125,9 @@ export function PackageOverview({
                   <li
                     key={s}
                     className={cn(
-                      "inline-flex items-center rounded-[--radius-rc-sm]",
-                      "border border-[--color-rc-border] bg-[--color-rc-surface]",
-                      "px-2 py-0.5 text-[--text-rc-xs] text-[--color-rc-text-muted]",
+                      "inline-flex items-center rounded-(--radius-rc-sm)",
+                      "border border-(--color-rc-border) bg-(--color-rc-surface)",
+                      "px-2 py-0.5 text-(--text-rc-xs) text-(--color-rc-text-muted)",
                     )}
                   >
                     {s}
@@ -139,7 +139,7 @@ export function PackageOverview({
 
           {prerequisites.length > 0 ? (
             <section>
-              <h2 className="mb-3 text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+              <h2 className="mb-3 text-(--text-rc-md) font-semibold text-(--color-rc-text)">
                 Prerequisites
               </h2>
               <ul className="flex flex-wrap gap-1.5">
@@ -147,9 +147,9 @@ export function PackageOverview({
                   <li
                     key={p}
                     className={cn(
-                      "inline-flex items-center rounded-[--radius-rc-sm]",
-                      "border border-[--color-rc-border] bg-[--color-rc-surface]",
-                      "px-2 py-0.5 text-[--text-rc-xs] text-[--color-rc-text-muted]",
+                      "inline-flex items-center rounded-(--radius-rc-sm)",
+                      "border border-(--color-rc-border) bg-(--color-rc-surface)",
+                      "px-2 py-0.5 text-(--text-rc-xs) text-(--color-rc-text-muted)",
                     )}
                   >
                     {p}
@@ -160,7 +160,7 @@ export function PackageOverview({
           ) : null}
 
           <section>
-            <h2 className="mb-3 text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+            <h2 className="mb-3 text-(--text-rc-md) font-semibold text-(--color-rc-text)">
               Stages
             </h2>
             <ol className="flex flex-col">
@@ -168,19 +168,19 @@ export function PackageOverview({
                 <li
                   key={stage.ref}
                   className={cn(
-                    "flex items-center justify-between gap-3 py-3 text-[--text-rc-sm]",
-                    idx > 0 && "border-t border-[--color-rc-border]",
+                    "flex items-center justify-between gap-3 py-3 text-(--text-rc-sm)",
+                    idx > 0 && "border-t border-(--color-rc-border)",
                   )}
                 >
                   <div className="flex min-w-0 flex-1 items-baseline gap-3">
-                    <span className="w-7 flex-none font-[--font-rc-mono] text-[--text-rc-xs] text-[--color-rc-text-subtle]">
+                    <span className="w-7 flex-none font-(--font-rc-mono) text-(--text-rc-xs) text-(--color-rc-text-subtle)">
                       {String(idx + 1).padStart(2, "0")}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-medium text-[--color-rc-text]">
+                      <div className="truncate font-medium text-(--color-rc-text)">
                         {stage.title}
                       </div>
-                      <div className="text-[--text-rc-xs] text-[--color-rc-text-muted]">
+                      <div className="text-(--text-rc-xs) text-(--color-rc-text-muted)">
                         {stage.type} · {stage.estimatedMinutes} min
                       </div>
                     </div>
@@ -200,33 +200,33 @@ export function PackageOverview({
         <aside className="md:sticky md:top-20 md:self-start">
           <Card>
             <CardHeader>
-              <h2 className="text-[--text-rc-md] font-semibold text-[--color-rc-text]">
+              <h2 className="text-(--text-rc-md) font-semibold text-(--color-rc-text)">
                 Summary
               </h2>
             </CardHeader>
             <CardBody className="flex flex-col gap-4">
-              <dl className="grid grid-cols-3 gap-3 text-[--text-rc-sm]">
+              <dl className="grid grid-cols-3 gap-3 text-(--text-rc-sm)">
                 <div className="flex flex-col gap-0.5">
-                  <dt className="text-[--text-rc-xs] uppercase tracking-wide text-[--color-rc-text-subtle]">
+                  <dt className="text-(--text-rc-xs) uppercase tracking-wide text-(--color-rc-text-subtle)">
                     Difficulty
                   </dt>
-                  <dd className="font-medium text-[--color-rc-text]">
+                  <dd className="font-medium text-(--color-rc-text)">
                     {difficulty}
                   </dd>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  <dt className="text-[--text-rc-xs] uppercase tracking-wide text-[--color-rc-text-subtle]">
+                  <dt className="text-(--text-rc-xs) uppercase tracking-wide text-(--color-rc-text-subtle)">
                     Time
                   </dt>
-                  <dd className="font-medium text-[--color-rc-text]">
+                  <dd className="font-medium text-(--color-rc-text)">
                     {estimatedMinutes} min
                   </dd>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  <dt className="text-[--text-rc-xs] uppercase tracking-wide text-[--color-rc-text-subtle]">
+                  <dt className="text-(--text-rc-xs) uppercase tracking-wide text-(--color-rc-text-subtle)">
                     Free
                   </dt>
-                  <dd className="font-medium text-[--color-rc-text]">
+                  <dd className="font-medium text-(--color-rc-text)">
                     {freeStageCount} stages
                   </dd>
                 </div>
@@ -234,15 +234,15 @@ export function PackageOverview({
               <a
                 href={ctaHref}
                 className={cn(
-                  "inline-flex w-full items-center justify-center rounded-[--radius-rc-md]",
-                  "bg-[--color-rc-accent] px-4 py-2.5 text-[--text-rc-sm] font-semibold",
-                  "text-[--color-rc-on-accent] transition-colors duration-[--duration-rc-fast]",
-                  "hover:bg-[--color-rc-accent-hover]",
+                  "inline-flex w-full items-center justify-center rounded-(--radius-rc-md)",
+                  "bg-(--color-rc-accent) px-4 py-2.5 text-(--text-rc-sm) font-semibold",
+                  "text-(--color-rc-on-accent) transition-colors duration-(--duration-rc-fast)",
+                  "hover:bg-(--color-rc-accent-hover)",
                 )}
               >
                 {ctaLabel}
               </a>
-              <p className="text-[--text-rc-xs] leading-relaxed text-[--color-rc-text-subtle]">
+              <p className="text-(--text-rc-xs) leading-relaxed text-(--color-rc-text-subtle)">
                 Start with the first decision stage. Your progress is saved
                 between sessions.
               </p>

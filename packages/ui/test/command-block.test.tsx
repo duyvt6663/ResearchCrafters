@@ -76,10 +76,10 @@ describe("CommandBlock", () => {
     expect(html).toContain("PASS  test_residual.py");
     expect(html).toContain("FAIL  test_blowup.py");
     // Tone classes should be present so visual tints actually paint.
-    expect(html).toContain("text-[--color-rc-success]");
-    expect(html).toContain("text-[--color-rc-warning]");
-    expect(html).toContain("text-[--color-rc-danger]");
-    expect(html).toContain("text-[--color-rc-code-muted]");
+    expect(html).toContain("text-(--color-rc-success)");
+    expect(html).toContain("text-(--color-rc-warning)");
+    expect(html).toContain("text-(--color-rc-danger)");
+    expect(html).toContain("text-(--color-rc-code-muted)");
   });
 
   it("renders a copy button with an accessible label", () => {

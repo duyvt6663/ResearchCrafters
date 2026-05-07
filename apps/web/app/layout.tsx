@@ -3,6 +3,7 @@ import type { ReactElement, ReactNode } from "react";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { AppShell, TopNav } from "@researchcrafters/ui/components";
 import { copy } from "@researchcrafters/ui/copy";
+import "katex/dist/katex.min.css";
 import "./globals.css";
 
 /**

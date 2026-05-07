@@ -65,4 +65,47 @@ describe("CodeBlock", () => {
     const html = renderToStaticMarkup(node);
     expect(html).toContain('data-lang="typescript"');
   });
+
+  it("renders a lang chip with the language label", async () => {
+    const node = await CodeBlock({
+      code: "let x = 1;",
+      lang: "typescript",
+    });
+    const html = renderToStaticMarkup(node);
+    expect(html).toContain("data-rc-codeblock-chip");
+    expect(html).toContain(">TS<");
+  });
+
+  it("paints the left edge stripe in the language color", async () => {
+    const py = await CodeBlock({ code: "x = 1", lang: "python" });
+    const ts = await CodeBlock({ code: "let x = 1;", lang: "typescript" });
+    const pyHtml = renderToStaticMarkup(py);
+    const tsHtml = renderToStaticMarkup(ts);
+    expect(pyHtml).toContain("data-rc-codeblock-stripe");
+    expect(pyHtml).toContain("#3776AB");
+    expect(tsHtml).toContain("#3178C6");
+  });
+
+  it("renders the green icon-accent flourish in the lang chip bar", async () => {
+    const node = await CodeBlock({
+      code: "x = 1",
+      lang: "python",
+    });
+    const html = renderToStaticMarkup(node);
+    // The flourish icon is tinted with the green icon-accent token.
+    expect(html).toContain("text-(--color-rc-icon-accent)");
+    // The bar wrapper is data-tagged so visual smoke tests can target it.
+    expect(html).toContain("data-rc-codeblock-bar");
+  });
+
+  it("falls back to plain shell rendering for an unknown language", async () => {
+    const node = await CodeBlock({
+      code: "frobnicate the widget",
+      lang: "made-up-lang",
+    });
+    const html = renderToStaticMarkup(node);
+    // We do not crash; a Shiki envelope is still emitted.
+    expect(html).toContain("class=\"shiki");
+    expect(html).toContain('data-lang="made-up-lang"');
+  });
 });

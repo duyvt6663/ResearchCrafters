@@ -213,13 +213,13 @@ export function AnswerEditor({
         onKeyDown={handleKeyDown}
         rows={rows}
         className={cn(
-          "w-full resize-vertical rounded-[--radius-rc-md] border border-[--color-rc-border]",
-          "bg-[--color-rc-bg] text-[--color-rc-text] p-3 text-[--text-rc-base] leading-snug",
-          "focus:outline-none focus:border-[--color-rc-accent]",
-          "placeholder:text-[--color-rc-text-subtle]",
+          "w-full resize-vertical rounded-(--radius-rc-md) border border-(--color-rc-border)",
+          "bg-(--color-rc-bg) text-(--color-rc-text) p-3 text-(--text-rc-base) leading-snug",
+          "focus:outline-none focus:border-(--color-rc-accent)",
+          "placeholder:text-(--color-rc-text-subtle)",
         )}
       />
-      <div className="flex items-center justify-between text-[--text-rc-xs] text-[--color-rc-text-muted]">
+      <div className="flex items-center justify-between text-(--text-rc-xs) text-(--color-rc-text-muted)">
         <span>{wordCount === 1 ? "1 word" : `${wordCount} words`}</span>
         <span>
           {maxChars !== undefined ? `${charCount} / ${maxChars}` : `${charCount} chars`}
