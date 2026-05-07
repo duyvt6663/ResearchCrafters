@@ -81,6 +81,11 @@ branch-stats suppression), 03 (CLI surface).
 
 ## Decision Graph
 
+Implementation note: the items in this section are design-spec coverage, not
+React Flow implementation completion. The current web app still renders a graph
+placeholder and `/api/enrollments/:id/graph` returns `{}` until the unresolved
+promise bug is fixed.
+
 - [x] Define graph node visual states.
 - [x] Define branch visual states.
 - [x] Define hidden/locked branch behavior.
@@ -93,6 +98,30 @@ branch-stats suppression), 03 (CLI surface).
       revealed state with expert feedback. Pick one of inline expansion,
       dedicated reveal view, or graph repaint and document the rationale.
 - [x] Define rare-branch suppression copy for the hidden-percentage state.
+
+## Experiment Tree Visualization
+
+The ERP/ARA trace tree is distinct from the learner-facing curriculum graph.
+`artifact/trace/exploration_tree.yaml` should become a first-class visual surface
+for understanding the research process: observations, hypotheses, decisions,
+failed branches, suboptimal branches, evidence, and synthesis.
+
+- [ ] Define the experiment-tree UI model from `artifact/trace/exploration_tree.yaml`
+      nodes and edges.
+- [ ] Preserve the distinction between curriculum nodes (`curriculum/graph.yaml`)
+      and trace nodes (`artifact/trace/exploration_tree.yaml`) in labels, copy,
+      and API payloads.
+- [ ] Link trace branch nodes back to authored curriculum branches through
+      `branch_id` so learner decisions can be compared with the reconstructed
+      research path.
+- [ ] Add a learner-facing `ExperimentTree` / `ResearchTraceGraph` component,
+      likely React Flow on desktop with a mobile tree/list fallback.
+- [ ] Show artifact references on trace nodes: logic claims, evidence tables,
+      source refs, and cached experiment outputs.
+- [ ] Add a package or enrollment API endpoint that returns a compiled trace
+      graph payload suitable for the web UI.
+- [ ] Add Playwright smoke coverage for opening the experiment tree on the
+      package overview or stage context panel.
 
 ## Feedback and Results
 
@@ -242,7 +271,9 @@ A single design-review checklist consolidating "do not" rules from
 - [x] Define focus states.
 - [x] Define tooltip behavior for icon-only controls.
 - [x] Verify color is not the only branch-status indicator.
-- [x] Verify text fits in buttons, tabs, cards, and graph nodes.
+- [ ] Verify text fits in buttons, tabs, cards, and graph nodes.
+      _(manual Playwright review found horizontal overflow on package and stage
+      pages because Tailwind is not emitting all `packages/ui` utility classes.)_
 
 ## Static Prototype
 
@@ -276,3 +307,4 @@ A single design-review checklist consolidating "do not" rules from
 - [ ] Formalize the Anti-Patterns Checklist sign-off process.
 - [ ] Pick the branch reveal transition (inline expansion / dedicated reveal /
       graph repaint) and document the rationale.
+- [ ] Add automated visual assertions for page overflow and mobile layout.

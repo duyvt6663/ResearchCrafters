@@ -8,52 +8,47 @@ status mirror. The latest verified state is listed first.
 
 ## Status today
 
-- `pnpm typecheck` — currently red on `apps/web`. Sibling agents are
-  migrating `permissions.canAccess` to an async (`Promise<PermissionResult>`)
-  Prisma-backed implementation; ~20 call sites under `app/api/**/route.ts`
-  and one server page have not yet been updated to `await` the result. Two
-  admin routes import `@researchcrafters/worker/admin` and
-  `@aws-sdk/client-s3` / `@aws-sdk/s3-request-presigner`, which are not yet
-  exposed by the workspace. The other 18 packages typecheck green (after
-  content-sdk got the `@researchcrafters/ai` workspace dep, telemetry/worker
-  picked up the `as unknown as` casts, and web's tsconfig got the
-  `declaration:false` override).
-- `pnpm test` — partially red:
-  - `apps/web`: 32 cases pass; `lib/__tests__/permissions.test.ts` fails to
-    load because the new test was authored with `vi.mock` referencing
-    top-level `vi.fn()` bindings (vitest hoisting). The previous "4 cases
-    failing" became a load-time failure when the test file was rewritten
-    to expect the async Prisma-backed policy.
-  - `packages/content-sdk`: 11 pass / 7 fail. Failures are in
-    `test/leak-tests.test.ts`; the harness exists in
-    `src/validator/leak-tests.ts` but `runStageLeakTests` /
-    `defaultLeakTestGatewayFactory` are not yet exported from
-    `src/index.ts`, and `validatePedagogy` does not surface the expected
-    `pedagogy.leak_test_*` issues end-to-end.
-  - Remaining packages green.
-- `pnpm build` — `apps/web` build is red on the same modules missing from
-  the workspace (`@aws-sdk/*`, `@researchcrafters/worker/admin`,
-  `../worker/src/redis.js`). All page-level prerender failures are now
-  fixed: catalog, package detail, enrollment stage, and share page each
-  carry `export const dynamic = "force-dynamic"`.
-- `pnpm lint` — every workspace now ships a local `eslint.config.js`
-  (apps/web, apps/runner, apps/worker, and packages/{ai, cli, content-sdk,
-  db, erp-schema, evaluator-sdk, telemetry, ui}), so ESLint 9 can discover
-  the shared flat config from each package cwd. Run-level pass/fail is
-  blocked behind the typecheck regression above.
+- `pnpm lint` — green. It still prints one cached UI warning for an unused
+  eslint-disable in `packages/ui/src/components/RunStatusPanel.tsx`.
+- `pnpm typecheck` — green across all 19 tasks.
+- `pnpm test` — green across all 18 tasks.
+- `@researchcrafters/web` production build — green with local dev env
+  (`DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`,
+  `RESEARCHCRAFTERS_API_URL`).
 - Package validation — green for `content/packages/resnet` and
-  `content/templates/erp-basic`.
-- Local migration + seed — green against Docker Postgres
-  (`docker-compose.yml` brings up Postgres 16 + Redis 7 + MinIO; bootstrap
-  via `infra/scripts/bootstrap.sh`).
-- Browser smoke — automated Playwright specs at
-  `tests/e2e/catalog-to-stage.spec.ts` and `tests/e2e/regressions.spec.ts`.
-  Manual smoke had been green for catalog → ResNet overview →
-  unauthenticated `/packages/resnet/start` redirect → seeded
-  writing/decision stage routes.
-- API smoke — device-code endpoints work, Bearer auth path works for
-  enrollment. `/api/packages` still returns the unresolved
-  `listPackages()` promise (handler does not `await`).
+  `content/templates/erp-basic`; ResNet leak tests run for stages S001-S007
+  and skip S008 because no attacks/redaction targets are declared.
+- Local migration + seed — green against Docker Postgres. The seed loads
+  ResNet with 8 stages, 3 branches, and fixture enrollment
+  `cmovf11u5001dakq882p0iob3`.
+- Local services — Postgres and MinIO are healthy. Redis still fails to start
+  because host port `6379` is already allocated, so live BullMQ/worker testing
+  is blocked until ports are configurable or the host Redis conflict is
+  resolved.
+- Browser smoke — the original tracked 3-spec smoke passed against the local
+  app. The current workspace now contains additional untracked API/stage/share
+  E2E specs; with those present, `pnpm test:e2e` fails 15/23 under parallel
+  dev-server execution. Failures include known API hardening gaps and Next dev
+  bundler missing-vendor-chunk 500s under load. Treat the expanded E2E suite as
+  a stabilization target before calling browser quality green.
+- Browser layout — not yet acceptable. Manual Playwright review found severe
+  horizontal overflow on package and stage pages because Tailwind is not
+  emitting all utility classes used by `packages/ui` (for example `flex-col`
+  on the app shell).
+- API smoke — `/api/health` works; `/api/cli/version`,
+  `/api/auth/device-code`, `/api/auth/device-token`, Bearer enrollment,
+  submission init/finalize, run status, and run logs all respond. Remaining
+  contract bugs: `/api/packages` returns `{ "packages": {} }` and
+  `/api/enrollments/:id/graph` returns `{ "graph": {} }` because both route
+  handlers return unresolved promises.
+- CLI smoke — validated `--version`, package validation, device-token auth,
+  `researchcrafters start resnet`, and `researchcrafters submit`. The CLI can
+  upload/finalize a submission, but `status` still prints "No runs yet" because
+  `submit` discards the finalize `runId` and does not write `lastRunId`.
+- Runner/evaluator loop — not end-to-end. Finalize creates a queued `Run` row,
+  but no BullMQ `submission_run` job is enqueued, the callback does not persist
+  result state/logs/metrics, and the latest verified run remained `queued` with
+  empty logs.
 
 ## Closed since the prior review
 
@@ -103,15 +98,20 @@ The historical "Integration and quality review — 2026-05-07" P0/P1 block
 has been mostly addressed by integration agents. The remaining regression
 bundle that needs to clear before declaring stable end-to-end is:
 
-- The async `permissions.canAccess` migration: update remaining call-site
-  `await`s, fix the test-file `vi.mock` hoisting, and remove the
-  `u-paid` / `u-stub` synthetic branches.
-- Workspace deps for `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`,
-  and the `@researchcrafters/worker/admin` re-export so `apps/web`
-  typecheck and build complete.
 - `/api/packages` `await listPackages()` fix.
-- `content-sdk` `runStageLeakTests` + `defaultLeakTestGatewayFactory`
-  exported from `src/index.ts`.
+- `/api/enrollments/:id/graph` `await getDecisionGraph(id)` fix.
+- Tailwind v4/package-source scanning fix so utility classes from
+  `packages/ui` are emitted and browser pages stop overflowing.
+- Submission finalize must enqueue `submission_run` with an idempotency key;
+  runner callback must authenticate as a service and persist run status, logs,
+  metrics, and timestamps.
+- CLI `submit` must honor `uploadHeaders`, persist/display the returned
+  `runId`, and make `status`/`logs` usable without manually querying the DB.
+- Start/enroll needs a starter bundle URL or workspace materialization path.
+- Branch traversal, web stage attempts, and share cards still need persistent
+  writes instead of synthesized IDs/stub payloads.
+- Trace/experiment-tree support needs typed validation for `branch_id`,
+  `parents`, `edges`, and a compiled web payload.
 
 ## Open today
 
@@ -120,10 +120,14 @@ bundle that needs to clear before declaring stable end-to-end is:
   wired.
 - Real Docker sandbox — `LocalFsSandbox` covers dev; Docker isolation
   with cgroup limits, network deny, secret stripping pending.
-- BullMQ live against Redis — worker scaffold and scheduler exist; not
-  boot-tested live.
-- React Flow decision graph — Phase 4; defer.
-- Mobile fallbacks for decision graph and code/experiment stages.
+- BullMQ live against Redis — worker scaffold and scheduler exist, but local
+  Redis cannot bind `6379` on this machine.
+- React Flow decision graph — Phase 4; defer. API currently returns `{}` due
+  the missing `await`.
+- Experiment tree / ERP trace visualization — TODO added; trace file exists in
+  content, but validation and web payload plumbing are not complete.
+- Mobile fallbacks for decision graph and code/experiment stages. Manual
+  browser review currently shows mobile horizontal overflow.
 - Performance instrumentation (Lighthouse / TTI in CI).
 - Wireframes captured (catalog, overview, stage player desktop/mobile,
   decision/writing/analysis/code/experiment/reflection, mentor panel,
@@ -134,14 +138,11 @@ bundle that needs to clear before declaring stable end-to-end is:
 - Second package authoring (FlashAttention or DPO).
 - Marketing/alpha launch artifacts (waitlist page, landing copy,
   decision-challenge posts, founder pricing offer, intake form).
-- Async `permissions.canAccess` cleanup (call-site awaits, test
-  hoisting fix, synthetic-user removal).
-- Workspace deps for `@aws-sdk/*` and `@researchcrafters/worker/admin`.
-- `account-cascade.ts` formalized (referenced from schema PII comments
-  but not yet authored).
-- `/api/packages` `await` fix.
-- content-sdk `runStageLeakTests` / `defaultLeakTestGatewayFactory`
-  re-exports.
+- API await bugs for `/api/packages` and `/api/enrollments/:id/graph`.
+- Tailwind package-source scanning / emitted utility coverage for
+  `packages/ui`.
+- Submission -> runner -> evaluator -> grade persistence.
+- CLI starter download, upload-header handling, and run-id persistence.
 
 ---
 
@@ -168,10 +169,9 @@ bundle that needs to clear before declaring stable end-to-end is:
 
 **Stubbed**
 
-- `lib/telemetry.ts` `track()` no-op.
-- `permissions.canAccess` mid-rewrite — async/Prisma-backed signature is
-  in flight; current main-branch source still carries the synthetic
-  `u-paid` user branch (in-flight rewrite expected to remove it).
+- `lib/telemetry.ts` logs locally; vendor/audit dual-write is not wired.
+- `node-traversals`, `stage-attempts`, and `share-cards` routes still return
+  synthesized IDs or stub payloads instead of durable product records.
 
 **Gaps**
 
@@ -315,6 +315,10 @@ bundle that needs to clear before declaring stable end-to-end is:
 
 - `packages/ai` `LLMGateway` interface; `AnthropicGateway` (lazy SDK
   import; throws without `ANTHROPIC_API_KEY`); `MockLLMGateway` for tests.
+- `apps/web/lib/mentor-runtime.ts` calls `AnthropicGateway` when the
+  API key is set and falls back to `MockLLMGateway` otherwise; persists
+  `MentorThread` + `MentorMessage` Prisma rows on every request, with
+  full token telemetry.
 - `buildMentorContext` enforces `stage_policy.mentor_visibility`
   strictly. `always` on `canonical_solution` / `branch_solutions` is
   treated as misconfiguration and refused with a logged warning.
@@ -342,8 +346,6 @@ bundle that needs to clear before declaring stable end-to-end is:
 - Wire production `SpendStore` and `RateLimiter` from the web app.
 - Per-package mentor budget caps surfaced in DB.
 - Mentor message review queue UI + flagged-output triage flow.
-- `mentor_messages` rows actually written from web `/api/mentor/messages`
-  to Postgres with full token telemetry.
 
 ---
 
@@ -373,21 +375,18 @@ bundle that needs to clear before declaring stable end-to-end is:
 
 **Stubbed**
 
-- `permissions.canAccess` Prisma rewrite is in flight; current source
-  still carries the `u-paid` synthetic branch.
+- `node_traversals`, share-card snapshots, and some stage-attempt writes are
+  still API stubs even though the tables exist.
 
 **Gaps**
 
-- Finish wiring `permissions.canAccess` to live `Membership` +
-  `Entitlement` rows _(in flight)_.
+- Persist branch traversal and web stage-attempt writes through Prisma.
 - Branch-stats rollup job (per-branch N≥5, per-node N≥20, 5% rounding)
   scheduler exists in `apps/worker/src/scheduler.ts`; live execution
   pending Redis.
 - Events dual-write: PostHog primary, audit-grade rows in `Event` table.
 - Migration UX flow surfaced in the web app.
-- Privacy: encryption-at-rest fields, data export endpoint, deletion
-  cascade workflow (the schema PII comments reference an
-  `apps/web/lib/account-cascade.ts` that has not yet been authored).
+- Privacy: encryption-at-rest fields and policy/legal docs.
 
 ---
 
@@ -438,13 +437,9 @@ bundle that needs to clear before declaring stable end-to-end is:
 - Secrets manager (Doppler / Vault / AWS Secrets Manager).
 - OpenTelemetry SDK in apps; dashboards for submission latency, runner
   queue depth, mentor latency, validate duration.
-- CI pipeline running `researchcrafters validate` sweep on every PR
-  _(in flight)_.
 - Container image scans + digest pinning.
 - Email magic-link provider (deferred to email-service workstream).
-- Browser approval UI for `/auth/device`.
-- Privacy foundations: encryption-at-rest, data export endpoint,
-  deletion-cascade workflow (`account-cascade.ts`).
+- Privacy foundations: encryption-at-rest and policy/legal docs.
 - SLO target dashboards.
 - Configurable local service ports (Redis 6379 collisions on dev hosts).
 
@@ -503,17 +498,20 @@ bundle that needs to clear before declaring stable end-to-end is:
 
 ## Suggested next moves
 
-1. Land the async `permissions.canAccess` rewrite end-to-end (await
-   updates at every call site; test-file `vi.mock` hoisting fix; remove
-   the synthetic `u-paid` / `u-stub` branches).
-2. Wire `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` into the
-   web workspace and re-export `worker/admin` so the build links.
-3. Fix `/api/packages` to `await listPackages()`.
-4. Export `runStageLeakTests` + `defaultLeakTestGatewayFactory` from
-   `packages/content-sdk/src/index.ts`.
-5. Wire the mentor leak-test battery and `researchcrafters validate`
-   sweep into the existing CI workflow.
-6. Complete submission → runner → evaluator → grade persistence with
-   real DockerSandbox or LocalFs in dev mode.
-7. Run the ResNet mini-experiment on real hardware once; replace the
+1. Fix `/api/packages` and `/api/enrollments/:id/graph` to await their Prisma
+   query helpers, then add API regression tests for both JSON shapes.
+2. Fix Tailwind v4/package-source scanning for `packages/ui`, then add
+   Playwright visual/layout assertions for desktop and mobile overflow.
+3. Complete submission -> runner -> evaluator -> grade persistence with
+   LocalFs in dev mode first, then DockerSandbox isolation.
+4. Make Redis/Postgres/MinIO host ports configurable so the full local worker
+   stack can boot even when common ports are occupied.
+5. Update CLI `start`/`submit`: provide a starter bundle path, honor
+   `uploadHeaders`, persist `lastRunId`, and make `status`/`logs` use it.
+6. Persist branch traversals, web stage attempts, and share-card snapshots so
+   branch stats, resume, and sharing are real.
+7. Build the ERP trace graph contract: validate `exploration_tree.yaml`
+   edges/parents/branch ids, compile a trace graph payload, and render it in
+   the web experiment-tree view.
+8. Run the ResNet mini-experiment on real hardware once; replace the
    placeholder fixture and recompute sha256.

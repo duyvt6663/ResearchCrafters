@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getEnrollment } from "@/lib/data/enrollment";
-import { getSession } from "@/lib/auth";
+import { getSessionFromRequest } from "@/lib/auth";
 import { denialHttpStatus, permissions } from "@/lib/permissions";
 import { track } from "@/lib/telemetry";
 
@@ -14,11 +14,28 @@ type Body = {
 };
 
 export async function POST(req: Request): Promise<NextResponse> {
-  const body = (await req.json()) as Body;
+  let body: Body;
+  try {
+    body = (await req.json()) as Body;
+  } catch {
+    return NextResponse.json(
+      { error: "bad_request", reason: "invalid_json" },
+      { status: 400 },
+    );
+  }
+  if (
+    typeof body?.enrollmentId !== "string" ||
+    typeof body?.insight !== "string"
+  ) {
+    return NextResponse.json(
+      { error: "bad_request", reason: "missing_required_fields" },
+      { status: 400 },
+    );
+  }
   const enr = await getEnrollment(body.enrollmentId);
   if (!enr) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  const session = await getSession();
+  const session = await getSessionFromRequest(req);
   const access = await permissions.canAccess({
     user: session,
     packageVersionId: enr.packageVersionId,

@@ -73,13 +73,21 @@ Acceptance criteria:
 
 Goal: add AI mentor safely and produce shareable proof of learning.
 
-- [ ] Add mentor context builder with `stage_policy`.
-- [ ] Add mentor leak tests in package CI.
-- [ ] Add evaluator leak tests and redaction checks.
-- [ ] Add prompt caching and per-user rate limits.
-- [ ] Add share-card payload generation.
+- [x] Add mentor context builder with `stage_policy`.
+- [ ] Add mentor leak tests in package CI. _(harness exists; explicit CI
+      step still pending — see `04-validation-evaluator.md`.)_
+- [x] Add evaluator leak tests and redaction checks.
+- [ ] Add prompt caching and per-user rate limits. _(rate-limit interface
+      shipped in `packages/ai`; production wiring + caching still pending.)_
+- [ ] Add share-card payload generation. _(preview component exists;
+      `/api/share-cards` still returns a stub payload — see `06`.)_
 - [ ] Add `branch_stats` rollups with minimum-N suppression.
-- [ ] Add telemetry for branch selection, feedback unlock, mentor requests, and share cards.
+      _(schema, suppression copy, and admin trigger
+      `/api/admin/rollup-branch-stats` exist; live execution depends on
+      bringing up the local Redis container.)_
+- [x] Add telemetry for branch selection, feedback unlock, mentor requests, and share cards.
+      _(events emitted via `lib/telemetry.ts` `track()`; vendor/audit
+      dual-write still pending.)_
 - [ ] Add internal review queue for flagged mentor/evaluator outputs.
 
 Acceptance criteria:

@@ -42,7 +42,9 @@ reflect that snapshot.
 - [ ] Cache stage-static context.
 - [x] Route hints to cheaper model.
 - [x] Route evidence-grounded writing feedback to stronger model.
-- [ ] Store mentor threads and messages. _(stubbed)_
+- [x] Store mentor threads and messages. _(persisted via Prisma in
+      `apps/web/lib/mentor-runtime.ts`; `MentorThread` + `MentorMessage`
+      rows are written from `/api/mentor/messages`.)_
 - [x] Record `model_tier`, `model_id`, `provider`, prompt token count, and
       completion token count on every `mentor_messages` row for cost and quality
       audits.
@@ -96,5 +98,6 @@ reflect that snapshot.
       app rather than relying on the interfaces shipped in `packages/ai`.
 - [ ] Surface per-package mentor budget caps in the database schema.
 - [ ] Build the mentor message review queue UI and flagged-output triage flow.
-- [ ] Persist `mentor_messages` rows with full token telemetry from the web
-      `/api/mentor/messages` route to Postgres.
+- [x] Persist `mentor_messages` rows with full token telemetry from the web
+      `/api/mentor/messages` route to Postgres. _(landed in
+      `apps/web/lib/mentor-runtime.ts`.)_

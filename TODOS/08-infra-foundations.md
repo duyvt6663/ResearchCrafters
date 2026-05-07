@@ -54,7 +54,7 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
       `docker-compose.yml`; non-local environments pending)_
 - [ ] Define prefixes: `submissions/`, `runs/`, `packages/`, `share-cards/`,
       `evidence/`.
-- [ ] Add signed-URL helpers for upload (CLI submissions) and download (starter
+- [x] Add signed-URL helpers for upload (CLI submissions) and download (starter
       workspaces, run logs).
 - [ ] Set lifecycle policy on `submissions/` matching retention TODO in 06.
 - [ ] Block public access by default; serve through API.
@@ -89,10 +89,9 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 
 ## CI/CD
 
-- [x] Add CI pipeline that runs lint, typecheck, test, and `researchcrafters validate`
-      on every package under `content/packages/`. _(typecheck + tests + validate
-      jobs at `.github/workflows/ci.yml`; per-package validate sweep wiring
-      pending)_
+- [x] Add CI pipeline that runs lint, typecheck, test, Playwright smoke, and
+      `researchcrafters validate` on every package under `content/packages/`.
+      _(`.github/workflows/ci.yml`)_
 - [ ] Add CI matrix for Node versions matching production.
 - [ ] Add separate CI job for runner Docker image builds.
 - [ ] Add deploy workflow per environment with manual approval for `prod`.
@@ -106,7 +105,7 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 - [ ] Implement email/password fallback or magic-link login. _(deferred to
       email-service workstream)_
 - [x] Implement OAuth device-code flow endpoints for the CLI.
-- [ ] Implement the browser approval UI for `/auth/device`.
+- [x] Implement the browser approval UI for `/auth/device`.
 - [x] Add session and CSRF protection. _(NextAuth v5 + middleware-driven CSP)_
 
 ## Privacy and Compliance Foundations
@@ -114,11 +113,10 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 - [x] Inventory PII fields across the data model. _(`/// PII:` JSDoc
       annotations on every PII field in `packages/db/prisma/schema.prisma`)_
 - [ ] Add encryption-at-rest for sensitive columns (auth tokens, mentor transcripts).
-- [ ] Add user data export endpoint behind authentication.
-- [ ] Add user account deletion endpoint that cascades through submissions and
-      mentor data per 06 retention rules. _(referenced as
-      `apps/web/lib/account-cascade.ts` in schema PII comments; not yet
-      authored)_
+- [x] Add user data export endpoint behind authentication. _(`apps/web/app/api/account/export/route.ts` calls `exportAccount` from `lib/account-cascade.ts`)_
+- [x] Add user account deletion endpoint that cascades through submissions and
+      mentor data per 06 retention rules. _(`apps/web/lib/account-cascade.ts`
+      and `/api/account/delete`)_
 - [ ] Add privacy policy and terms-of-service drafts before alpha.
 
 ## SLO Targets
@@ -147,14 +145,12 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 - [ ] Add OpenTelemetry SDK to web, worker, and runner; expose dashboards for
       submission latency, runner queue depth, mentor latency, and validate
       duration.
-- [x] Stand up CI workflow that runs typecheck, test, and
-      `researchcrafters validate` on every PR. _(base workflow at
-      `.github/workflows/ci.yml`; per-package validate sweep step in flight)_
+- [x] Stand up CI workflow that runs typecheck, test, Playwright smoke, and
+      `researchcrafters validate` on every PR. _(`.github/workflows/ci.yml`)_
 - [ ] Add container image scans and digest pinning for runner base images.
 - [ ] Land privacy foundations: PII inventory, encryption-at-rest, data export,
-      deletion cascade. _(PII inventory landed via `/// PII:` schema
-      annotations; encryption-at-rest, export, and `account-cascade.ts`
-      pending)_
+      deletion cascade. _(PII inventory, data export, and deletion cascade have
+      landed; encryption-at-rest remains.)_
 - [ ] Codify SLO target dashboards in a single observability surface.
 - [x] Pick an auth provider and wire it through the web app. _(NextAuth v5 +
       Prisma adapter)_

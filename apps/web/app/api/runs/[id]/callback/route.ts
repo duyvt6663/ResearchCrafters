@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getSessionFromRequest } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { track } from "@/lib/telemetry";
 
@@ -22,7 +22,7 @@ export async function POST(
   // the real implementation; until that lands, we still route through the
   // policy with a synthetic admin-style call so every API path uses the
   // single canAccess surface.
-  const session = await getSession();
+  const session = await getSessionFromRequest(req);
   const access = await permissions.canAccess({
     user: session,
     packageVersionId: "runner-callback",

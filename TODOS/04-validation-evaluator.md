@@ -25,9 +25,11 @@ reflect that snapshot.
 - [x] Verify heuristics link to code refs.
 - [x] Verify curriculum stages link to valid artifact refs.
 - [x] Verify branches link to evidence or declare expert reconstruction.
-- [x] Verify `trace/exploration_tree.yaml` nodes reference valid logic, code, and
-      evidence ids; flag dangling or duplicate node ids.
-- [x] Verify trace nodes that map to curriculum branches use the same id
+- [ ] Verify `trace/exploration_tree.yaml` nodes reference valid logic, code,
+      evidence ids, branch ids, parent ids, and edge endpoints; flag dangling or
+      duplicate node ids. _(current validator covers node id uniqueness and
+      `refs`; trace schema, `parents`, `edges`, and `branch_id` checks remain.)_
+- [ ] Verify trace nodes that map to curriculum branches use the same id
       convention so trace and curriculum stay aligned.
 - [x] Enforce `support_level=explicit` requires non-empty `source_refs`.
 - [ ] Enforce claim wording does not exceed cited evidence where possible.
@@ -99,17 +101,20 @@ reflect that snapshot.
 
 ## Open gaps from snapshot
 
-- [ ] Add a CI workflow that runs `researchcrafters validate` against every
-      package under `content/packages/` on every PR. _(in flight — base CI
-      workflow exists at `.github/workflows/ci.yml`; per-package validate
-      sweep step pending)_
+- [x] Add a CI workflow that runs `researchcrafters validate` against every
+      package under `content/packages/` on every PR.
+- [ ] Wire leak tests and non-stub sandbox validation into the same package CI
+      gate.
 - [ ] Wire layer-3 sandbox execution to the real runner once Docker is online,
       replacing the current stub that only verifies fixture sha256.
 - [ ] Plug the mentor leak-test battery from `packages/ai` into per-package CI.
       _(harness exists in `packages/ai` and
       `packages/content-sdk/src/validator/leak-tests.ts`; CI wiring pending)_
-- [ ] Export `runStageLeakTests` and `defaultLeakTestGatewayFactory` from
+- [x] Export `runStageLeakTests` and `defaultLeakTestGatewayFactory` from
       `packages/content-sdk/src/index.ts` so the leak-test regression suite and
       downstream package CI can call the harness.
 - [ ] Persist evaluator grades through `packages/db` instead of the in-memory
       grade store.
+- [ ] Define a typed trace graph schema and build output so
+      `buildPackageManifest` can expose a compiled experiment tree payload for
+      the web UI.

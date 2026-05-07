@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getSessionFromRequest } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 
 export const runtime = "nodejs";
 
-export async function GET(): Promise<NextResponse> {
-  const session = await getSession();
+export async function GET(req: Request): Promise<NextResponse> {
+  const session = await getSessionFromRequest(req);
 
   const access = await permissions.canAccess({
     user: session,

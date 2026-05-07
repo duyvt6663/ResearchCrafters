@@ -38,6 +38,10 @@ reflect that snapshot.
 - [x] Mirror entitlement gates into `stages`.
 - [x] Mirror graph nodes into `decision_nodes`.
 - [x] Mirror branch choices into `branches`.
+- [ ] Compile and expose ERP trace graph data from
+      `artifact/trace/exploration_tree.yaml` for the web experiment-tree UI.
+- [ ] Decide whether trace graph data is mirrored into Postgres or served as a
+      package-file-backed API payload.
 - [ ] Store source hash and package build manifest.
 - [x] Store active patch sequence.
 
@@ -51,10 +55,8 @@ reflect that snapshot.
 - [x] Support `view_branch_feedback`.
 - [x] Support `create_share_card`.
 - [x] Support `view_solution`.
-- [ ] Use memberships, entitlements, package status, free stages, stage gates,
-      and roles. _(route policy exists, but still has stubbed `u-paid` logic;
-      async/Prisma rewrite in flight — call sites updated, source/test cleanup
-      pending)_
+- [x] Use memberships, entitlements, package status, free stages, stage gates,
+      and roles.
 - [x] Add tests that every route calls the policy.
 
 ## Version and Patch Policy
@@ -75,6 +77,8 @@ reflect that snapshot.
 - [ ] Define cohorts: `all_attempts`, `completers`, `entitled_paid`, `alpha_beta`.
 - [ ] Exclude `alpha_beta` from public percentages by default.
 - [ ] Compute branch stats by package version, stage, node, branch, cohort, and time window.
+      _(blocked until `node_traversals` are persisted by the API instead of
+      synthesized after telemetry.)_
 - [x] Hide public percentages unless the cohort N for the decision node is at
       least 20.
 - [x] Hide individual branch percentages unless that specific branch's N is at
@@ -134,18 +138,22 @@ reflect that snapshot.
 
 ## Share Cards
 
-- [x] Store immutable share-card payload snapshot.
-- [x] Include package slug and version.
-- [x] Include completion status.
-- [x] Include score summary.
-- [x] Include hardest decision when available.
-- [x] Include selected branch and branch type.
-- [x] Include cohort selection percentage only after minimum-N suppression passes.
-- [x] Include learner-written evidence-grounded insight when available.
+- [ ] Store immutable share-card payload snapshot.
+      _(schema exists, but `/api/share-cards` currently returns a stub payload
+      and does not write a DB row.)_
+- [ ] Include package slug and version.
+- [ ] Include completion status.
+- [ ] Include score summary.
+- [ ] Include hardest decision when available.
+- [ ] Include selected branch and branch type.
+- [ ] Include cohort selection percentage only after minimum-N suppression passes.
+- [ ] Include learner-written evidence-grounded insight when available.
 
 ## Acceptance Criteria
 
-- [x] Branch selections can power safe share-card percentages.
+- [ ] Branch selections can power safe share-card percentages.
+      _(requires persisted `node_traversals`; current route emits telemetry and
+      returns a synthesized id.)_
 - [x] Free-stage access cannot drift between routes.
 - [x] Package versions and patches are auditable.
 - [ ] Analytics map directly to PRD success metrics.
@@ -157,11 +165,17 @@ reflect that snapshot.
 - [x] Replace the web package/enrollment/stage in-memory stubs with Prisma-backed
       queries through `@researchcrafters/db`.
 - [ ] Fix `/api/packages` to await the Prisma-backed package list.
-- [ ] Wire `permissions.canAccess` to live `Membership` and `Entitlement` rows.
+- [x] Wire `permissions.canAccess` to live `Membership` and `Entitlement` rows.
+- [ ] Fix `/api/enrollments/:id/graph` to await the Prisma-backed decision
+      graph.
+- [ ] Persist `node_traversals` and `stage_attempts` from API routes instead of
+      returning synthesized ids.
 - [ ] Build the branch-stats rollup job (per-branch N>=5, per-node N>=20, 5%
       rounding).
 - [ ] Land the events dual-write: PostHog primary, audit-grade rows in the
       Postgres `Event` table.
 - [ ] Surface the migration UX flow in the web app.
-- [ ] Add privacy plumbing: encryption-at-rest fields, data export endpoint,
-      deletion cascade workflow.
+- [ ] Add privacy plumbing: encryption-at-rest fields. _(data export endpoint
+      and deletion cascade workflow have landed at
+      `apps/web/lib/account-cascade.ts` + `apps/web/app/api/account/{delete,export}/route.ts`;
+      encryption-at-rest remains.)_

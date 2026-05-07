@@ -14,8 +14,7 @@ behavior by the user's role and entitlement.
 
 Learner commands:
 
-- [x] `researchcrafters login` (OAuth device code flow). _(API endpoints exist;
-      browser approval UI is still pending)_
+- [x] `researchcrafters login` (OAuth device code flow).
 - [x] `researchcrafters logout` (revoke and clear local token).
 - [x] `researchcrafters start <package>`.
 - [x] `researchcrafters test` (local smoke tests).
@@ -40,13 +39,15 @@ Common:
 
 - [x] Decide CLI package name and distribution path.
 - [ ] Implement npm distribution first: `npx researchcrafters` or `npm create researchcrafters`.
-- [x] Use OAuth device code flow for login. _(API endpoints exist; browser
-      approval UI is still pending)_
+- [x] Use OAuth device code flow for login.
 - [x] Store auth token securely in local keychain or config fallback.
 - [x] Refresh tokens transparently; prompt re-login when refresh fails.
-- [x] On `start`, resolve package version, entitlement, stage manifest, and signed
-      starter URL.
-- [x] Download starter workspace.
+- [ ] On `start`, resolve package version, entitlement, stage manifest, and
+      signed starter URL.
+      _(package version and stage resolve; signed starter URL is not returned.)_
+- [ ] Download starter workspace.
+      _(current workspace contains only `.researchcrafters/config.json` unless a
+      future `starterUrl` is present.)_
 - [x] Write `.researchcrafters/config.json`.
 - [x] Show clear error UX for: not logged in, missing entitlement, fixture hash
       mismatch (package-author bug), runner offline, stage not unlocked.
@@ -60,6 +61,9 @@ Common:
 - [x] Hash submission bundle.
 - [x] Upload to signed object-storage URL.
 - [x] Record submission metadata.
+- [ ] Honor all API-returned `uploadHeaders` when uploading to the signed URL.
+- [ ] Persist/display the `runId` returned by finalize so `status` and `logs`
+      work without manual DB lookup.
 
 ## Runner Modes
 
@@ -104,9 +108,15 @@ Common:
 
 ## Acceptance Criteria
 
-- [x] Learner can start a package locally and submit code.
-- [x] Runner returns structured execution status and raw artifacts.
-- [x] Evaluator receives artifacts only after successful execution.
+- [ ] Learner can start a package locally and submit code.
+      _(start + submit round-trip, but starter workspace and run result loop are
+      incomplete.)_
+- [ ] Runner returns structured execution status and raw artifacts.
+      _(runner unit tests cover statuses; finalized submissions remain queued in
+      the integrated app.)_
+- [ ] Evaluator receives artifacts only after successful execution.
+      _(blocked until finalize enqueues runner jobs and callbacks persist
+      artifacts/status.)_
 - [x] Replay fixture hashes make cached-evidence stages reproducible.
 
 ## Open gaps from snapshot
@@ -117,8 +127,12 @@ Common:
 - [ ] Wire `AnthropicGateway` to a real `ANTHROPIC_API_KEY` once a budget cap is
       in place.
 - [ ] Plug BullMQ workers into a live Redis broker.
-- [ ] Replace the development-only device-code force-approve path with the real
+- [x] Replace the development-only device-code force-approve path with the real
       `/auth/device` browser approval flow.
+- [ ] Enqueue `submission_run` from finalize and persist runner callback state
+      (status, logs, metrics, timestamps).
+- [ ] Return starter bundle URLs and smoke commands from enroll/start.
+- [ ] Update CLI `submit` to persist `lastRunId` and pass signed upload headers.
 - [ ] Evaluate gVisor / Modal / E2B integration once Docker isolation is solid.
 - [ ] Publish CLI to npm with a release channel and versioning policy.
 - [ ] Decide per-stage GPU policy beyond the MVP CPU-only stance.
