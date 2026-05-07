@@ -155,7 +155,8 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 - [x] Pick an auth provider and wire it through the web app. _(NextAuth v5 +
       Prisma adapter)_
 - [ ] Make local Docker service ports configurable; Redis on host `6379` can
-      collide with an existing developer service.
+      collide with an existing developer service. _(runner-loop agent may
+      retarget the port as part of wiring BullMQ.)_
 - [x] Finish ESLint 9 migration after adding per-workspace flat configs:
       install/configure missing plugins, clean unused disables, and resolve the
       surfaced worker/UI/web lint errors. _(per-workspace flat configs landed

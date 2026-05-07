@@ -63,7 +63,7 @@ Common:
 - [x] Record submission metadata.
 - [ ] Honor all API-returned `uploadHeaders` when uploading to the signed URL.
 - [ ] Persist/display the `runId` returned by finalize so `status` and `logs`
-      work without manual DB lookup.
+      work without manual DB lookup. _(CLI/entitlements agent in flight)_
 
 ## Runner Modes
 
@@ -126,13 +126,17 @@ Common:
       _(LocalFsSandbox covers dev — `apps/runner/src/sandboxes/local-fs.ts`)_
 - [ ] Wire `AnthropicGateway` to a real `ANTHROPIC_API_KEY` once a budget cap is
       in place.
-- [ ] Plug BullMQ workers into a live Redis broker.
+- [ ] Plug BullMQ workers into a live Redis broker. _(runner-loop agent in
+      flight)_
 - [x] Replace the development-only device-code force-approve path with the real
       `/auth/device` browser approval flow.
 - [ ] Enqueue `submission_run` from finalize and persist runner callback state
-      (status, logs, metrics, timestamps).
+      (status, logs, metrics, timestamps). _(runner-loop agent in flight)_
 - [ ] Return starter bundle URLs and smoke commands from enroll/start.
+      _(CLI/entitlements agent in flight on the `EnrollResponse` cleanup —
+      starter URL itself depends on storage seeding.)_
 - [ ] Update CLI `submit` to persist `lastRunId` and pass signed upload headers.
+      _(CLI/entitlements agent in flight)_
 - [ ] Evaluate gVisor / Modal / E2B integration once Docker isolation is solid.
 - [ ] Publish CLI to npm with a release channel and versioning policy.
 - [ ] Decide per-stage GPU policy beyond the MVP CPU-only stance.

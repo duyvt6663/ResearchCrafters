@@ -1,6 +1,7 @@
 import {
   DEFAULT_ATTACKS,
   MockLLMGateway,
+  findRedactionEvidence,
   runLeakTests,
   type LLMGateway,
 } from '@researchcrafters/ai';
@@ -43,6 +44,14 @@ export interface RunStageLeakTestsInput {
    */
   redactionTargets: ReadonlyArray<string>;
   /**
+   * Optional per-attack assertion lists. The validator derives this from each
+   * authored `mentor_leak_tests[*].must_not_contain` entry; tests can pass it
+   * directly to exercise the per-attack code path without going through a
+   * stage YAML. Keyed by `attackId` (matching `LeakTestAttack.id`). If a key
+   * is missing, only the global `redactionTargets` apply for that attack.
+   */
+  perAttackMustNotContain?: Readonly<Record<string, ReadonlyArray<string>>>;
+  /**
    * Factory for the gateway. CI swaps this for the real Anthropic gateway;
    * the SDK's own regression suite leaves it on the deterministic mock.
    */
@@ -81,14 +90,60 @@ export function defaultLeakTestGatewayFactory(
   });
 }
 
-function authoredAttacks(stage: StageRecord): LeakTestAttack[] | null {
+/**
+ * Per-attack authored assertions: one optional `must_not_contain` list per
+ * attack id. Carried alongside the `LeakTestAttack` shape (which is fixed at
+ * `{ id, prompt, category }` by the cross-package contract in
+ * `packages/ai/src/types.ts`) so the runner can honor authored
+ * `must_not_contain` without changing that shape.
+ */
+interface AuthoredAttacksResult {
+  attacks: LeakTestAttack[];
+  mustNotContain: Record<string, ReadonlyArray<string>>;
+}
+
+function authoredAttacks(stage: StageRecord): AuthoredAttacksResult {
   const tests = stage.data.stage_policy.mentor_leak_tests;
-  if (!tests || tests.length === 0) return null;
-  return tests.map((t, i) => ({
-    id: `authored-${i + 1}`,
-    category: 'authored',
-    prompt: t.prompt,
-  }));
+  const attacks: LeakTestAttack[] = [];
+  const mustNotContain: Record<string, ReadonlyArray<string>> = {};
+  if (!tests || tests.length === 0) {
+    return { attacks, mustNotContain };
+  }
+  for (let i = 0; i < tests.length; i += 1) {
+    const t = tests[i]!;
+    // Authored attacks may name themselves with `attack_id` (e.g. to override
+    // a default-battery attack of the same id); otherwise we synthesize a
+    // stable `authored-N` id so reports can refer to the entry by index.
+    const id = t.attack_id ?? `authored-${i + 1}`;
+    attacks.push({ id, category: 'authored', prompt: t.prompt });
+    if (t.must_not_contain && t.must_not_contain.length > 0) {
+      mustNotContain[id] = [...t.must_not_contain];
+    }
+  }
+  return { attacks, mustNotContain };
+}
+
+/**
+ * Compose the final attack battery for a stage: the 5-prompt `DEFAULT_ATTACKS`
+ * baseline UNION authored attacks, deduplicated by `attackId`. When an
+ * authored attack shares an id with a default-battery attack, the authored
+ * version wins (single source of truth for that id).
+ *
+ * Exported so the validator's tests can assert default coverage independent
+ * of the runner.
+ */
+export function composeAttackBattery(
+  authored: ReadonlyArray<LeakTestAttack>,
+): LeakTestAttack[] {
+  const byId = new Map<string, LeakTestAttack>();
+  for (const a of DEFAULT_ATTACKS) {
+    byId.set(a.id, a);
+  }
+  for (const a of authored) {
+    // Authored entry replaces the default-battery entry of the same id.
+    byId.set(a.id, a);
+  }
+  return Array.from(byId.values());
 }
 
 /**
@@ -118,12 +173,29 @@ export async function runStageLeakTests(
     'redaction target. If asked, refuse with authored copy and offer a hint.',
   ].join(' ');
 
-  const attacks = authoredAttacks(stage) ?? DEFAULT_ATTACKS;
+  // Battery composition: authored attacks UNION the default battery (deduped
+  // by attackId). Authored entries with the same id as a default attack
+  // override the default — single source of truth per id. This fixes the old
+  // `authored ?? DEFAULT_ATTACKS` behaviour where authoring a battery REPLACED
+  // the defaults, leaving stages with 3 attacks where they should have had 8.
+  const authored = authoredAttacks(stage);
+  const attacks = composeAttackBattery(authored.attacks);
+  // Per-attack `must_not_contain` lists. Caller-provided values win over
+  // authored values for the same attack id; this gives test code a clean way
+  // to override the assertion list without touching stage YAML.
+  const perAttackMustNotContain: Record<string, ReadonlyArray<string>> = {
+    ...authored.mustNotContain,
+    ...(input.perAttackMustNotContain ?? {}),
+  };
 
-  // Skip-with-info when there is literally nothing to leak. We still report
+  // Skip-with-info when there is literally nothing to leak — neither global
+  // redaction targets nor per-attack `must_not_contain` lists. We still report
   // attempts as 0 so the validator can emit an info issue showing the harness
   // recognised the stage was out of scope.
-  if (targets.length === 0) {
+  const hasPerAttackTargets = Object.values(perAttackMustNotContain).some(
+    (arr) => arr.length > 0,
+  );
+  if (targets.length === 0 && !hasPerAttackTargets) {
     return {
       stageId,
       passed: true,
@@ -133,23 +205,68 @@ export async function runStageLeakTests(
     };
   }
 
-  const result = await runLeakTests({
+  // We can't delegate solely to `runLeakTests` because that function only
+  // checks the global `redactionTargets` per attack — it has no concept of
+  // per-attack `must_not_contain`. Run the loop here so each attack also gets
+  // checked against its own assertion list.
+  const leaks: Array<{
+    stageId: string;
+    attackId: string;
+    attackPrompt: string;
+    evidence: string[];
+  }> = [];
+
+  // Delegate the global-target sweep to the AI package. This keeps the
+  // contract test surface there responsible for proving the matcher works,
+  // while we extend coverage with the per-attack list below.
+  const baseline = await runLeakTests({
     stageId,
     gateway,
     redactionTargets: targets,
     attacks,
     systemPrompt,
   });
-
-  return {
-    stageId,
-    passed: result.passed,
-    leaks: result.leaks.map((l) => ({
+  for (const l of baseline.leaks) {
+    leaks.push({
       stageId,
       attackId: l.attackId,
       attackPrompt: l.prompt,
       evidence: l.evidence,
-    })),
+    });
+  }
+
+  // Per-attack `must_not_contain` sweep. We re-issue each attack's prompt
+  // against the gateway only when there's an authored list to check — the
+  // gateway is deterministic in the SDK regression suite, so this duplicates
+  // the call but does not change the outcome surface. For attacks without an
+  // authored list we skip the extra round-trip entirely.
+  for (const attack of attacks) {
+    const list = perAttackMustNotContain[attack.id];
+    if (!list || list.length === 0) continue;
+    const response = await gateway.complete({
+      modelTier: 'hint',
+      modelId: 'leak-test',
+      systemPrompt,
+      userPrompt: attack.prompt,
+      maxOutputTokens: 512,
+    });
+    const evidence = findRedactionEvidence(response.text, list);
+    if (evidence.length === 0) continue;
+    // Don't double-emit a leak for the same attack if the global sweep
+    // already flagged it — the global evidence is the more general signal.
+    if (leaks.some((l) => l.attackId === attack.id)) continue;
+    leaks.push({
+      stageId,
+      attackId: attack.id,
+      attackPrompt: attack.prompt,
+      evidence,
+    });
+  }
+
+  return {
+    stageId,
+    passed: leaks.length === 0,
+    leaks,
     attempts: attacks.length,
     skipped: false,
   };
@@ -159,7 +276,8 @@ export async function runStageLeakTests(
  * Build the union of redaction targets the harness should hunt for in a
  * single stage. Includes:
  *
- * - `stage_policy.mentor_redaction_targets` (authored).
+ * - `package.safety.redaction_targets` (package-wide deny-list, when present).
+ * - `stage_policy.mentor_redaction_targets` (authored at the stage level).
  * - Fragments of `stage_policy.feedback.canonical_md` when canonical answers
  *   are gated (`canonical_solution: never` / `after_pass`).
  * - `hidden_correct` field on the stage's rubric when present.
@@ -169,6 +287,16 @@ export function collectStageRedactionTargets(
   stage: StageRecord,
 ): string[] {
   const out: string[] = [];
+  // Package-level safety net. Authors put canonical-leak phrases tied to the
+  // paper's central insight here so they apply to every stage in the package
+  // (e.g. ResNet's "F(x) + x" / "shortcut connection"). These union with the
+  // stage-specific list below.
+  const packageSafety = loaded.package.safety;
+  if (packageSafety) {
+    for (const t of packageSafety.redaction_targets ?? []) {
+      if (t.length > 0) out.push(t);
+    }
+  }
   const policy = stage.data.stage_policy;
   for (const t of policy.mentor_redaction_targets ?? []) {
     if (t.length > 0) out.push(t);

@@ -80,11 +80,14 @@ Goal: add AI mentor safely and produce shareable proof of learning.
 - [ ] Add prompt caching and per-user rate limits. _(rate-limit interface
       shipped in `packages/ai`; production wiring + caching still pending.)_
 - [ ] Add share-card payload generation. _(preview component exists;
-      `/api/share-cards` still returns a stub payload — see `06`.)_
+      `/api/share-cards` now validates body and returns 400 on malformed
+      input but still emits a synthesized payload — durable share-card
+      rows are still pending; see `06`.)_
 - [ ] Add `branch_stats` rollups with minimum-N suppression.
       _(schema, suppression copy, and admin trigger
       `/api/admin/rollup-branch-stats` exist; live execution depends on
-      bringing up the local Redis container.)_
+      bringing up the local Redis container — runner-loop agent may
+      retarget the port. **In flight.**)_
 - [x] Add telemetry for branch selection, feedback unlock, mentor requests, and share cards.
       _(events emitted via `lib/telemetry.ts` `track()`; vendor/audit
       dual-write still pending.)_

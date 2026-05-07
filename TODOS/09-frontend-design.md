@@ -83,8 +83,8 @@ branch-stats suppression), 03 (CLI surface).
 
 Implementation note: the items in this section are design-spec coverage, not
 React Flow implementation completion. The current web app still renders a graph
-placeholder and `/api/enrollments/:id/graph` returns `{}` until the unresolved
-promise bug is fixed.
+placeholder. `/api/enrollments/:id/graph` now returns the awaited graph
+(Tier-1 fix landed); React Flow rendering itself is deferred to Phase 4.
 
 - [x] Define graph node visual states.
 - [x] Define branch visual states.
@@ -272,8 +272,11 @@ A single design-review checklist consolidating "do not" rules from
 - [x] Define tooltip behavior for icon-only controls.
 - [x] Verify color is not the only branch-status indicator.
 - [ ] Verify text fits in buttons, tabs, cards, and graph nodes.
-      _(manual Playwright review found horizontal overflow on package and stage
-      pages because Tailwind is not emitting all `packages/ui` utility classes.)_
+      _(Tailwind v4 utility generation is fixed in `apps/web` (Tier-1 fix);
+      `globals.css` now `@import "tailwindcss"` + `@source
+      ../../../packages/ui/src/...` so `packages/ui` classes are emitted.
+      Add Playwright visual / overflow assertions to confirm desktop and
+      mobile.)_
 
 ## Static Prototype
 
@@ -308,3 +311,7 @@ A single design-review checklist consolidating "do not" rules from
 - [ ] Pick the branch reveal transition (inline expansion / dedicated reveal /
       graph repaint) and document the rationale.
 - [ ] Add automated visual assertions for page overflow and mobile layout.
+      _(Tailwind v4 utility scanning fix landed; visual assertions now
+      meaningful.)_
+- [ ] UI polish for catalog/overview/stage layouts, AppShell, dark-mode
+      toggle. _(in flight)_

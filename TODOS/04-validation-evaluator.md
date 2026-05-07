@@ -16,6 +16,11 @@ reflect that snapshot.
 - [x] Validate hint schemas.
 - [x] Validate `workspace/runner.yaml`.
 - [x] Validate `safety.redaction_targets` when LLM mentor or LLM grading is enabled.
+      _(stage-level `mentor_redaction_targets` validates today; the
+      `package.safety.redaction_targets` block is silently dropped at parse
+      because `packageSchema` does not declare `safety`. **Schema-completeness
+      agent in flight** to add `safetySchema` to `packageSchema` and union
+      its targets with the per-stage list.)_
 
 ## ARA Cross-Link Validation
 
@@ -28,7 +33,9 @@ reflect that snapshot.
 - [ ] Verify `trace/exploration_tree.yaml` nodes reference valid logic, code,
       evidence ids, branch ids, parent ids, and edge endpoints; flag dangling or
       duplicate node ids. _(current validator covers node id uniqueness and
-      `refs`; trace schema, `parents`, `edges`, and `branch_id` checks remain.)_
+      `refs`; trace schema, `parents`, `edges`, and `branch_id` checks remain.
+      Schema-completeness agent may pick this up alongside the other
+      drop-fixes.)_
 - [ ] Verify trace nodes that map to curriculum branches use the same id
       convention so trace and curriculum stay aligned.
 - [x] Enforce `support_level=explicit` requires non-empty `source_refs`.
@@ -118,3 +125,18 @@ reflect that snapshot.
 - [ ] Define a typed trace graph schema and build output so
       `buildPackageManifest` can expose a compiled experiment tree payload for
       the web UI.
+- [ ] Add `package.safety` (`safetySchema`) to `packageSchema` and union
+      `package.safety.redaction_targets` with `stage_policy.mentor_redaction_targets`
+      when collecting leak-test targets. _(schema-completeness agent in
+      flight)_
+- [ ] Capture `mentor_leak_tests[*].must_not_contain` (and optional `id` /
+      `category`) on the stage schema; have the leak-test harness check
+      each authored attack against its own list. _(in flight)_
+- [ ] Compose authored leak-test attacks as a UNION with the default
+      battery, not OR (today `authoredAttacks(stage) ?? DEFAULT_ATTACKS`
+      replaces the 5 defaults; should `[...authored, ...DEFAULT_ATTACKS]`
+      with id-dedupe). _(in flight)_
+- [ ] Surface dropped stage fields (`node_id`, `source_refs`,
+      `evidence_refs`, `validation.test_path`, `inputs.fields`,
+      `runner.fixtures`) either via schema extension or structural warnings.
+      _(in flight)_

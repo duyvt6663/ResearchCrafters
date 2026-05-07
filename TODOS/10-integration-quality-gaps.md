@@ -3,17 +3,21 @@
 Goal: turn the scaffolded app into a verified end-to-end learner loop before
 adding more product surface.
 
-Status (verified 2026-05-08): static quality is green after the integration
-fixes (`pnpm lint`, `pnpm typecheck`, `pnpm test`, and the web production build
-all pass; lint still reports one cached UI warning). Local Postgres + MinIO are
-healthy, and CLI device-token, `start`, and `submit` can round-trip against the
-local app. Browser quality is not green: the original tracked 3-spec smoke
-passed, but the current workspace's expanded 23-test Playwright suite fails
-15/23 under parallel dev-server execution. The app is not yet end-to-end
-complete: two API routes still serialize unresolved promises, submission runs
-never reach a real runner/evaluator, Redis cannot start on the default local
-port, and Tailwind is not generating all utility classes used by `packages/ui`,
-causing severe layout overflow in the browser.
+Status (verified 2026-05-08, post Tier-1 API hygiene + Tailwind v4
+migration): static quality is green (`pnpm lint`, `pnpm typecheck`,
+`pnpm test`, and the web production build all pass; lint still reports one
+cached UI warning). Local Postgres + MinIO are healthy, and CLI
+device-token, `start`, and `submit` can round-trip against the local app.
+The two unresolved-promise API contract bugs are fixed (`/api/packages` and
+`/api/enrollments/:id/graph` now `await`); 10 routes now accept Bearer auth
+via `getSessionFromRequest`; `/api/stage-attempts`, `/api/share-cards`, and
+`/api/node-traversals` return structured 400 on bad bodies; Tailwind v4
+utility generation in `apps/web` is fixed and `packages/ui` classes are
+emitted. The app is still not end-to-end complete: submission runs never
+reach a real runner/evaluator, Redis cannot start on the default local
+port, the Next.js 15.5.16 dev cache flake (`Cannot find module './3879.js'`)
+still destabilises Playwright under parallel load, and persistent rows for
+node traversals / share cards / stage attempts are still synthesized.
 
 Depends on: 01, 02, 03, 04, 06, 08, 09. Blocks: calling the app end-to-end.
 
@@ -47,9 +51,9 @@ Acceptance criteria:
 - [x] No React Server Component client-boundary errors appear in server logs.
 - [ ] No console error appears on the happy-path catalog -> stage journey except
       explicitly allowed dev-only warnings.
-      _(routes are healthy, but manual browser review still shows layout
-      overflow from missing Tailwind utilities; add visual assertions before
-      closing this.)_
+      _(routes are healthy and Tailwind v4 utility generation is fixed;
+      sibling UI-polish agent is in flight on layout regressions, and
+      visual / overflow assertions are still pending in Playwright.)_
 
 ## P0: Package Source of Truth
 
@@ -140,12 +144,18 @@ Acceptance criteria:
 - [x] Store submission metadata before upload and verify upload size + sha256
       during finalize.
 - [ ] Enqueue a runner job after finalize with an idempotency key.
-      _(verified: finalize creates a queued `Run` row only.)_
+      _(verified: finalize creates a queued `Run` row only. Runner-loop
+      agent in flight.)_
 - [ ] Implement `DockerSandbox.run()` or a dev-safe sandbox adapter that enforces
       CPU, memory, wall-clock, network, and writable-mount constraints.
-- [ ] Persist runner output artifacts and scrubbed logs.
+- [ ] Persist runner output artifacts and scrubbed logs. _(runner-loop
+      agent in flight)_
 - [ ] Send runner callbacks with service authentication, not user cookies.
-- [ ] Invoke evaluator only when `execution_status=ok`.
+      _(route is now Bearer-aware via `getSessionFromRequest`, but a service
+      token / `X-Runner-Secret` gate is still missing — runner-loop agent
+      in flight.)_
+- [ ] Invoke evaluator only when `execution_status=ok`. _(runner-loop
+      agent in flight)_
 - [ ] Persist structured grades and expose them through web and CLI.
 - [ ] Render timeout, OOM, crash, and non-zero exit as execution failures, not
       grade failures.
@@ -208,32 +218,60 @@ Acceptance criteria:
 
 ## Current Verified Failures
 
-- [ ] `/api/packages` returns `{ "packages": {} }`; route handler returns the
-      unresolved `listPackages()` promise.
-- [ ] `/api/enrollments/:id/graph` returns `{ "graph": {} }`; route handler
-      returns the unresolved `getDecisionGraph()` promise.
-- [ ] Web layout has severe horizontal overflow because Tailwind is not
+- [x] `/api/packages` returns `{ "packages": {} }`; route handler returns the
+      unresolved `listPackages()` promise. _(Tier-1 fix landed: now
+      `await listPackages()`.)_
+- [x] `/api/enrollments/:id/graph` returns `{ "graph": {} }`; route handler
+      returns the unresolved `getDecisionGraph()` promise. _(Tier-1 fix
+      landed: now `await getDecisionGraph(id)`.)_
+- [x] Web layout has severe horizontal overflow because Tailwind is not
       generating all utility classes used by `packages/ui` (`flex-col` on the
-      app shell is missing in the emitted CSS). Add package UI source scanning
-      or a v4-compatible Tailwind config and visual assertions.
+      app shell is missing in the emitted CSS). _(Tier-1 fix landed:
+      `apps/web/app/globals.css` migrated to v4
+      `@import "tailwindcss"` + `@source ../../../packages/ui/src/...`;
+      dead `apps/web/tailwind.config.ts` removed. UI polish for residual
+      layout regressions is in flight; visual / overflow assertions in
+      Playwright are still pending.)_
 - [ ] Expanded Playwright suite fails 15/23 in the current workspace. Some
-      failures are product gaps; several 500s are Next dev missing-vendor-chunk
-      failures under parallel test execution, so the E2E harness also needs
-      server/cache isolation.
+      failures are product gaps; several 500s are Next 15.5.16 dev
+      missing-vendor-chunk failures (`Cannot find module './3879.js'`,
+      vendor-chunk MODULE_NOT_FOUND under parallel test execution), so the
+      E2E harness also needs server/cache isolation. Workaround:
+      `rm -rf apps/web/.next && pnpm --filter @researchcrafters/web dev`.
 - [ ] CLI `submit` uploads and finalizes, but does not surface or persist the
       returned run id; `researchcrafters status` still prints "No runs yet."
+      _(CLI/entitlements agent in flight)_
 - [ ] Submission finalize creates a queued `Run` row but does not enqueue the
       BullMQ `submission_run` job, so the run remains queued with empty logs.
+      _(runner-loop agent in flight)_
 - [ ] Runner callback does not persist status, logs, metrics, or timestamps and
-      still lacks service-token authentication.
+      still lacks service-token authentication. _(route is Bearer-aware now;
+      service-token / `X-Runner-Secret` gate is in flight via runner-loop
+      agent.)_
 - [ ] `researchcrafters start resnet` creates an effectively empty workspace
       because the enroll/start response has no starter URL or smoke command.
+      _(CLI/entitlements agent is dropping the dead `EnrollResponse`
+      `starterUrl/apiUrl/smokeCommand` fields; durable starter bundle
+      seeding still pending.)_
 - [ ] CLI upload ignores returned `uploadHeaders`; it hard-codes only
       `content-type`, which will break if signed headers become required.
 - [ ] Branch traversal and web stage-attempt routes return synthesized IDs and
       telemetry only; they do not persist rows for branch stats or resumes.
+      _(routes now Bearer-aware and 400-validate empty bodies; durable rows
+      remain.)_
 - [ ] Share-card API/page still use stub payloads and do not persist immutable
-      public share-card rows/assets.
+      public share-card rows/assets. _(route now 400-validates empty body
+      and is Bearer-aware; durable rows still pending.)_
 - [x] `pnpm typecheck`, `pnpm test`, and the web production build are green.
 - [ ] `docker compose up` can fail on Redis when host port `6379` is already in
-      use; make local ports configurable.
+      use; make local ports configurable. _(runner-loop agent may retarget
+      the port.)_
+- [ ] No API route handler tests anywhere — every `apps/web/app/api/**/route.ts`
+      lacks Request → Response tests. test-coverage QA listed top-10
+      candidates (denial-status mapping, anonymized-email, stage-attempt
+      4xx, mentor messages 4xx, submission-init bad sha256 propagation).
+- [ ] CLI `submit` bundle deny-list (`.env`, `node_modules`, `.git`, `*.pem`),
+      50 MiB total cap, 5 MiB per-file cap, and 5000-file cap are
+      uncovered by tests; a regression could leak `.env` to the server.
+- [ ] `AnthropicGateway` real-provider path is mock-only — wire shape and
+      error handling never exercised against a real key.

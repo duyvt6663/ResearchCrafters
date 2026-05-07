@@ -164,14 +164,17 @@ reflect that snapshot.
       runnable.
 - [x] Replace the web package/enrollment/stage in-memory stubs with Prisma-backed
       queries through `@researchcrafters/db`.
-- [ ] Fix `/api/packages` to await the Prisma-backed package list.
+- [x] Fix `/api/packages` to await the Prisma-backed package list. _(Tier-1
+      fix landed.)_
 - [x] Wire `permissions.canAccess` to live `Membership` and `Entitlement` rows.
-- [ ] Fix `/api/enrollments/:id/graph` to await the Prisma-backed decision
-      graph.
+- [x] Fix `/api/enrollments/:id/graph` to await the Prisma-backed decision
+      graph. _(Tier-1 fix landed.)_
 - [ ] Persist `node_traversals` and `stage_attempts` from API routes instead of
-      returning synthesized ids.
+      returning synthesized ids. _(routes now Bearer-aware and 400-validate
+      empty bodies; durable rows remain.)_
 - [ ] Build the branch-stats rollup job (per-branch N>=5, per-node N>=20, 5%
-      rounding).
+      rounding). _(execution depends on bringing up Redis; runner-loop agent
+      may retarget the port — in flight.)_
 - [ ] Land the events dual-write: PostHog primary, audit-grade rows in the
       Postgres `Event` table.
 - [ ] Surface the migration UX flow in the web app.

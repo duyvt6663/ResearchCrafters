@@ -52,6 +52,11 @@
   --text-rc-2xl: 24px;
   --text-rc-3xl: 30px;
 
+  /* Display sizes — marketing/hero only. Do not use for body. */
+  --text-rc-display-sm: 32px;
+  --text-rc-display-md: 40px;
+  --text-rc-display-lg: 48px;
+
   /* ---------- Radius ---------- */
   --radius-rc-sm: 4px;
   --radius-rc-md: 6px;
@@ -105,4 +110,77 @@
 [data-card] [data-card] {
   outline: 2px dashed var(--color-rc-danger);
   outline-offset: 2px;
+}
+
+/*
+ * Card inside a clickable wrapper (anchor, button, link card) gets a subtle
+ * border-color shift on hover. Cards used as static surfaces stay quiet.
+ */
+a:hover > [data-card],
+button:hover > [data-card],
+[data-card-link]:hover > [data-card] {
+  border-color: var(--color-rc-border-strong);
+}
+
+/*
+ * Component layer: workbench-precise patterns shared across surfaces.
+ * Keeps the marketing hero free of decorative gradients while still letting
+ * the catalog band feel intentional rather than flat (per `docs/FRONTEND.md`
+ * §4: "prefer full-width application bands and fixed work areas").
+ */
+@layer components {
+  /*
+   * Subtle dot grid for the hero band. Single CSS gradient, no images.
+   * Density and contrast tuned to disappear at scale — readers should sense
+   * texture, not see decoration.
+   */
+  .rc-hero-grid {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      var(--color-rc-border) 1px,
+      transparent 0
+    );
+    background-size: 22px 22px;
+    background-position: 0 0;
+  }
+
+  /* Display heading — hero/H1 only. */
+  .rc-display {
+    font-size: var(--text-rc-display-md);
+    line-height: 1.05;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+  @media (min-width: 1100px) {
+    .rc-display {
+      font-size: var(--text-rc-display-lg);
+    }
+  }
+
+  /* Indeterminate top-of-shell loading bar slot. Hidden by default. */
+  .rc-loading-bar {
+    height: 2px;
+    width: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-rc-accent),
+      transparent
+    );
+    background-size: 200% 100%;
+    background-position: 100% 0;
+    opacity: 0;
+  }
+  .rc-loading-bar[data-active="true"] {
+    opacity: 1;
+    animation: rc-loading-bar 1.2s var(--ease-rc-standard, linear) infinite;
+  }
+  @keyframes rc-loading-bar {
+    from {
+      background-position: 100% 0;
+    }
+    to {
+      background-position: -100% 0;
+    }
+  }
 }

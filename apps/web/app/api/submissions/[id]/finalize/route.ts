@@ -13,6 +13,8 @@ import {
   headObject,
   type HeadObjectResult,
 } from "@/lib/storage";
+import { getProducerQueue } from "@researchcrafters/worker/admin";
+import { SUBMISSION_RUN_QUEUE } from "@researchcrafters/worker";
 
 export const runtime = "nodejs";
 
@@ -167,6 +169,36 @@ export async function POST(
     }
   }
 
+  // Resolve the stage's runnerMode (mirrored on the Stage row) so we can both
+  // stamp the Run row truthfully AND give the BullMQ payload the dispatch hint
+  // it needs. Defaults to `none` when the lookup fails — the worker's
+  // submission-run handler accepts `none` and short-circuits to ok.
+  let runnerMode: "test" | "replay" | "mini_experiment" | "none" = "none";
+  if (submission) {
+    try {
+      const stage = await withQueryTimeout(
+        prisma.stage.findFirst({
+          where: {
+            packageVersionId: submission.stageAttempt.enrollment.packageVersionId,
+            stageId: submission.stageAttempt.stageRef,
+          },
+          select: { runnerMode: true },
+        }),
+      );
+      const candidate = stage?.runnerMode;
+      if (
+        candidate === "test" ||
+        candidate === "replay" ||
+        candidate === "mini_experiment" ||
+        candidate === "none"
+      ) {
+        runnerMode = candidate;
+      }
+    } catch {
+      // Best-effort: leave runnerMode at 'none' so the worker exits fast.
+    }
+  }
+
   let runId = `run-${Date.now()}`;
   if (submission) {
     try {
@@ -175,10 +207,9 @@ export async function POST(
           data: {
             submissionId: submission.id,
             status: "queued",
-            // The runner mode lives on the Stage row keyed by (packageVersion,
-            // stageRef). For the queued row it's safe to default to 'none' —
-            // the worker rewrites this when it picks the job up.
-            runnerMode: "none",
+            // Mirror the Stage's runnerMode so /api/runs/:id reflects the real
+            // dispatch shape immediately, even before the worker picks the job.
+            runnerMode,
           },
           select: { id: true },
         }),
@@ -189,12 +220,55 @@ export async function POST(
     }
   }
 
+  // Enqueue the submission_run job. The job id is pinned to `runId` so a
+  // retry of the enqueue (e.g. transient Redis failure) cannot double-execute
+  // — BullMQ deduplicates on jobId at the queue layer.
+  let queueDeferred = false;
+  if (submission) {
+    try {
+      const queue = await getProducerQueue(SUBMISSION_RUN_QUEUE);
+      await queue.add(
+        SUBMISSION_RUN_QUEUE,
+        {
+          runId,
+          submissionId: submission.id,
+          packageVersionId:
+            submission.stageAttempt.enrollment.packageVersionId,
+          stageRef: submission.stageAttempt.stageRef,
+          runnerMode,
+        },
+        { jobId: runId },
+      );
+    } catch (err) {
+      // Redis is allowed to be down in dev (port 6379 collisions on the host
+      // tier). Leave the Run row in `queued` so a worker can pick it up the
+      // moment the broker is back, and surface `queueDeferred` so the CLI can
+      // distinguish "queued and ready" from "queued, broker offline".
+      queueDeferred = true;
+
+      console.warn(
+        JSON.stringify({
+          kind: "submission_run_enqueue_failed",
+          runId,
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      );
+    }
+  }
+
   await track("runner_job_started", {
     submissionId: submission?.id ?? id,
     runId,
     stageRef: submission?.stageAttempt.stageRef ?? "unknown",
+    queueDeferred,
   });
 
   const body = submissionFinalizeResponseSchema.parse({ runId });
+  // Surface the queue degradation flag as an extra field. The contract schema
+  // is `.strict()` so we wrap it to keep the canonical fields intact while
+  // adding the optional flag the CLI can branch on.
+  if (queueDeferred) {
+    return NextResponse.json({ ...body, queueDeferred: true });
+  }
   return NextResponse.json(body);
 }

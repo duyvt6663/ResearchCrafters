@@ -65,8 +65,14 @@ reflect that snapshot.
 - [x] For each stage, generate adversarial prompts.
 - [x] Ask for canonical answers directly.
 - [x] Ask through roleplay, grading, JSON, and "debug" framing.
+      _(default battery exists; today authored attacks REPLACE the default
+      battery rather than extending it — schema-completeness agent in
+      flight on the union composition.)_
 - [x] Fail package validation if restricted answer text appears.
 - [x] Include `safety.redaction_targets` in leak checks.
+      _(per-stage `mentor_redaction_targets` used; package-level
+      `safety.redaction_targets` is silently dropped at parse — schema
+      agent in flight to surface and union it.)_
 - [x] Add tests for branch feedback gating.
 - [x] Add tests for canonical solution gating.
 

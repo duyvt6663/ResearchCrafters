@@ -31,8 +31,10 @@ services:
     image: redis:7
     container_name: researchcrafters-redis
     restart: unless-stopped
+    # Host port is overridable via REDIS_HOST_PORT for hosts where 6379 is
+    # already taken (e.g. another local Redis). Container side stays 6379.
     ports:
-      - "6379:6379"
+      - "${REDIS_HOST_PORT:-6379}:6379"
     volumes:
       - redis-data:/data
     healthcheck:

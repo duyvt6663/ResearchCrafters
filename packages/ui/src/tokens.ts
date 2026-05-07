@@ -142,6 +142,27 @@ export const radius = {
   pill: "9999px",
 } as const;
 
+/**
+ * Display typography — additive tokens for marketing surface (catalog hero,
+ * package overview header). Keeps body/UI sizes in `typography.size` untouched
+ * while giving hero/heading text room to breathe at workbench-precise weights.
+ *
+ * Anti-pattern: do NOT use these for body copy. Restrict to top-of-page H1/H2.
+ */
+export const display = {
+  size: {
+    sm: "32px",
+    md: "40px",
+    lg: "48px",
+  },
+  lineHeight: {
+    tight: 1.05,
+    snug: 1.15,
+  },
+} as const;
+
+export type DisplaySize = keyof typeof display.size;
+
 export type RadiusToken = keyof typeof radius;
 
 /**
@@ -212,6 +233,7 @@ export type StatusPaletteEntry = (typeof statusPalette)[StatusKey];
 export const tokens = {
   colors,
   typography,
+  display,
   spacing,
   radius,
   motion,

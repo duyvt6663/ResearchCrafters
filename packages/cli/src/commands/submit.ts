@@ -5,7 +5,7 @@ import kleur from 'kleur';
 import fg from 'fast-glob';
 import { api } from '../lib/api.js';
 import { errors } from '../lib/error-ux.js';
-import { isLoggedIn } from '../lib/config.js';
+import { isLoggedIn, readProjectConfig, setProjectConfig } from '../lib/config.js';
 import type { LocalProjectConfig } from '../lib/config.js';
 
 const DENY_PATTERNS = [
@@ -35,11 +35,9 @@ export interface SubmitResult {
   fileCount: number;
 }
 
-async function readProjectConfig(cwd: string): Promise<LocalProjectConfig> {
-  const file = path.join(cwd, '.researchcrafters', 'config.json');
+async function loadProjectConfig(cwd: string): Promise<LocalProjectConfig> {
   try {
-    const text = await fs.readFile(file, 'utf8');
-    return JSON.parse(text) as LocalProjectConfig;
+    return await readProjectConfig(cwd);
   } catch {
     throw errors.noProjectConfig();
   }
@@ -89,7 +87,7 @@ function buildBundle(entries: BundleEntry[]): Buffer {
 export async function submitCommand(opts: { cwd?: string } = {}): Promise<SubmitResult> {
   if (!isLoggedIn()) throw errors.notLoggedIn();
   const cwd = opts.cwd ?? process.cwd();
-  const cfg = await readProjectConfig(cwd);
+  const cfg = await loadProjectConfig(cwd);
 
   process.stdout.write(kleur.dim('Collecting submission files...\n'));
   const entries = await collectFiles(cwd);
@@ -108,12 +106,24 @@ export async function submitCommand(opts: { cwd?: string } = {}): Promise<Submit
     sha256: sha,
   });
   await api.uploadToSignedUrl(init.uploadUrl, bundle);
-  await api.finalizeSubmission(init.submissionId, {
+  const finalize = await api.finalizeSubmission(init.submissionId, {
     uploadedSha256: sha,
     uploadedBytes: bundle.length,
   });
 
+  // Persist the runId in the workspace config so `researchcrafters status`
+  // can fetch and render the latest run. Surface a friendly hint pointing the
+  // learner at the right next-step command.
+  try {
+    await setProjectConfig({ lastRunId: finalize.runId }, cwd);
+  } catch {
+    // Best-effort: a stale workspace shouldn't fail the whole submission.
+  }
+
   process.stdout.write(kleur.green(`Submitted. id=${init.submissionId}\n`));
+  process.stdout.write(
+    `${kleur.bold('Run id:')} ${finalize.runId} ${kleur.dim('— track with `researchcrafters status`')}\n`,
+  );
   return {
     submissionId: init.submissionId,
     bundleSha256: sha,

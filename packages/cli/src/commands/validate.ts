@@ -2,6 +2,21 @@ import path from 'node:path';
 import kleur from 'kleur';
 import { validatePackage } from '@researchcrafters/content-sdk';
 import type { Issue, ValidationReport } from '@researchcrafters/content-sdk';
+import { MockLLMGateway } from '@researchcrafters/ai';
+
+/**
+ * Clean-refusal gateway used by the CLI by default. The SDK's built-in
+ * default mock deliberately echoes redaction targets on the `direct-ask`
+ * attack — that's the harness's own regression test, not a behaviour we
+ * want during author-facing validate runs. CI swaps in the real Anthropic
+ * gateway via the env-var path inside the SDK.
+ */
+function cleanRefusalGatewayFactory(): MockLLMGateway {
+  return new MockLLMGateway(
+    () =>
+      "I can't disclose the canonical solution, branch solutions, or any redaction target. Here's a hint instead: re-read the rubric and ground your reasoning in the cited evidence.",
+  );
+}
 
 interface ValidateOptions {
   cwd?: string;
@@ -49,7 +64,9 @@ export async function validateCommand(
 ): Promise<ValidationReport> {
   const cwd = opts.cwd ?? process.cwd();
   const target = path.resolve(cwd, packagePath);
-  const report = await validatePackage(target);
+  const report = await validatePackage(target, {
+    leakTestGatewayFactory: cleanRefusalGatewayFactory,
+  });
   if (opts.json) {
     process.stdout.write(JSON.stringify(report, null, 2) + '\n');
   } else {

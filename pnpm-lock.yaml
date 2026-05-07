@@ -204,6 +204,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@researchcrafters/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@researchcrafters/content-sdk':
         specifier: workspace:*
         version: link:../content-sdk

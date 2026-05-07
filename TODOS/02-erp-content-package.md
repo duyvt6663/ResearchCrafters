@@ -51,6 +51,9 @@ reflect that snapshot.
 - [x] Add `stage_policy` for every stage.
 - [x] Add runner mode for every executable stage.
 - [x] Add `safety.redaction_targets` for LLM mentor or grading stages.
+      _(authored in `package.yaml`; **schema-completeness agent in flight**
+      to surface `package.safety.redaction_targets` through `packageSchema`
+      so the runtime actually sees them.)_
 - [x] Write expert branch feedback for every decision branch.
 - [x] Write canonical feedback and common misconception notes.
 
@@ -113,3 +116,12 @@ trusted hardware before the package can ship.
 - [ ] Assign expert reviewer; populate `review.last_reviewed_at`.
 - [ ] Run beta cohort review of the flagship package.
 - [ ] Author a second package (FlashAttention or DPO).
+- [ ] Add a `math` node stage to the ResNet curriculum (PRD §5 requires 9
+      node types; ResNet covers 8). _(schema-completeness agent in flight on
+      schema; new stage authoring still needed.)_
+- [ ] Lengthen S004 redaction target `"0.03"` to a contextualized phrase
+      (e.g. `"degradation gap of 0.03"`); add per-trajectory finals
+      (`0.06`, `0.08`, `0.05`) to `mentor_redaction_targets` so the harness
+      can catch fixture leaks today instead of only via the dropped
+      per-attack `must_not_contain` lists. _(schema-completeness agent in
+      flight on `must_not_contain` capture.)_

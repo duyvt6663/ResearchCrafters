@@ -102,17 +102,25 @@ section 11.
 
 - [x] Choose an auth provider (NextAuth / Clerk / in-house) and wire DB-backed sessions in `lib/auth.ts`.
       _(NextAuth v5 + Prisma adapter; GitHub provider; magic-link deferred)_
-- [ ] Fix `/api/packages` so the API returns the awaited Prisma-backed package
-      list instead of `{}`.
+- [x] Fix `/api/packages` so the API returns the awaited Prisma-backed package
+      list instead of `{}`. _(Tier-1 fix landed: `await listPackages()`.)_
 - [x] Replace the stubbed `permissions.canAccess` entitlement branch with live
       `Membership` + `Entitlement` reads.
 - [x] Automate the package overview and stage-player browser smoke path from
       `10-integration-quality-gaps.md`. _(Playwright specs at `tests/e2e/`)_
 - [ ] Wire `lib/telemetry.ts` `track()` to a real analytics destination.
 - [ ] Render the React Flow decision graph (deferred to Phase 4).
-- [ ] Fix `/api/enrollments/:id/graph` so it returns the awaited Prisma-backed
-      graph instead of `{}`.
-- [ ] Fix Tailwind package-source scanning / config so `packages/ui` utility
+- [x] Fix `/api/enrollments/:id/graph` so it returns the awaited Prisma-backed
+      graph instead of `{}`. _(Tier-1 fix landed: `await getDecisionGraph(id)`.)_
+- [x] Fix Tailwind package-source scanning / config so `packages/ui` utility
       classes render correctly and pages do not overflow horizontally.
+      _(Tier-1 fix landed: `apps/web/app/globals.css` migrated to v4
+      `@import "tailwindcss"` + `@source ../../../packages/ui/src/...`; dead
+      `apps/web/tailwind.config.ts` removed; CSS payload 109 → ~1328 lines.)_
 - [ ] Generate real share-card public URLs and image assets.
 - [ ] Review the static prototype with target users.
+- [ ] UI polish for catalog/overview/stage layouts, AppShell, dark-mode
+      toggle. _(in flight)_
+- [ ] CLI/entitlements polish: `lastRunId` persistence, `slug@slug@stub`
+      rendering fix, drop dead `EnrollResponse` fields, replace
+      `/api/entitlements` stub with live Prisma reads. _(in flight)_

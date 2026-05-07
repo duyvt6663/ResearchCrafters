@@ -104,7 +104,6 @@ interface AnsiSegment {
 
 function parseAnsi(input: string): AnsiSegment[] {
   const segments: AnsiSegment[] = [];
-  // eslint-disable-next-line no-control-regex
   const re = /\x1b\[([0-9;]*)m/g;
   let cursor = 0;
   let color: string | undefined;

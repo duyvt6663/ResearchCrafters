@@ -58,18 +58,18 @@ export const DialogContent = React.forwardRef<
           "fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
           "w-[min(92vw,520px)] max-h-[85vh] overflow-auto",
           "rounded-[--radius-rc-lg] border border-[--color-rc-border] bg-[--color-rc-bg] text-[--color-rc-text]",
-          "shadow-lg p-5",
+          "shadow-lg p-7",
           className,
         )}
         {...rest}
       >
         {title ? (
-          <RadixDialog.Title className="text-[--text-rc-lg] font-semibold mb-1">
+          <RadixDialog.Title className="text-[--text-rc-xl] font-semibold leading-tight mb-2">
             {title}
           </RadixDialog.Title>
         ) : null}
         {description ? (
-          <RadixDialog.Description className="text-[--text-rc-sm] text-[--color-rc-text-muted] mb-3">
+          <RadixDialog.Description className="text-[--text-rc-sm] leading-relaxed text-[--color-rc-text-muted] mb-3">
             {description}
           </RadixDialog.Description>
         ) : null}

@@ -175,15 +175,57 @@ describeLive("api smoke (live)", () => {
     expect([200, 401, 403, 404]).toContain(res.status);
   });
 
-  it("REGRESSION — GET /api/entitlements always returns []  (stub)", async () => {
+  it("GET /api/entitlements returns the live { membership, entitlements } shape under Bearer auth", async () => {
     const res = await fetch(`${baseUrl}/api/entitlements`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(res.status).toBe(200);
-    const body = await res.json();
-    // Documented behaviour today: hard-coded `[]` for any user that isn't
-    // the magic id `"u-paid"`. Pin it so the fix is observable.
-    expect(body).toEqual({ entitlements: [] });
+    expect(res.headers.get("content-type")).toMatch(/application\/json/);
+    const body = (await res.json()) as {
+      membership: { plan: string; status: string } | null;
+      entitlements: Array<{
+        scope: string;
+        packageVersionId: string | null;
+        stageId: string | null;
+        source: string;
+        expiresAt: string | null;
+      }>;
+    };
+    // Shape contract — narrow set of fields, no PII beyond what the user
+    // already has implicitly. The previous stub returned `{entitlements:[]}`
+    // with no `membership` key; the live route always returns both.
+    expect(body).toHaveProperty("membership");
+    expect(body).toHaveProperty("entitlements");
+    expect(Array.isArray(body.entitlements)).toBe(true);
+    if (body.membership !== null) {
+      expect(typeof body.membership.plan).toBe("string");
+      expect(typeof body.membership.status).toBe("string");
+    }
+    for (const ent of body.entitlements) {
+      expect(typeof ent.scope).toBe("string");
+      expect(typeof ent.source).toBe("string");
+      // packageVersionId / stageId may be null but, when present, must be
+      // strings — not Prisma Date objects, not undefined.
+      if (ent.packageVersionId !== null) {
+        expect(typeof ent.packageVersionId).toBe("string");
+      }
+      if (ent.stageId !== null) {
+        expect(typeof ent.stageId).toBe("string");
+      }
+      if (ent.expiresAt !== null) {
+        expect(typeof ent.expiresAt).toBe("string");
+        // ISO-formatted (parseable).
+        expect(Number.isNaN(Date.parse(ent.expiresAt))).toBe(false);
+      }
+    }
+  });
+
+  it("GET /api/entitlements requires auth (401 for anonymous callers)", async () => {
+    const res = await fetch(`${baseUrl}/api/entitlements`);
+    // The previous stub silently returned `{entitlements: []}` to anonymous
+    // callers; the wired route must 401 instead.
+    expect(res.status).toBe(401);
+    expect(res.headers.get("content-type")).toMatch(/application\/json/);
   });
 
   // --- Schema-gap: bodies that should be 400 but become 500 today -----------

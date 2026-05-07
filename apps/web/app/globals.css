@@ -1,8 +1,22 @@
+/* Tailwind v4 entry point.
+ * v4 is CSS-first: `@import "tailwindcss"` replaces the old v3
+ * `@tailwind base/components/utilities` directives. The `tailwind.config.ts`
+ * file is ignored by v4 — content paths come from `@source` and from
+ * automatic detection.
+ *
+ * The UI package's tokens land via `@theme` in @researchcrafters/ui/styles.css.
+ */
+@import "tailwindcss";
+
+/* Pull in the design tokens defined as @theme in the UI package. */
 @import "@researchcrafters/ui/styles.css";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind v4 only auto-scans the app's own files. We have to explicitly
+ * point it at the workspace package whose components carry our utility
+ * classes. Without this, classes like `flex`, `text-[--color-rc-text]`, and
+ * `bg-[--color-rc-surface]` never make it into the generated stylesheet —
+ * which produces the "bland page" symptom we hit before this fix. */
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
 
 :root {
   color-scheme: light dark;
@@ -14,17 +28,79 @@ body {
 }
 
 body {
-  font-family: var(--rc-font-sans, ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, sans-serif);
+  font-family: var(
+    --font-rc-sans,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif
+  );
   letter-spacing: 0;
-  background: var(--rc-color-bg, #fff);
-  color: var(--rc-color-fg, #111);
+  background: var(--color-rc-bg, #fff);
+  color: var(--color-rc-text, #111);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 code,
 kbd,
 pre,
 samp {
-  font-family: var(--rc-font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, monospace);
+  font-family: var(
+    --font-rc-mono,
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace
+  );
+}
+
+/* Prefer the user's OS theme on first load; the web app can later persist
+ * their explicit choice via `data-theme` on <html>. */
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) {
+    color-scheme: dark;
+  }
+  html:not([data-theme]) body {
+    background: var(--color-rc-bg);
+    color: var(--color-rc-text);
+  }
+  html:not([data-theme]) {
+    --color-rc-bg: #0b0d11;
+    --color-rc-surface: #13161c;
+    --color-rc-surface-muted: #1a1e26;
+    --color-rc-border: #262b35;
+    --color-rc-border-strong: #3a414f;
+    --color-rc-text: #f3f5f8;
+    --color-rc-text-muted: #a8b0bd;
+    --color-rc-text-subtle: #7c8492;
+    --color-rc-accent: #5b8bff;
+    --color-rc-accent-hover: #7aa1ff;
+    --color-rc-accent-subtle: #1c2a4d;
+    --color-rc-on-accent: #0b0d11;
+  }
+}
+
+/* Smooth focus ring for keyboard nav — workbench tone, not brand-y. */
+:focus-visible {
+  outline: 2px solid var(--color-rc-accent, #1f5fff);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Subtle scrollbar for dense panels. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-rc-border, #dcdfe6);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-rc-border-strong, #c2c7d1);
 }

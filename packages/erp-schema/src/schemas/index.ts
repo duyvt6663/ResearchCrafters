@@ -10,6 +10,7 @@ export {
   paperSchema,
   releaseSchema,
   reviewSchema,
+  safetySchema,
   statusEnum,
   difficultyEnum,
   packageDifficultyEnum,
@@ -19,10 +20,13 @@ export { graphNodeSchema, graphChoiceSchema, stageTypeEnum } from './graph.js';
 export {
   mentorVisibilitySchema,
   stagePolicySchema,
+  mentorLeakTestSchema,
+  stageInputFieldSchema,
   mentorVisibilityStateEnum,
   runnerModeEnum,
   validationKindEnum,
   inputModeEnum,
+  inputFieldKindEnum,
 } from './stage.js';
 export { branchTypeEnum, supportLevelEnum } from './branch.js';
 export { rubricDimensionSchema } from './rubric.js';

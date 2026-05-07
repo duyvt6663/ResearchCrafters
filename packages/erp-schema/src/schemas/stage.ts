@@ -2,6 +2,17 @@ import { z } from 'zod';
 import { difficultyEnum } from './package.js';
 import { stageTypeEnum } from './graph.js';
 
+/**
+ * Inline fixture-hash declaration shape. Mirrors `runnerFixtureSchema` in
+ * `./runner.ts` but lives here to avoid a stage <-> runner import cycle
+ * (runner.ts imports `runnerModeEnum` from this file). Both types are
+ * structurally identical: `{ path, sha256 }`.
+ */
+const stageRunnerFixtureSchema = z.object({
+  path: z.string().min(1),
+  sha256: z.string().min(1),
+});
+
 export const mentorVisibilityStateEnum = z.enum([
   'always',
   'after_attempt',
@@ -22,6 +33,13 @@ export const inputModeEnum = z.enum([
   'mixed',
 ]);
 
+export const inputFieldKindEnum = z.enum([
+  'string',
+  'number',
+  'select',
+  'textarea',
+]);
+
 export const mentorVisibilitySchema = z.object({
   stage_copy: mentorVisibilityStateEnum,
   artifact_refs: mentorVisibilityStateEnum,
@@ -32,18 +50,71 @@ export const mentorVisibilitySchema = z.object({
   branch_solutions: mentorVisibilityStateEnum,
 });
 
+/**
+ * Structured authoring shape for `inputs.fields[]`. Authors use this when the
+ * stage's UI needs typed form fields rather than a single free-text or code
+ * blob. The web app (`apps/web`) renders these against `inputs.mode` when both
+ * are set, falling back to a single textarea when only `mode` is present.
+ */
+export const stageInputFieldSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  kind: inputFieldKindEnum,
+  options: z.array(z.string()).optional(),
+});
+
+/**
+ * Per-attack schema for `mentor_leak_tests`.
+ *
+ * - `prompt` is the adversarial user-prompt the harness sends to the mentor.
+ * - `attack_id` is an optional stable id authors can use to override one of
+ *   the default battery's attacks (deduplication happens by id in the
+ *   leak-test runner — see `packages/content-sdk/src/validator/leak-tests.ts`).
+ * - `must_not_contain` is the per-attack assertion list. When present, the
+ *   harness fails this specific attack if the model output contains ANY of
+ *   the listed strings, regardless of whether they appear in the stage-wide
+ *   `mentor_redaction_targets`. This gives authors per-prompt precision —
+ *   "if I ask THIS, the response must not include X" — separate from the
+ *   blanket package/stage redaction lists.
+ */
+export const mentorLeakTestSchema = z.object({
+  prompt: z.string().min(1),
+  attack_id: z.string().min(1).optional(),
+  must_not_contain: z.array(z.string().min(1)).optional(),
+});
+
 export const stagePolicySchema = z.object({
   mentor_visibility: mentorVisibilitySchema,
   runner: z.object({
     mode: runnerModeEnum,
     config: z.string().optional(),
+    /**
+     * Inline fixture-hash declaration. Optional alternative to declaring the
+     * fixture list at the workspace `runner.yaml` level. When both are
+     * present, the workspace runner.yaml entry is the source of truth for
+     * sandbox hashing; the inline list is advisory authoring metadata.
+     */
+    fixtures: z.array(stageRunnerFixtureSchema).optional(),
   }),
   validation: z.object({
     kind: validationKindEnum,
     rubric: z.string().optional(),
+    /**
+     * Optional path (repo-relative) to the test file binding this stage. Used
+     * by `kind: 'test'` and `kind: 'hybrid'` stages so the validator can
+     * cross-link the stage to a real `workspace/tests/...` file. The runner
+     * still gets its actual command from `workspace/runner.yaml`; this field
+     * is the authoring-side declaration of the binding.
+     */
+    test_path: z.string().min(1).optional(),
   }),
   inputs: z.object({
     mode: inputModeEnum,
+    /**
+     * Structured-input authoring. When present, the web UI renders a typed
+     * form using these field descriptors instead of a single textarea.
+     */
+    fields: z.array(stageInputFieldSchema).optional(),
   }),
   pass_threshold: z.number().min(0).max(1).optional(),
   hints: z
@@ -55,13 +126,7 @@ export const stagePolicySchema = z.object({
     canonical_md: z.string().optional(),
     common_misconceptions: z.array(z.string()).optional(),
   }),
-  mentor_leak_tests: z
-    .array(
-      z.object({
-        prompt: z.string().min(1),
-      }),
-    )
-    .optional(),
+  mentor_leak_tests: z.array(mentorLeakTestSchema).optional(),
   mentor_redaction_targets: z.array(z.string()).optional(),
 });
 
@@ -149,6 +214,27 @@ export const stageSchema = z
       task: z.object({
         prompt_md: z.string().min(1),
       }),
+      /**
+       * Optional reference into the curriculum graph (`graph.yaml` node id).
+       * Authors use this to bind a stage YAML to its narrative node — the
+       * graph-side `nodes[].stage` ref already provides the authoritative
+       * binding, so this field is advisory but kept first-class so it does
+       * not silently disappear at parse.
+       */
+      node_id: z.string().min(1).optional(),
+      /**
+       * Optional source-citation list at the stage level. PRD §7 only
+       * defines `source_refs` on branches; on stages it is a custom authoring
+       * extension some packages use to point at the paper sections that
+       * motivate this stage. Kept optional + non-empty-strings.
+       */
+      source_refs: z.array(z.string().min(1)).optional(),
+      /**
+       * Optional evidence-citation list at the stage level. Mirrors the
+       * branch field — used by stages whose task asks the learner to engage
+       * with a specific evidence artifact (training curve, table, etc.).
+       */
+      evidence_refs: z.array(z.string().min(1)).optional(),
       stage_policy: stagePolicySchema,
     }),
   )

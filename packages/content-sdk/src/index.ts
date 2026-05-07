@@ -12,6 +12,7 @@ export {
   runStageLeakTests,
   defaultLeakTestGatewayFactory,
   collectStageRedactionTargets,
+  composeAttackBattery,
 } from './validator/leak-tests.js';
 export type {
   StageLeakTestOutcome,

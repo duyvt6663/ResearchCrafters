@@ -145,11 +145,30 @@ export async function validatePedagogy(
   if (!options.skipLeakTests) {
     for (const stage of loaded.stages) {
       const targets = collectStageRedactionTargets(loaded, stage);
+      // Plumb per-attack `must_not_contain` from authored leak tests. The
+      // runner already reads this directly off the stage's
+      // `mentor_leak_tests[*].must_not_contain` list, but we forward it
+      // explicitly here so the validator's contract surface is symmetric with
+      // the global `redactionTargets` plumbing — and so callers passing an
+      // already-loaded stage without going through `loadPackage` get the same
+      // behaviour.
+      const perAttack: Record<string, string[]> = {};
+      const tests = stage.data.stage_policy.mentor_leak_tests ?? [];
+      for (let i = 0; i < tests.length; i += 1) {
+        const t = tests[i]!;
+        const id = t.attack_id ?? `authored-${i + 1}`;
+        if (t.must_not_contain && t.must_not_contain.length > 0) {
+          perAttack[id] = [...t.must_not_contain];
+        }
+      }
       const input: RunStageLeakTestsInput = {
         packageDir: loaded.root,
         stage,
         redactionTargets: targets,
       };
+      if (Object.keys(perAttack).length > 0) {
+        input.perAttackMustNotContain = perAttack;
+      }
       if (options.leakTestGatewayFactory !== undefined) {
         input.gatewayFactory = options.leakTestGatewayFactory;
       }

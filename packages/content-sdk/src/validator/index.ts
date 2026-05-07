@@ -3,7 +3,7 @@ import { loadPackage } from '../loader.js';
 import { validateStructural } from './structural.js';
 import { validateAraCrossLink } from './ara-cross-link.js';
 import { validateSandbox } from './sandbox.js';
-import { validatePedagogy } from './pedagogy.js';
+import { validatePedagogy, type ValidatePedagogyOptions } from './pedagogy.js';
 import { emptyReport, finalize, makeIssue, mergeReports, pushIssue } from './issues.js';
 
 export { validateStructural } from './structural.js';
@@ -11,7 +11,17 @@ export { validateAraCrossLink } from './ara-cross-link.js';
 export { validateSandbox } from './sandbox.js';
 export { validatePedagogy } from './pedagogy.js';
 
-export async function validatePackage(packageDir: string): Promise<ValidationReport> {
+/**
+ * Top-level validator options. Currently the only knob is the leak-test
+ * harness configuration — all other layers are deterministic. Forwarded to
+ * `validatePedagogy` unchanged.
+ */
+export type ValidatePackageOptions = ValidatePedagogyOptions;
+
+export async function validatePackage(
+  packageDir: string,
+  options: ValidatePackageOptions = {},
+): Promise<ValidationReport> {
   const structural = await validateStructural(packageDir);
 
   // If structural failed catastrophically, skip later layers but still return early.
@@ -40,7 +50,7 @@ export async function validatePackage(packageDir: string): Promise<ValidationRep
   const [araReport, sandboxReport, pedagogyReport] = await Promise.all([
     validateAraCrossLink(loaded),
     validateSandbox(loaded),
-    validatePedagogy(loaded),
+    validatePedagogy(loaded, options),
   ]);
 
   return mergeReports(structural, araReport, sandboxReport, pedagogyReport);

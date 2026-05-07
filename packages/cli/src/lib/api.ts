@@ -36,19 +36,20 @@ export interface EnrollResponse {
 }
 
 /**
- * Workspace-resolution payload returned by `start <slug>`. Composes the
- * `EnrollResponse` shape with workspace-only fields the CLI uses to write
- * `.researchcrafters/config.json`. The web app returns a back-compat envelope
- * that includes both this and the contract-shape fields; the CLI reads the
- * legacy envelope for now.
+ * Workspace-resolution payload returned by `start <slug>`. Mirrors what the
+ * `/api/packages/[slug]/enroll` route actually returns today (`enrollResponseSchema`
+ * plus a back-compat `enrollment.{packageSlug,packageVersionId,activeStageRef}`
+ * envelope). The previous shape declared `starterUrl`/`apiUrl`/`smokeCommand`
+ * but the route never populated them; those fields have been dropped here so
+ * the CLI's type surface matches the wire surface. When the workspace
+ * provisioning workstream lands a `/api/packages/[slug]/starter-url`
+ * endpoint, we'll thread the bundle URL through that separate call —
+ * tracked as a TODO in `commands/start.ts`.
  */
 export interface StartPackageResponse {
   packageSlug: string;
   packageVersionId: string;
   stageRef: string;
-  starterUrl: string;
-  apiUrl: string;
-  smokeCommand?: string;
 }
 
 export interface SubmitInitRequest {
@@ -209,9 +210,10 @@ export const api = {
   async startPackage(slug: string): Promise<StartPackageResponse> {
     // The web /enroll route returns a back-compat envelope: the contract
     // fields are at the top level (enrollmentId, packageVersionId,
-    // firstStageRef) and the legacy `enrollment` object is also present. The
-    // CLI's `start` command builds a workspace, so we keep using the legacy
-    // envelope until the workspace fields move into the contract.
+    // firstStageRef) and the legacy `enrollment` object carries
+    // `packageSlug` / `activeStageRef`. The CLI used to also reach for
+    // `starterUrl` / `apiUrl` / `smokeCommand` here, but the route never
+    // populated those — we now read only what the route guarantees.
     type Envelope = EnrollResponse & {
       enrollment?: {
         id: string;
@@ -219,10 +221,6 @@ export const api = {
         packageVersionId: string;
         activeStageRef: string | null;
       };
-      // Optional starter URL + smoke command surfaced by future routes.
-      starterUrl?: string;
-      apiUrl?: string;
-      smokeCommand?: string;
     };
     const env = await call<Envelope>(`/api/packages/${encodeURIComponent(slug)}/enroll`, {
       method: 'POST',
@@ -232,9 +230,6 @@ export const api = {
       packageSlug: env.enrollment?.packageSlug ?? slug,
       packageVersionId: env.packageVersionId,
       stageRef: env.firstStageRef,
-      starterUrl: env.starterUrl ?? '',
-      apiUrl: env.apiUrl ?? apiUrl(),
-      ...(env.smokeCommand !== undefined ? { smokeCommand: env.smokeCommand } : {}),
     };
   },
 

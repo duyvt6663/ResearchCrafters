@@ -1,6 +1,6 @@
 # Progress Snapshot
 
-Last updated: 2026-05-08
+Last updated: 2026-05-08 (post Tier-1 API hygiene + Tailwind v4 migration)
 
 What landed in the integrated build, and what's still genuinely open. Forward
 plans live in the per-workstream files in this directory; this file is a
@@ -31,27 +31,56 @@ status mirror. The latest verified state is listed first.
   dev-server execution. Failures include known API hardening gaps and Next dev
   bundler missing-vendor-chunk 500s under load. Treat the expanded E2E suite as
   a stabilization target before calling browser quality green.
-- Browser layout — not yet acceptable. Manual Playwright review found severe
-  horizontal overflow on package and stage pages because Tailwind is not
-  emitting all utility classes used by `packages/ui` (for example `flex-col`
-  on the app shell).
+- Browser layout — Tailwind v4 utility generation is fixed in `apps/web`.
+  Old `globals.css` used v3 directives plus a v3 `tailwind.config.ts` that v4
+  ignored. Migrated to `@import "tailwindcss"` + `@source
+  "../../../packages/ui/src/**/*.{ts,tsx}"` and removed the dead
+  `apps/web/tailwind.config.ts`. CSS payload went from 109 lines to ~1328
+  lines with utility classes resolved. UI polish (catalog/overview/stage
+  layouts, AppShell, dark-mode toggle) is _(in flight)_ behind a sibling
+  agent.
 - API smoke — `/api/health` works; `/api/cli/version`,
   `/api/auth/device-code`, `/api/auth/device-token`, Bearer enrollment,
-  submission init/finalize, run status, and run logs all respond. Remaining
-  contract bugs: `/api/packages` returns `{ "packages": {} }` and
-  `/api/enrollments/:id/graph` returns `{ "graph": {} }` because both route
-  handlers return unresolved promises.
+  submission init/finalize, run status, and run logs all respond. The
+  unresolved-promise contract bugs are now fixed: `/api/packages` now
+  `await`s `listPackages()` and `/api/enrollments/:id/graph` now `await`s
+  `getDecisionGraph(id)`.
 - CLI smoke — validated `--version`, package validation, device-token auth,
   `researchcrafters start resnet`, and `researchcrafters submit`. The CLI can
-  upload/finalize a submission, but `status` still prints "No runs yet" because
-  `submit` discards the finalize `runId` and does not write `lastRunId`.
+  upload/finalize a submission. CLI/entitlements polish (persist `lastRunId`,
+  fix `slug@slug@stub` rendering, drop dead `EnrollResponse` fields, replace
+  `/api/entitlements` stub with live Prisma reads) is _(in flight)_ behind a
+  sibling agent.
 - Runner/evaluator loop — not end-to-end. Finalize creates a queued `Run` row,
   but no BullMQ `submission_run` job is enqueued, the callback does not persist
   result state/logs/metrics, and the latest verified run remained `queued` with
-  empty logs.
+  empty logs. Runner-loop wiring (BullMQ `submission_run` enqueue from
+  finalize, the worker, callback persistence with service-token auth) is
+  _(in flight)_ behind a sibling agent.
 
 ## Closed since the prior review
 
+- **Tier-1 API hygiene landed.** `/api/packages` now `await`s `listPackages()`
+  (was the unresolved-promise `{ "packages": {} }` bug) and
+  `/api/enrollments/:id/graph` now `await`s `getDecisionGraph(id)` (was the
+  unresolved-promise `{ "graph": {} }` bug).
+- **10 routes are Bearer-aware via `getSessionFromRequest`** (from 4 to all
+  14 server routes that use auth): `grades/[id]`, `node-traversals`,
+  `enrollments/[id]/graph`, `enrollments/[id]/state`, `stage-attempts`,
+  `entitlements`, `packages` (root), `packages/[slug]`, `share-cards`,
+  `runs/[id]/callback`. CLI Bearer traffic now reaches the policy layer on
+  every route.
+- **Body-validation guards on 3 routes.** `/api/stage-attempts`,
+  `/api/share-cards`, and `/api/node-traversals` now return structured 400
+  on empty / malformed body (`bad_request` + `invalid_json` /
+  `missing_required_fields`) instead of letting Prisma 5xx with `id:
+  undefined`.
+- **Tailwind v4 migration in `apps/web`.** The "bland UI" was caused by
+  mixed v3/v4 syntax + a CSS-var typo + a missing `@source` for the
+  `packages/ui` workspace. `apps/web/app/globals.css` now uses
+  `@import "tailwindcss"` and explicitly `@source`s
+  `../../../packages/ui/src/**/*.{ts,tsx}`; the dead
+  `apps/web/tailwind.config.ts` (a v3 file v4 was ignoring) is removed.
 - ResNet is the visible flagship package, backed by seeded Prisma rows
   rather than the old hardcoded FlashAttention / Transformer catalog.
 - Package and stage pages render through the Next App Router without RSC
@@ -95,54 +124,95 @@ status mirror. The latest verified state is listed first.
 ## Stabilization pointer
 
 The historical "Integration and quality review — 2026-05-07" P0/P1 block
-has been mostly addressed by integration agents. The remaining regression
-bundle that needs to clear before declaring stable end-to-end is:
+has been mostly addressed by integration agents, and the Tier-1 API hygiene
++ Tailwind v4 migration above closed the most visible regressions. The
+remaining regression bundle that needs to clear before declaring stable
+end-to-end is:
 
-- `/api/packages` `await listPackages()` fix.
-- `/api/enrollments/:id/graph` `await getDecisionGraph(id)` fix.
-- Tailwind v4/package-source scanning fix so utility classes from
-  `packages/ui` are emitted and browser pages stop overflowing.
 - Submission finalize must enqueue `submission_run` with an idempotency key;
   runner callback must authenticate as a service and persist run status, logs,
-  metrics, and timestamps.
+  metrics, and timestamps. _(runner-loop agent in flight)_
+- `/api/runs/[id]/callback` is currently unauthenticated (Bearer-aware now,
+  but no service-token check yet); runner-loop agent is gating it with
+  `X-Runner-Secret`. _(in flight)_
 - CLI `submit` must honor `uploadHeaders`, persist/display the returned
   `runId`, and make `status`/`logs` usable without manually querying the DB.
+  _(CLI/entitlements agent in flight)_
+- `/api/entitlements` still filters on the legacy `u-paid` stub user id;
+  CLI/entitlements agent is replacing it with live Prisma reads. _(in flight)_
 - Start/enroll needs a starter bundle URL or workspace materialization path.
 - Branch traversal, web stage attempts, and share cards still need persistent
   writes instead of synthesized IDs/stub payloads.
 - Trace/experiment-tree support needs typed validation for `branch_id`,
   `parents`, `edges`, and a compiled web payload.
+- Schema-completeness gaps (`package.safety.redaction_targets` dropped,
+  `mentor_leak_tests[*].must_not_contain` dropped, leak-test battery
+  composition uses OR not union, dropped stage fields). _(schema agent in
+  flight)_
 
 ## Open today
 
-- Real Anthropic LLM exercise — gateway throws without
-  `ANTHROPIC_API_KEY` (intentional safety stop); defer until budget cap
-  wired.
-- Real Docker sandbox — `LocalFsSandbox` covers dev; Docker isolation
-  with cgroup limits, network deny, secret stripping pending.
-- BullMQ live against Redis — worker scaffold and scheduler exist, but local
-  Redis cannot bind `6379` on this machine.
-- React Flow decision graph — Phase 4; defer. API currently returns `{}` due
-  the missing `await`.
-- Experiment tree / ERP trace visualization — TODO added; trace file exists in
-  content, but validation and web payload plumbing are not complete.
-- Mobile fallbacks for decision graph and code/experiment stages. Manual
-  browser review currently shows mobile horizontal overflow.
-- Performance instrumentation (Lighthouse / TTI in CI).
-- Wireframes captured (catalog, overview, stage player desktop/mobile,
-  decision/writing/analysis/code/experiment/reflection, mentor panel,
-  grade panel, execution failure panel, paywall modal, share-card
-  preview).
-- Real ResNet fixture run on hardware (`workspace/fixtures/stage-004/`
-  remains a placeholder with `_meta.provenance: PLACEHOLDER`).
-- Second package authoring (FlashAttention or DPO).
-- Marketing/alpha launch artifacts (waitlist page, landing copy,
+Genuinely-open items not currently being closed by the in-flight sibling
+agents:
+
+- **`/api/runs/[id]/callback` still unauthenticated end-to-end.** It now
+  uses `getSessionFromRequest`, but has no service-token / runner-secret
+  gate. _(runner-loop agent is wiring `X-Runner-Secret`; until that lands the
+  route is open.)_
+- **No API route handler tests** — every `apps/web/app/api/**/route.ts`
+  lacks `Request -> Response` tests. test-coverage QA listed top-10
+  candidates (denial-status mapping, anonymized-email, stage-attempt 400
+  paths, mentor messages 4xx, submission-init bad sha256 propagation, etc.).
+- **CLI submit bundle policy untested.** The `.env` / `node_modules` /
+  `*.pem` / `.git` deny-list, the 50 MiB total cap, the 5 MiB per-file cap,
+  and the 5000-file cap are enforced inside `collectFiles` but no test ever
+  exercises them. A regression here could silently include `.env` files in
+  submissions and leak developer secrets.
+- **`AnthropicGateway` real-provider path is mock-only.** Every mentor and
+  grader test runs through `MockLLMGateway`; the wire shape, error handling
+  (`rate_limit_error`, `overloaded_error`), and token-counting glue have
+  never been exercised against a real key. Defer until budget cap is wired.
+- **Redis port conflict (`6379` already allocated)** blocks live BullMQ /
+  worker testing. Make local docker-compose ports configurable; the
+  runner-loop agent may retarget the port as part of its work.
+- **Next.js 15.5.16 dev cache flake** (`Cannot find module './3879.js'`,
+  vendor-chunk MODULE_NOT_FOUND under parallel Playwright load). Workaround
+  is `rm -rf apps/web/.next && pnpm --filter @researchcrafters/web dev`.
+  Document in the dev-loop runbook; either pin Next or move dev cache
+  in-memory / per-Playwright-worker.
+- **Real ResNet fixture** still a placeholder.
+  `workspace/fixtures/stage-004/training_log.json` has
+  `_meta.provenance: "PLACEHOLDER"`. Needs an actual hardware run; recompute
+  sha256 in `runner.yaml` after.
+- **Math node missing from ResNet curriculum graph.** PRD §5 requires 9
+  node types; ResNet covers 8 (no `math` stage). The schema allows `math`
+  (`packages/erp-schema/src/schemas/graph.ts`); the package just doesn't use
+  it.
+- **S004 redaction target `"0.03"` is too short** to be a useful leak guard
+  (matches `"0.038"`, `"0.030 epoch"`). Needs longer, contextualized
+  phrases.
+- **Mobile fallbacks** for decision graph and code/experiment stages —
+  skeleton only.
+- **OpenTelemetry SDK** still not installed in web/worker/runner; no
+  dashboards yet for submission latency, runner queue depth, mentor
+  latency, validate duration.
+- **Encryption-at-rest for PII fields** still not implemented. The
+  `/// PII:` JSDoc inventory is in `schema.prisma`; column-level
+  encryption is the next step.
+- **Wireframe set** still not captured (catalog, overview, stage player
+  desktop/mobile, decision/writing/analysis/code/experiment/reflection,
+  mentor panel, grade panel, execution failure panel, paywall modal,
+  share-card preview).
+- **Performance budget not instrumented** (Lighthouse / TTI in CI).
+- **Branch reveal transition** design — pick inline expansion vs.
+  dedicated reveal vs. graph repaint and document the rationale.
+- **Second package authoring** (FlashAttention or DPO).
+- **Marketing/alpha launch artifacts** (waitlist page, landing copy,
   decision-challenge posts, founder pricing offer, intake form).
-- API await bugs for `/api/packages` and `/api/enrollments/:id/graph`.
-- Tailwind package-source scanning / emitted utility coverage for
-  `packages/ui`.
-- Submission -> runner -> evaluator -> grade persistence.
-- CLI starter download, upload-header handling, and run-id persistence.
+- **Trace/experiment-tree** validation for `branch_id`, `parents`,
+  `edges`; compiled web payload plumbing.
+- **Persisted `node_traversals` and `share_card` rows.** Both routes still
+  return synthesized IDs.
 
 ---
 
@@ -164,6 +234,20 @@ bundle that needs to clear before declaring stable end-to-end is:
 - NextAuth v5 + Prisma adapter wired in `apps/web/auth.ts` (GitHub
   provider; magic-link deferred).
 - `lib/data/packages.ts` + `lib/data/enrollment.ts` Prisma-backed.
+- `/api/packages` returns the awaited Prisma-backed catalog (Tier-1 fix).
+- `/api/enrollments/:id/graph` returns the awaited decision graph (Tier-1
+  fix).
+- 10 routes accept Bearer auth via `getSessionFromRequest` (Tier-1 fix);
+  CLI traffic is no longer dropped to anonymous on `packages`,
+  `packages/[slug]`, `entitlements`, `enrollments/[id]/{state,graph}`,
+  `node-traversals`, `stage-attempts`, `share-cards`, `grades/[id]`,
+  `runs/[id]/callback`.
+- `/api/stage-attempts`, `/api/share-cards`, `/api/node-traversals`
+  return structured 400 on empty / malformed body instead of 500
+  (Tier-1 fix).
+- Tailwind v4 utility generation in `apps/web` (Tier-1 fix). `globals.css`
+  now uses `@import "tailwindcss"` + `@source ../../../packages/ui/src/...`;
+  the dead v3 `tailwind.config.ts` is gone. CSS payload 109 → ~1328 lines.
 - Browser smoke automated under `tests/e2e/`.
 - Mid-stage paywall guard tested in stage page (`/enrollments/[id]/stages/[stageRef]/page.tsx`).
 
@@ -172,13 +256,16 @@ bundle that needs to clear before declaring stable end-to-end is:
 - `lib/telemetry.ts` logs locally; vendor/audit dual-write is not wired.
 - `node-traversals`, `stage-attempts`, and `share-cards` routes still return
   synthesized IDs or stub payloads instead of durable product records.
+- `/api/entitlements` still filters on legacy `u-paid` user id _(in flight,
+  CLI/entitlements agent replacing with live Prisma reads)_.
 
 **Gaps**
 
 - React Flow decision graph render (deferred to Phase 4).
 - Real share-card public URL + image asset pipeline.
 - Static prototype reviewed with target users.
-- `/api/packages` `await listPackages()` fix.
+- UI polish (catalog/overview/stage layouts, AppShell, dark-mode toggle)
+  _(in flight)_.
 - `lib/telemetry.ts` `track()` wired to a real analytics destination.
 
 ---
@@ -498,20 +585,28 @@ bundle that needs to clear before declaring stable end-to-end is:
 
 ## Suggested next moves
 
-1. Fix `/api/packages` and `/api/enrollments/:id/graph` to await their Prisma
-   query helpers, then add API regression tests for both JSON shapes.
-2. Fix Tailwind v4/package-source scanning for `packages/ui`, then add
-   Playwright visual/layout assertions for desktop and mobile overflow.
+1. Land API route handler tests (top-10 from test-coverage QA) so future
+   regressions like the Tier-1 batch get caught in CI rather than QA passes.
+2. Add Playwright visual/layout assertions for desktop and mobile overflow
+   now that Tailwind v4 utilities resolve correctly.
 3. Complete submission -> runner -> evaluator -> grade persistence with
-   LocalFs in dev mode first, then DockerSandbox isolation.
+   LocalFs in dev mode first, then DockerSandbox isolation. _(runner-loop
+   agent in flight)_
 4. Make Redis/Postgres/MinIO host ports configurable so the full local worker
    stack can boot even when common ports are occupied.
 5. Update CLI `start`/`submit`: provide a starter bundle path, honor
    `uploadHeaders`, persist `lastRunId`, and make `status`/`logs` use it.
+   _(CLI/entitlements agent in flight)_
 6. Persist branch traversals, web stage attempts, and share-card snapshots so
    branch stats, resume, and sharing are real.
 7. Build the ERP trace graph contract: validate `exploration_tree.yaml`
    edges/parents/branch ids, compile a trace graph payload, and render it in
    the web experiment-tree view.
-8. Run the ResNet mini-experiment on real hardware once; replace the
+8. Add `package.safety.redaction_targets` to `packageSchema` and union with
+   per-stage redaction targets; capture `mentor_leak_tests[*].must_not_contain`
+   and run authored attacks on top of the default battery rather than
+   replacing it. _(schema-completeness agent in flight)_
+9. Run the ResNet mini-experiment on real hardware once; replace the
    placeholder fixture and recompute sha256.
+10. Add a `math` node stage to the ResNet graph (PRD §5 requires 9 node
+    types; ResNet covers 8).
