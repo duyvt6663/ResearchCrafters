@@ -30,8 +30,15 @@ at them in a real browser alongside the actual product styling.
 5. **Decide.** Update the `status:` field in `_registry.ts` to one of:
    - `draft` — still being built / not ready for review
    - `validated` — informally tested, idea is sound, ready to plan integration
-   - `promoted` — moved into `packages/ui` / content schema; mock kept here for history
-   - `dropped` — tried it, didn't pan out (writeup explains why)
+   - `promoted` — primitives shipped to `packages/ui`; opt-in via a prop or
+     mode field. Mock kept in the registry as a live demo of the integrated
+     component.
+   - `archived` — fully wired end-to-end (UI + content schema + at least one
+     real stage YAML + stage-page routing). Folder moved to the repo-root
+     `archive/<slug>/`; registry entry removed; the production component is
+     now the canonical reference. The writeup survives as the historical
+     record. See **Archiving an experiment** below for the exact steps.
+   - `dropped` — tried it, didn't pan out (writeup explains why).
 
 ## Writeup contract
 
@@ -60,6 +67,39 @@ Every `<slug>/README.md` MUST contain these sections (in this order):
   on `_registry.ts` shows the lifecycle of every proposal.
 - **Findings are append-only.** When an idea gets dropped six months in, the
   writeup remembers why so we don't re-propose it from scratch.
+
+## Archived experiments
+
+Archived experiments live at the repo root under `archive/<slug>/`. Their
+writeups are preserved (read them before re-proposing similar ideas — the
+Findings log often explains *why* a path was taken). The mocks are
+intentionally not reachable at `/experiments/<slug>`; the production
+components in `packages/ui` and their consumers in `apps/web/app/*` are the
+canonical demonstration of the idea once it's integrated.
+
+## Archiving an experiment
+
+Run these steps in a single commit so the registry never imports a folder
+that has already moved:
+
+1. **Update the writeup.** Append a dated `Findings` entry summarising the
+   integration outcome, flip the front-matter `Status` to `archived` + add
+   an `Archived: YYYY-MM-DD` line, set `Decision` to `promote → archived`,
+   and fill the *Integration sketch* with the real production touch points
+   (file paths, prop names — not abstractions).
+2. **Drop the registry entry** in `apps/web/app/experiments/_registry.ts`.
+   Remove both the `import` line at the top and the entry inside
+   `experiments`. With the slug gone from `experimentSlugs`, the
+   `/experiments/<slug>` route 404s automatically.
+3. **Move the folder** from `apps/web/experiments/<slug>/` to the
+   repo-root `archive/<slug>/`. Use `git mv` when the folder is tracked
+   so `git log --follow` keeps working on the writeup.
+
+Archived folders are *not* typechecked or bundled — the `@experiments/*`
+alias and the experiments tsconfig include only cover
+`apps/web/experiments/`, so a future breaking change in `packages/ui`
+won't fail the build over a mock that drifted out of sync with current
+types.
 
 ## Currently registered
 

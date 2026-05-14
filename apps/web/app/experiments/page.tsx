@@ -31,6 +31,11 @@ const STATUS_TONE: Record<ExperimentStatus, string> = {
     "border-(--color-rc-info) bg-(--color-rc-info-subtle) text-(--color-rc-info)",
   promoted:
     "border-(--color-rc-icon-accent) bg-(--color-rc-icon-accent-soft) text-(--color-rc-icon-accent)",
+  // `archived` shouldn't appear in the registry (archived entries are
+  // removed) — kept here so the union is exhaustive if an author leaves a
+  // stale row by accident.
+  archived:
+    "border-(--color-rc-border) bg-(--color-rc-surface-muted) text-(--color-rc-text-subtle)",
   dropped:
     "border-(--color-rc-danger) bg-(--color-rc-danger-subtle) text-(--color-rc-danger)",
 };

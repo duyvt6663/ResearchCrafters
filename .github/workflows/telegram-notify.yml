@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows: ['CI']
     types: [completed]
-  pull_request:
+  pull_request_target:
     types:
       - opened
       - reopened
@@ -228,7 +228,7 @@ jobs:
 
           const builders = {
             workflow_run: workflowRunMessage,
-            pull_request: pullRequestMessage,
+            pull_request_target: pullRequestMessage,
             issue_comment: issueCommentMessage,
             pull_request_review: pullRequestReviewMessage,
             pull_request_review_comment: pullRequestReviewCommentMessage,

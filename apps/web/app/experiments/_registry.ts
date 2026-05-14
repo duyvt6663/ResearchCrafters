@@ -1,6 +1,4 @@
 import type { ComponentType, ReactElement } from "react";
-import { Mock as M1SymbolPaletteMock } from "@experiments/m1-symbol-palette/Mock";
-import { Mock as W1ClaimSkeletonMock } from "@experiments/w1-claim-skeleton/Mock";
 
 /**
  * Registry of UX experiments. Each entry is statically imported so the Next
@@ -14,7 +12,13 @@ import { Mock as W1ClaimSkeletonMock } from "@experiments/w1-claim-skeleton/Mock
  *      module-grouped order so diffs read cleanly.
  *
  * Status lifecycle (see `experiments/README.md`):
- *   draft → validated → promoted | dropped
+ *   draft → validated → promoted → archived | dropped
+ *
+ * When an experiment reaches `archived`, move its folder to the repo-root
+ * `archive/<slug>/` location AND remove its registry entry — archived
+ * experiments don't appear at `/experiments` and don't ship a live mock.
+ * The folder survives as a historical writeup with a `Findings` log that
+ * explains the integration outcome.
  */
 
 export type ExperimentModule = "math" | "writing" | "coding" | "shared";
@@ -22,6 +26,7 @@ export type ExperimentStatus =
   | "draft"
   | "validated"
   | "promoted"
+  | "archived"
   | "dropped";
 
 export interface ExperimentEntry {
@@ -35,26 +40,7 @@ export interface ExperimentEntry {
   Mock: ComponentType<Record<string, never>> | (() => ReactElement);
 }
 
-export const experiments: Readonly<Record<string, ExperimentEntry>> = {
-  "m1-symbol-palette": {
-    slug: "m1-symbol-palette",
-    title: "M1 — Symbol Palette",
-    module: "math",
-    status: "promoted",
-    summary:
-      "Click-to-assemble math chips with hover-gloss tooltips. Promoted to packages/ui as `SymbolPalette`; opt-in via `DerivationStep.inputMode = 'palette'`.",
-    Mock: M1SymbolPaletteMock,
-  },
-  "w1-claim-skeleton": {
-    slug: "w1-claim-skeleton",
-    title: "W1 — Claim Skeleton",
-    module: "writing",
-    status: "promoted",
-    summary:
-      "Rubric-keyed reorderable cards replace the free-text editor for scaffolded claim drafting. Promoted to packages/ui as `ClaimSkeleton`; opt-in via the `skeleton` prop on `WritingWorkbench`.",
-    Mock: W1ClaimSkeletonMock,
-  },
-};
+export const experiments: Readonly<Record<string, ExperimentEntry>> = {};
 
 export const experimentSlugs = Object.keys(experiments);
 

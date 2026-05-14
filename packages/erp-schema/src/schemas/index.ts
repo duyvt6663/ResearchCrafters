@@ -22,6 +22,8 @@ export {
   stagePolicySchema,
   mentorLeakTestSchema,
   stageInputFieldSchema,
+  stageInputsPaletteSchema,
+  stageInputsSkeletonSchema,
   mentorVisibilityStateEnum,
   runnerModeEnum,
   validationKindEnum,

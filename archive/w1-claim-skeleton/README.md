@@ -1,10 +1,11 @@
 # W1 — Claim Skeleton
 
 > **Module:** writing
-> **Status:** promoted
+> **Status:** archived
 > **Owner:** _unassigned_
 > **Created:** 2026-05-14
 > **Promoted:** 2026-05-14
+> **Archived:** 2026-05-14
 
 ## Goal
 
@@ -123,16 +124,23 @@ Append-only.
 - **2026-05-14 — repo-owner — promoted to packages/ui.** Mock validated the
   four-card structuring effect and the in-editor rubric coverage chips.
   Shipped as `ClaimSkeleton` (`packages/ui/src/components/ClaimSkeleton.tsx`)
-  with an opt-in `skeleton` prop on `WritingWorkbench`. When `skeleton` is
-  passed, the center pane swaps `RichAnswerEditor` for `ClaimSkeleton`; the
-  submitted artifact remains a single string (cards are joined with
-  `spec.joiner`, default `\n\n`), so rubric grading is untouched. The
-  Mock.tsx at this experiment URL now consumes `WritingWorkbench` directly
-  so the page is a live demo of the integrated component.
+  with an opt-in `skeleton` prop on `WritingWorkbench`.
+- **2026-05-14 — repo-owner — archived (Phase 2 wired end-to-end).** Authoring
+  added to the stage YAML schema (`stageInputsSkeletonSchema` in
+  `packages/erp-schema/src/schemas/stage.ts`); `006-claim-writing.yaml`
+  authors a 4-dimension skeleton (mechanism · conditions · evidence · scope)
+  bound to the existing rubric; the data layer surfaces it on
+  `StageRecord.skeleton`; the stage page routes writing-stages with skeleton
+  through `WritingStageView`
+  (`apps/web/app/enrollments/[id]/stages/[stageRef]/views/WritingStageView.tsx`),
+  which renders `WritingWorkbench` with the `skeleton` prop and POSTs the
+  assembled draft to `/api/stage-attempts`. Writing stages without a skeleton
+  authored still fall through to `RichAnswerEditor` (non-breaking). Mock
+  removed from the experiments registry.
 
 ## Decision
 
-`promote` — shipped 2026-05-14.
+`archive` — integrated end-to-end 2026-05-14.
 
 Open follow-ups (intentionally deferred so each can be reviewed independently):
 

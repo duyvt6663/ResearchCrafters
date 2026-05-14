@@ -1,10 +1,11 @@
 # M1 — Symbol Palette
 
 > **Module:** math
-> **Status:** promoted
+> **Status:** archived
 > **Owner:** _unassigned_
 > **Created:** 2026-05-14
 > **Promoted:** 2026-05-14
+> **Archived:** 2026-05-14
 
 ## Goal
 
@@ -96,14 +97,21 @@ Append-only.
 - **2026-05-14 — repo-owner — promoted to packages/ui.** Mock validated the
   click-to-assemble interaction and the gloss-tooltip layer. Shipped as a
   generic `SymbolPalette` component (`packages/ui/src/components/SymbolPalette.tsx`)
-  and an opt-in `inputMode: "palette"` field on `DerivationStep`. The
-  Mock.tsx at this experiment URL was refactored to consume the new
-  primitives so this page remains a live, on-brand demo of the integrated
-  component (rather than a snapshot of the proposal).
+  and an opt-in `inputMode: "palette"` field on `DerivationStep`.
+- **2026-05-14 — repo-owner — archived (Phase 2 wired end-to-end).** Authoring
+  added to the stage YAML schema (`stageInputsPaletteSchema` in
+  `packages/erp-schema/src/schemas/stage.ts`); `001m-residual-math.yaml`
+  authors a 12-tile palette; the data layer (`apps/web/lib/data/enrollment.ts`)
+  surfaces it on `StageRecord.palette`; the stage page routes math stages to
+  a new `MathStageView` client component
+  (`apps/web/app/enrollments/[id]/stages/[stageRef]/views/MathStageView.tsx`)
+  which renders `MathWorkspace` with a palette-mode blank step. Mock removed
+  from the experiments registry; this folder lives on as a historical
+  writeup.
 
 ## Decision
 
-`promote` — shipped 2026-05-14.
+`archive` — integrated end-to-end 2026-05-14.
 
 Open follow-ups (intentionally deferred so each can be reviewed independently):
 

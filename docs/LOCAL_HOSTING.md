@@ -21,14 +21,21 @@ Do not publish Postgres, Redis, MinIO, Docker, or SSH through the tunnel.
 
 ## Run The App
 
-For active iteration, run the dev server on a loopback-only port:
+For active iteration, run the dev server and point the tunnel at that port:
 
 ```sh
-./infra/scripts/host-dev-local.sh
+pnpm dev
 ```
 
-This defaults to `127.0.0.1:3100` so it does not collide with the usual
-`pnpm dev` port.
+The normal dev server uses port `3000` and hot-reloads as files change. The
+named Cloudflare tunnel can point at `http://127.0.0.1:3000` so the public
+domain updates with the same live dev server.
+
+If you want a loopback-only dev server managed outside `pnpm dev`, run:
+
+```sh
+RC_PORT=3000 ./infra/scripts/host-dev-local.sh
+```
 
 For a production-style local server:
 

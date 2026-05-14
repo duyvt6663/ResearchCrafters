@@ -7,6 +7,10 @@
 // + `Branch` rows belonging to the same version.
 
 import { prisma, withQueryTimeout } from "@researchcrafters/db";
+import type {
+  PaletteSpec,
+  SkeletonSpec,
+} from "@researchcrafters/ui/components";
 
 export type StageInputsMode =
   | "decision"
@@ -15,7 +19,8 @@ export type StageInputsMode =
   | "code"
   | "experiment"
   | "reflection"
-  | "review";
+  | "review"
+  | "math";
 
 export type StageRecord = {
   id: string;
@@ -38,6 +43,16 @@ export type StageRecord = {
   };
   rubric?: ReadonlyArray<{ id: string; label: string; weight: number }>;
   artifact?: { kind: "log" | "table" | "plot"; caption: string };
+  /**
+   * Symbol-palette config (math stages) — surfaced from
+   * `stagePolicy.inputs.palette` when authored.
+   */
+  palette?: PaletteSpec;
+  /**
+   * Claim-skeleton config (writing stages) — surfaced from
+   * `stagePolicy.inputs.skeleton` when authored.
+   */
+  skeleton?: SkeletonSpec;
 };
 
 export type EnrollmentState = {
@@ -77,11 +92,11 @@ function inferMode(stageType: string, validationKind: string): StageInputsMode {
     case "experiment":
     case "reflection":
     case "review":
+    case "math":
       return stageType;
     case "framing":
       return "writing";
     case "implementation":
-    case "math":
       return "code";
   }
   switch (validationKind) {
@@ -292,6 +307,7 @@ export async function getStageForEnrollment(
   const policy = (stage.stagePolicy ?? {}) as {
     prompt?: unknown;
     rubric?: unknown;
+    inputs?: { palette?: unknown; skeleton?: unknown };
   };
   const prompt = typeof policy.prompt === "string" ? policy.prompt : stage.title;
   const rubric = Array.isArray(policy.rubric)
@@ -303,6 +319,20 @@ export async function getStageForEnrollment(
           weight: typeof r["weight"] === "number" ? r["weight"] : 0,
         }))
     : undefined;
+
+  // Surface palette / skeleton verbatim from the policy JSON. The shapes
+  // were validated against `stageInputsPaletteSchema` / `stageInputsSkeletonSchema`
+  // at content-build time (`packages/erp-schema/src/schemas/stage.ts`), so we
+  // pass them through unchanged — they share field names with the runtime
+  // types exported from `@researchcrafters/ui/components`.
+  const palette =
+    policy.inputs && typeof policy.inputs === "object"
+      ? ((policy.inputs as { palette?: unknown }).palette as PaletteSpec | undefined)
+      : undefined;
+  const skeleton =
+    policy.inputs && typeof policy.inputs === "object"
+      ? ((policy.inputs as { skeleton?: unknown }).skeleton as SkeletonSpec | undefined)
+      : undefined;
 
   // Build the record without ever assigning `undefined` so the strict
   // exactOptionalPropertyTypes check in tsconfig stays happy.
@@ -317,6 +347,8 @@ export async function getStageForEnrollment(
     estimatedMinutes: stage.estimatedTimeMinutes,
   };
   if (decision !== undefined) record.decision = decision;
+  if (palette !== undefined) record.palette = palette;
+  if (skeleton !== undefined) record.skeleton = skeleton;
   if (rubric !== undefined) record.rubric = rubric;
   return record;
 }

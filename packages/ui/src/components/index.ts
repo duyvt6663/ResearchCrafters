@@ -72,6 +72,15 @@ export type {
   PaywallEntryPoint,
 } from "./PaywallModal.js";
 
+export { LoginForm } from "./LoginForm.js";
+export type {
+  LoginFormProps,
+  CredentialsServerAction,
+} from "./LoginForm.js";
+
+export { LoginModal } from "./LoginModal.js";
+export type { LoginModalProps } from "./LoginModal.js";
+
 export { MentorPanel, MentorPanelIcons } from "./MentorPanel.js";
 export type { MentorPanelProps, MentorMode } from "./MentorPanel.js";
 
