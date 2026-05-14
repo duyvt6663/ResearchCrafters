@@ -1,4 +1,4 @@
-# Mentor Safety TODO
+# Mentor Safety Backlog
 
 Goal: provide useful AI mentorship without turning the mentor into an answer oracle.
 

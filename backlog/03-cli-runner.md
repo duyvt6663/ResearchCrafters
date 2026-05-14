@@ -1,4 +1,4 @@
-# CLI and Runner TODO
+# CLI and Runner Backlog
 
 Goal: support local-first CodeCrafters-style work for code and experiment stages.
 

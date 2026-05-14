@@ -59,7 +59,9 @@ _(none yet)_
 
 ## Integration sketch
 
-Filled in *after* the proposal is promoted. Cite the specific files and lines
-the integration touches (`packages/ui/src/components/<File>.tsx:<line>`),
-list any content-package schema additions, and call out the deprecation path
-for any UI this replaces.
+Filled in when the proposal is validated and moved to backlog. Cite the
+specific files and lines the integration is expected to touch
+(`packages/ui/src/components/<File>.tsx:<line>`), list any content-package
+schema additions, name the backlog item that will own coding, name the `qa/`
+report that should validate it, and call out the deprecation path for any UI
+this replaces.

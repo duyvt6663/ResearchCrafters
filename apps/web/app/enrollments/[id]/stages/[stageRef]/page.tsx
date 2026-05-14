@@ -51,7 +51,7 @@ export default async function StagePage({
 
   if (!access.allowed) {
     // Stage opened under entitlement must not be paywall-interrupted mid-stage
-    // (see TODOS/09 mid-stage paywall guard). The paywall surface is the
+    // (see backlog/09 mid-stage paywall guard). The paywall surface is the
     // stage-load boundary itself, rendered via the typed error renderer.
     if (access.reason === "stage_locked" || access.reason === "no_entitlement") {
       return renderErrorPage("stage-locked", { retryHref: `/packages/${enrollment.packageSlug}` });

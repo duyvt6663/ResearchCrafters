@@ -1,4 +1,4 @@
-# Integration and Quality Gaps TODO
+# Integration and Quality Gaps Backlog
 
 Goal: turn the scaffolded app into a verified end-to-end learner loop before
 adding more product surface.

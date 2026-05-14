@@ -6,15 +6,15 @@ branch YAML, rubric YAML, hint YAML, `runner.yaml`, `safety.redaction_targets`.
 Schemas live in `schemas/` (JSON Schema or Zod); generated TypeScript types
 and parsers live in `src/`.
 
-## Primary TODO
+## Primary Backlog Item
 
-- `TODOS/04-validation-evaluator.md` — schema parsing layer of the validator.
+- `backlog/04-validation-evaluator.md` — schema parsing layer of the validator.
 
-## Related TODOs
+## Related Backlog Items
 
-- `TODOS/02-erp-content-package.md` — content authors target these schemas.
-- `TODOS/05-mentor-safety.md` — `stage_policy.mentor_visibility` schema.
-- `TODOS/06-data-access-analytics.md` — package build mirrors these into the DB.
+- `backlog/02-erp-content-package.md` — content authors target these schemas.
+- `backlog/05-mentor-safety.md` — `stage_policy.mentor_visibility` schema.
+- `backlog/06-data-access-analytics.md` — package build mirrors these into the DB.
 
 ## Depends on
 

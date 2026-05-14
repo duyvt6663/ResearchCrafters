@@ -29,10 +29,14 @@ at them in a real browser alongside the actual product styling.
    the audit trail).
 5. **Decide.** Update the `status:` field in `_registry.ts` to one of:
    - `draft` — still being built / not ready for review
-   - `validated` — informally tested, idea is sound, ready to plan integration
-   - `promoted` — primitives shipped to `packages/ui`; opt-in via a prop or
-     mode field. Mock kept in the registry as a live demo of the integrated
-     component.
+   - `validated` — informally tested, idea is sound, ready for backlog
+     shaping
+   - `backlog` — a matching `backlog/*.md` item exists with implementation
+     scope, owner notes, and QA expectations. Production coding starts from
+     that backlog item, not from this experiment folder.
+   - `promoted` — the backlog implementation shipped through QA and primitives
+     landed in `packages/ui`; opt-in via a prop or mode field. Mock kept in
+     the registry as a live demo of the integrated component.
    - `archived` — fully wired end-to-end (UI + content schema + at least one
      real stage YAML + stage-page routing). Folder moved to the repo-root
      `archive/<slug>/`; registry entry removed; the production component is
@@ -52,10 +56,11 @@ Every `<slug>/README.md` MUST contain these sections (in this order):
 - **Validation criteria** — what counts as "this works" / "this doesn't".
 - **Findings** — append-only log of review sessions (date, who, what they
   noticed). Empty at first.
-- **Decision** — `pending` until validation is done; then `promote | iterate | drop` + rationale.
-- **Integration sketch** — *if promoted*, where in the codebase it lands and
-  what schema changes the content package needs. Cite file paths and line
-  numbers, not abstractions.
+- **Decision** — `pending` until validation is done; then `backlog | iterate | drop` + rationale.
+- **Integration sketch** — *if moved to backlog*, where in the codebase it is
+  expected to land, what schema changes the content package needs, and what
+  QA report should validate. Cite file paths and line numbers, not
+  abstractions.
 
 ## Why these constraints
 
@@ -65,6 +70,9 @@ Every `<slug>/README.md` MUST contain these sections (in this order):
   means the Next.js bundler picks the mock up automatically. No build step.
 - **Status lives in the registry, not in the writeup**, so a quick `git log`
   on `_registry.ts` shows the lifecycle of every proposal.
+- **Validated means backlog next.** Experiments do not jump straight into
+  production coding. They become backlog work first, then move through
+  coding and `qa/`.
 - **Findings are append-only.** When an idea gets dropped six months in, the
   writeup remembers why so we don't re-propose it from scratch.
 

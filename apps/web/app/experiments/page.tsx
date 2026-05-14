@@ -29,6 +29,8 @@ const STATUS_TONE: Record<ExperimentStatus, string> = {
     "border-(--color-rc-border) bg-(--color-rc-surface-muted) text-(--color-rc-text-muted)",
   validated:
     "border-(--color-rc-info) bg-(--color-rc-info-subtle) text-(--color-rc-info)",
+  backlog:
+    "border-(--color-rc-warning) bg-(--color-rc-warning-subtle) text-(--color-rc-warning)",
   promoted:
     "border-(--color-rc-icon-accent) bg-(--color-rc-icon-accent-soft) text-(--color-rc-icon-accent)",
   // `archived` shouldn't appear in the registry (archived entries are

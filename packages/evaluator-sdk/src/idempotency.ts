@@ -1,7 +1,7 @@
 import type { Grade } from './types.js';
 
 /**
- * Deterministic key for grade deduplication. Per TODOS/04: deduplicate by
+ * Deterministic key for grade deduplication. Per backlog/04: deduplicate by
  * `(submission_id, rubric_version, evaluator_version)`.
  */
 export function idempotencyKey(args: {

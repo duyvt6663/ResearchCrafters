@@ -1,4 +1,4 @@
-# Validation and Evaluator TODO
+# Validation and Evaluator Backlog
 
 Goal: make ERP quality and learner grading testable, auditable, and safe.
 

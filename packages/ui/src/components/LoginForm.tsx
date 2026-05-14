@@ -166,38 +166,32 @@ function CredentialsForm({
   action: CredentialsServerAction;
 }): React.ReactElement {
   const [clientError, setClientError] = React.useState<string | null>(null);
-  const formRef = React.useRef<HTMLFormElement>(null);
-
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    const form = e.currentTarget;
-    const data = new FormData(form);
-    const email = String(data.get("email") ?? "").trim();
-    const password = String(data.get("password") ?? "");
-
-    if (!email) {
-      e.preventDefault();
-      setClientError("Enter your email to continue.");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      e.preventDefault();
-      setClientError("Enter a valid email address.");
-      return;
-    }
-    if (password.length < 8) {
-      e.preventDefault();
-      setClientError("Password must be at least 8 characters.");
-      return;
-    }
-    setClientError(null);
-    // Let the form action proceed — Next will handle the redirect.
-  };
 
   return (
     <form
-      ref={formRef}
       action={action}
-      onSubmit={onSubmit}
+      onSubmit={(e) => {
+        const data = new FormData(e.currentTarget);
+        const email = String(data.get("email") ?? "").trim();
+        const password = String(data.get("password") ?? "");
+        if (!email) {
+          e.preventDefault();
+          setClientError("Enter your email to continue.");
+          return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          e.preventDefault();
+          setClientError("Enter a valid email address.");
+          return;
+        }
+        if (password.length < 8) {
+          e.preventDefault();
+          setClientError("Password must be at least 8 characters.");
+          return;
+        }
+        setClientError(null);
+        // Let the form action proceed — Next handles the redirect.
+      }}
       className="flex flex-col gap-2.5 pt-1"
     >
       {clientError ? (

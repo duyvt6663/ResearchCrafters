@@ -321,7 +321,7 @@ sibling agents are actively closing in this run:
 - **Interactive math + academic writing modules** still shallow. ResNet
   has a basic `math` node (`S001M`) and a writing stage (`S006`), both
   free-text/rubric prompts. The richer module design lives in
-  `TODOS/11-learning-modules-math-writing.md`: derivation/shape/numeric
+  `backlog/11-learning-modules-math-writing.md`: derivation/shape/numeric
   math interactions, claim surgery, evidence mapping, reviewer rebuttal,
   and revision feedback.
 - **Branch reveal transition** design — pick inline expansion vs.
@@ -565,7 +565,7 @@ sibling agents are actively closing in this run:
   `NodeTraversal`, `StageAttempt`, `Submission`, `Run`, `Grade` with
   idempotency unique key, `MentorThread`, `MentorMessage` with full
   model telemetry, `BranchStat`, `ShareCard`, `Review`, `Event`).
-- Hot-path indexes per `TODOS/06-data-access-analytics.md`.
+- Hot-path indexes per `backlog/06-data-access-analytics.md`.
 - `prisma` singleton with 10s query timeout + `QueryTimeoutError`.
 - Idempotent `seed.ts` that loads ResNet via `content-sdk`.
 - `postinstall` runs `prisma generate` so workspace types resolve.
@@ -727,4 +727,4 @@ sibling agents are actively closing in this run:
 9. Run the ResNet mini-experiment on real hardware once; replace the
    placeholder fixture and recompute sha256.
 10. Upgrade the ResNet `S001M` math stage and `S006` writing stage into the
-    interactive modules specified in `TODOS/11-learning-modules-math-writing.md`.
+    interactive modules specified in `backlog/11-learning-modules-math-writing.md`.

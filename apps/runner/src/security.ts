@@ -58,7 +58,7 @@ export function stripSecretsFromEnv(
 }
 
 /**
- * Default upload size (bytes) for submission bundles. Per TODOS/03 the runner
+ * Default upload size (bytes) for submission bundles. Per backlog/03 the runner
  * enforces a maximum upload size; this constant is the runtime cap. The web
  * app and CLI also enforce on their side.
  */

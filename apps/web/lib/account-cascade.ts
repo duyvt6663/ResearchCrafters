@@ -18,12 +18,12 @@
 //                   to it remain valid.
 //   - 'retain'    — row stays as-is (or with userId nulled where the FK
 //                   permits). Used for audit-grade Events whose retention is
-//                   tracked in TODOS/06 §Events Storage and for Reviews where
+//                   tracked in backlog/06 §Events Storage and for Reviews where
 //                   reviewer prose is part of package moderation history.
 //
 // Retention numbers (audit-grade events: indefinite; non-audit-grade: scrubbed
 // to anonymized aggregates after 24 months) are pulled from
-// TODOS/06-data-access-analytics.md §Events Storage.
+// backlog/06-data-access-analytics.md §Events Storage.
 
 import {
   prisma as defaultPrisma,
@@ -89,7 +89,7 @@ export const ACCOUNT_DELETE_PLAN: ReadonlyArray<AccountDeletePlanRow> = [
     table: "Run",
     strategy: "delete",
     rationale:
-      "User-authored artifact pointer (S3 log key). Underlying S3 object is purged out-of-band per TODOS/08 lifecycle policy.",
+      "User-authored artifact pointer (S3 log key). Underlying S3 object is purged out-of-band per backlog/08 lifecycle policy.",
   },
   {
     table: "Grade",
@@ -167,7 +167,7 @@ export const ACCOUNT_DELETE_PLAN: ReadonlyArray<AccountDeletePlanRow> = [
     strategy: "retain",
     retentionDays: null,
     rationale:
-      "Audit-grade events (grade_created, grade_overridden, evaluator_redaction_triggered, subscription_started, branch_feedback_unlocked) are retained indefinitely per TODOS/06 §Events Storage. userId already has SetNull so it is nulled on User delete; non-audit rows are scrubbed by the retention job after 24 months.",
+      "Audit-grade events (grade_created, grade_overridden, evaluator_redaction_triggered, subscription_started, branch_feedback_unlocked) are retained indefinitely per backlog/06 §Events Storage. userId already has SetNull so it is nulled on User delete; non-audit rows are scrubbed by the retention job after 24 months.",
   },
   // --- finally, the user row itself ---
   {

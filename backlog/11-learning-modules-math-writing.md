@@ -1,4 +1,4 @@
-# Interactive Math and Academic Writing Modules TODO
+# Interactive Math and Academic Writing Modules Backlog
 
 Status (2026-05-08): see `PROGRESS.md` for the snapshot. Iteration 2
 landed the basic `S001M` math node and `S006` writing stage as free-text

@@ -1,4 +1,4 @@
-# ERP Content Package TODO
+# ERP Content Package Backlog
 
 Goal: produce one excellent flagship Executable Research Package.
 

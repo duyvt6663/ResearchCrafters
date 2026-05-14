@@ -2,8 +2,8 @@
  * Authored refusal copy.
  *
  * IMPORTANT: The strings here are PLACEHOLDERS. The real, package-aware
- * authored copy lives in `@researchcrafters/ui/copy` (see TODOS/05 and
- * TODOS/09). The product surface MUST resolve refusal strings via that
+ * authored copy lives in `@researchcrafters/ui/copy` (see backlog/05 and
+ * backlog/09). The product surface MUST resolve refusal strings via that
  * package; this file exists only so the runtime has a typed default while the
  * UI package is being wired up.
  *

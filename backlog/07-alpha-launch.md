@@ -1,4 +1,4 @@
-# Alpha Launch TODO
+# Alpha Launch Backlog
 
 Goal: validate willingness to pay and learning value with one excellent package.
 

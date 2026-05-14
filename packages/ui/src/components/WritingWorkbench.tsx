@@ -9,7 +9,7 @@ import { RichAnswerEditor } from "./RichAnswerEditor.js";
 import { ClaimSkeleton, type SkeletonSpec } from "./ClaimSkeleton.js";
 
 /**
- * WritingWorkbench — the academic-writing host the TODO calls for.
+ * WritingWorkbench — the academic-writing host the backlog item calls for.
  *
  * Layout: 4 panes —
  *   left:        evidence column

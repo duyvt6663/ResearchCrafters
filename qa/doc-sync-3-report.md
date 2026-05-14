@@ -1,7 +1,7 @@
 # Doc Sync v3 Report
 
 Date: 2026-05-08
-Scope: Walk every TODOS workstream file + PROGRESS.md against live code
+Scope: Walk every backlog workstream file + PROGRESS.md against live code
 after autonomous-loop iterations 1-10. Flip checkboxes, refresh prose,
 annotate in-flight work.
 
@@ -10,12 +10,12 @@ annotate in-flight work.
 Iterations 1-10 closed substantially more ground than the per-workstream
 files reflected. The biggest deltas are: (1) **schema completeness**
 (`package.safety.redaction_targets`, `must_not_contain`, union battery,
-6 surfaced dropped fields) is fully landed but TODO 04/05 still showed
+6 surfaced dropped fields) is fully landed but backlog 04/05 still showed
 it as "schema-completeness agent in flight"; (2) **OpenTelemetry SDK**
 shipped in `apps/web` (iteration 10) but the open-today section still
 claimed it was uninstalled; (3) **mobile decision-graph fallback**
 (`DecisionGraphMobile`) shipped in iterations 4+5 with full wiring +
-tests but TODO 09 still listed it as `- [ ]`. PROGRESS.md was rewritten
+tests but backlog 09 still listed it as `- [ ]`. PROGRESS.md was rewritten
 to credit iterations 1-10 in a "Closed since prior review" section,
 "Open today" was rebuilt with `_(in flight)_` annotations for sibling
 agents extending OTel to worker/runner, wiring encryption-at-rest, and
@@ -29,19 +29,19 @@ adding the Lighthouse CI step.
 
 | File                                      | Edits |
 |-------------------------------------------|-------|
-| TODOS/PROGRESS.md                         | 4 (header, status counts, closed-section rewrite, open-today rewrite) |
-| TODOS/00-roadmap.md                       | 1 (S001M annotation) |
-| TODOS/01-mvp-platform.md                  | 1 (mobile decision-graph fallback) |
-| TODOS/02-erp-content-package.md           | 2 (safety.redaction_targets, S004 redaction phrases) |
-| TODOS/03-cli-runner.md                    | 2 (lastRunId persisted, drop dead bullet on combined task) |
-| TODOS/04-validation-evaluator.md          | 5 (safety schema validation, must_not_contain, union battery, dropped-field surfacing, schema-completeness summary) |
-| TODOS/05-mentor-safety.md                 | 2 (battery union composition, package safety.redaction_targets) |
-| TODOS/06-data-access-analytics.md         | 1 (failed-branch label redaction) |
-| TODOS/08-infra-foundations.md             | 3 (OpenTelemetry partial landing, OTel open-gap update, encryption-at-rest in flight) |
-| TODOS/09-frontend-design.md               | 3 (mobile fallback flipped, mobile sheet/tab note, open-gap reword) |
-| TODOS/10-integration-quality-gaps.md      | 5 (status banner rewrite, callback service auth flipped, callback persistence narrowed, CLI lastRunId flipped, route-handler/CLI-bundle-policy flipped to closed) |
-| TODOS/11-learning-modules-math-writing.md | 1 (status banner inserted) |
-| TODOS/qa/doc-sync-3-report.md             | NEW |
+| backlog/PROGRESS.md                         | 4 (header, status counts, closed-section rewrite, open-today rewrite) |
+| backlog/00-roadmap.md                       | 1 (S001M annotation) |
+| backlog/01-mvp-platform.md                  | 1 (mobile decision-graph fallback) |
+| backlog/02-erp-content-package.md           | 2 (safety.redaction_targets, S004 redaction phrases) |
+| backlog/03-cli-runner.md                    | 2 (lastRunId persisted, drop dead bullet on combined task) |
+| backlog/04-validation-evaluator.md          | 5 (safety schema validation, must_not_contain, union battery, dropped-field surfacing, schema-completeness summary) |
+| backlog/05-mentor-safety.md                 | 2 (battery union composition, package safety.redaction_targets) |
+| backlog/06-data-access-analytics.md         | 1 (failed-branch label redaction) |
+| backlog/08-infra-foundations.md             | 3 (OpenTelemetry partial landing, OTel open-gap update, encryption-at-rest in flight) |
+| backlog/09-frontend-design.md               | 3 (mobile fallback flipped, mobile sheet/tab note, open-gap reword) |
+| backlog/10-integration-quality-gaps.md      | 5 (status banner rewrite, callback service auth flipped, callback persistence narrowed, CLI lastRunId flipped, route-handler/CLI-bundle-policy flipped to closed) |
+| backlog/11-learning-modules-math-writing.md | 1 (status banner inserted) |
+| qa/doc-sync-3-report.md             | NEW |
 
 Total: 30 edits across 12 files + 1 new self-report.
 
@@ -54,9 +54,9 @@ Total: 30 edits across 12 files + 1 new self-report.
    `must_not_contain` (line 105) and surfaces 6 previously dropped
    stage fields; `packages/content-sdk/src/validator/leak-tests.ts`
    composes the battery as `[...DEFAULT_ATTACKS, ...authored]` with
-   id-dedupe (lines 127, 139, 176-181). TODO 04 had four open
+   id-dedupe (lines 127, 139, 176-181). backlog 04 had four open
    schema-completeness checkboxes that should have been checked;
-   TODO 02 / TODO 05 referenced "schema-completeness agent in flight"
+   backlog 02 / backlog 05 referenced "schema-completeness agent in flight"
    in 5 places. All flipped.
 
 2. **OpenTelemetry SDK is wired in apps/web (was marked uninstalled).**
@@ -74,8 +74,8 @@ Total: 30 edits across 12 files + 1 new self-report.
    `apps/web/app/packages/[slug]/page.tsx` imports and renders it
    (line 8, 132); `packages/ui/test/decision-graph-mobile.test.tsx`
    pins behavior with 5 tests (the entirety of the UI workspace's
-   5 incremental tests over the prior 14). TODO 09 had it open;
-   TODO 01 didn't mention it at all. Both updated. The
+   5 incremental tests over the prior 14). backlog 09 had it open;
+   backlog 01 didn't mention it at all. Both updated. The
    stage-player code/experiment mobile sheet UI remains genuinely
    open and is now called out distinctly.
 
@@ -84,27 +84,27 @@ Total: 30 edits across 12 files + 1 new self-report.
 - **Failed-branch label redaction** at the catalog spoiler boundary:
   `apps/web/lib/data/packages.ts` `redactSampleDecision` strips
   canonical-branch labels; `packages/db/src/seed.ts`
-  `buildFailedBranchLesson` writes a non-spoiler title. TODO 06 now
+  `buildFailedBranchLesson` writes a non-spoiler title. backlog 06 now
   credits this.
 - **Runner callback `X-Runner-Secret`** constant-time service-token
   gate landed (`apps/web/app/api/runs/[id]/callback/route.ts:14, 61,
   120`), pinned by `route-runs-callback.test.ts` (7 cases). Run
-  persistence after auth passes is still in flight. TODO 10 was
+  persistence after auth passes is still in flight. backlog 10 was
   flipped on the auth half, narrowed on the persistence half.
 - **CLI `lastRunId` persistence + `slug@slug@stub` rendering fix**
   landed (`packages/cli/src/commands/submit.ts:119`,
   `packages/cli/src/lib/config.ts:94`,
   `packages/cli/src/commands/status.ts:56-97`), pinned by
-  `packages/cli/test/status-render.test.ts`. TODO 03 / TODO 10
+  `packages/cli/test/status-render.test.ts`. backlog 03 / backlog 10
   flipped accordingly.
 - **S004 redaction targets**: 11 contextualized phrases now in
   `content/packages/resnet/curriculum/stages/004-cifar10-replay.yaml`
-  (lines 71-86); bare `"0.03"` is gone. TODO 02 flipped.
+  (lines 71-86); bare `"0.03"` is gone. backlog 02 flipped.
 
 ## Ambiguous / left annotated but not flipped
 
 - **`docker isolation`, BullMQ enqueue, run persistence, evaluator
-  invocation** in TODO 03 / TODO 10 stay open because the live code
+  invocation** in backlog 03 / backlog 10 stay open because the live code
   shows finalize still creates only a queued `Run` row (verified in
   PROGRESS.md prose, not changed by iterations 1-10). Annotated
   `_(runner-loop agent in flight)_` where applicable.

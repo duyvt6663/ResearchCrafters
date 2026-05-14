@@ -9,7 +9,7 @@ import { StatusBadge } from "./StatusBadge.js";
 /**
  * Mobile-friendly decision-graph view.
  *
- * Per `docs/FRONTEND.md` §10 + `TODOS/09 Mobile Fallbacks`, the React-Flow
+ * Per `docs/FRONTEND.md` §10 + `backlog/09 Mobile Fallbacks`, the React-Flow
  * pannable canvas does not work on narrow viewports — a vertical timeline
  * is the documented fallback. This component renders the same `nodes`
  * shape the future canvas will consume, but as an indexed step list with:

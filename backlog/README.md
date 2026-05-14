@@ -1,4 +1,4 @@
-# ResearchCrafters TODO Index
+# ResearchCrafters Backlog Index
 
 This folder converts the current product, ERP, and technical specs into execution plans.
 
@@ -26,12 +26,30 @@ Source docs:
 - `09-frontend-design.md`: visual direction, screen layouts, stage-player UX, components, and responsive behavior.
 - `10-integration-quality-gaps.md`: current end-to-end quality gaps found by local web/API/CLI testing.
 - `11-learning-modules-math-writing.md`: interactive math modules and academic writing modules for research-skill depth.
+- `12-agentic-erp-reconstruction.md`: agentic paper-to-ERP authoring workflow using the existing package, validator, and review gates.
 
 ## Execution Rule
 
 The first release should prove one claim: a serious AI engineer will pay for one excellent
 executable paper package because it exposes research-thinking gaps that passive reading
 and code copying do not.
+
+## Delivery Workflow
+
+Backlog items move through this exact path:
+
+`backlog → coding → qa → done`
+
+- Implementation work starts from a checked or unchecked item in this folder.
+- After coding, validate the work in the QA step before marking the backlog
+  item done. QA reports live in the repo-root `qa/` folder.
+- If QA passes, update the relevant backlog item and `PROGRESS.md` when the
+  integrated snapshot changed.
+- If QA fails, document the failure in `qa/`, keep or reopen the backlog item
+  with reproduction notes, and continue from backlog rather than marking the
+  work complete.
+- Validated UX experiments enter backlog before production coding; do not
+  implement directly from `apps/web/experiments/<slug>/`.
 
 ## Suggested Order
 
@@ -46,3 +64,4 @@ and code copying do not.
 9. Upgrade the flagship package with one interactive math module and one academic writing module.
 10. Add entitlements, progress, telemetry, and share cards.
 11. Run alpha with 20-50 target users.
+12. Build the agentic ERP reconstruction workflow after the hand-authored package process is stable enough to serve as a quality reference.

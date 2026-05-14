@@ -1,4 +1,4 @@
-# Infra Foundations TODO
+# Infra Foundations Backlog
 
 Goal: stand up the shared scaffolding every other workstream depends on.
 
@@ -56,7 +56,7 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
       `evidence/`.
 - [x] Add signed-URL helpers for upload (CLI submissions) and download (starter
       workspaces, run logs).
-- [ ] Set lifecycle policy on `submissions/` matching retention TODO in 06.
+- [ ] Set lifecycle policy on `submissions/` matching retention backlog item in 06.
 - [ ] Block public access by default; serve through API.
 
 ## Runner Base Images

@@ -9,7 +9,7 @@ import type { StatusKey } from "../tokens.js";
 /**
  * ShareCardPreview — clean technical-report tile.
  *
- * Constraints (`docs/FRONTEND.md` section 14 + TODOS/06 minimum-N rules):
+ * Constraints (`docs/FRONTEND.md` section 14 + backlog/06 minimum-N rules):
  *  - No meme styling.
  *  - No spoilers from hidden answers.
  *  - Cohort percentage hidden when `cohortPercentage === undefined`; we
@@ -18,7 +18,7 @@ import type { StatusKey } from "../tokens.js";
 export type ShareBranchKind = "canonical" | "alternative" | "suboptimal";
 
 /**
- * Snapshot payload mirrored from the eventual share-card row (TODOS/06).
+ * Snapshot payload mirrored from the eventual share-card row (backlog/06).
  * The web app passes this shape directly; the component derives display
  * values from it.
  */

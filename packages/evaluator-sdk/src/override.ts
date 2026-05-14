@@ -12,7 +12,7 @@ export interface ApplyOverrideInput {
 }
 
 /**
- * Applies a reviewer override to a grade. Per TODOS/04: append to history,
+ * Applies a reviewer override to a grade. Per backlog/04: append to history,
  * never overwrite. The store implementation is responsible for persisting the
  * append; this function constructs the entry and forwards it.
  */

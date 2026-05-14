@@ -4,7 +4,7 @@
 # verified by the runner before exec. The image stays minimal — bigger ML
 # libs go in mini-experiment.Dockerfile.
 #
-# Real implementation tracked in TODOS/08.
+# Real implementation tracked in backlog/08.
 
 # syntax=docker/dockerfile:1.7
 FROM python:3.11-slim AS base

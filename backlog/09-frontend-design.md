@@ -1,4 +1,4 @@
-# Frontend Design TODO
+# Frontend Design Backlog
 
 Goal: design the learner-facing UI before building the MVP web app.
 
@@ -185,7 +185,7 @@ _Iteration: math+rich-text agent (2026-05-08) — `packages/ui/src/components/Wr
 "Insert ref" affordance from the evidence panel injects `[ref:<id>]` into
 the draft at the textarea caret, satisfying the citation-insertion row
 above and the corresponding `AnswerEditor` checkbox below. ClaimEvidenceMatrix
-and RevisionDiff are intentionally NOT shipped — the TODO calls them out as
+and RevisionDiff are intentionally NOT shipped — the backlog item calls them out as
 separate components and they need a sentence-level claim parsing model
 that's out of scope for this iteration._
 

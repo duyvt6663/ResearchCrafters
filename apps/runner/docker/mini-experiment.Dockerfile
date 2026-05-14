@@ -1,10 +1,10 @@
 # Placeholder runner image for `mini_experiment` mode.
 #
-# CPU-only for MVP per TODOS/03 and TODOS/08. GPU-backed mini-experiments
+# CPU-only for MVP per backlog/03 and backlog/08. GPU-backed mini-experiments
 # are a Phase 5 paid/team feature and will live in a separate Dockerfile
 # when justified by demand.
 #
-# Real implementation tracked in TODOS/08.
+# Real implementation tracked in backlog/08.
 
 # syntax=docker/dockerfile:1.7
 FROM python:3.11-slim AS base

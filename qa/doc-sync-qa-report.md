@@ -10,7 +10,7 @@ last commit and the live codebase by the time this agent ran. PROGRESS.md and
 all 11 workstream files reflect the live state with one exception: a few
 already-shipped items (mentor message persistence, account data export
 endpoint, banner date on PROGRESS + 10) were still listed as open. Those have
-been corrected here. The other QA reports under `TODOS/qa/*-qa-report.md`
+been corrected here. The other QA reports under `qa/*-qa-report.md`
 were left untouched.
 
 ## Live-state evidence sweep (verified at 22:42-22:48 local)
@@ -75,7 +75,7 @@ Live bug surface still present:
 
 ## Per-file edit count
 
-- `TODOS/PROGRESS.md` — 3 line edits:
+- `backlog/PROGRESS.md` — 3 line edits:
   - Banner date `2026-05-07` → `2026-05-08`.
   - Mentor `Built` block: added line about `mentor-runtime.ts` + Anthropic
     fallback + persistence.
@@ -83,7 +83,7 @@ Live bug surface still present:
     /api/mentor/messages to Postgres" item (already shipped).
   - Net: 0 checkbox flips (this file uses prose, not checkboxes), 1
     Built bullet added, 1 Gap bullet removed, 1 banner update.
-- `TODOS/00-roadmap.md` — 5 checkbox flips inside the Phase 3 block:
+- `backlog/00-roadmap.md` — 5 checkbox flips inside the Phase 3 block:
   - `Add mentor context builder` `[ ]` → `[x]`.
   - `Add evaluator leak tests and redaction checks` `[ ]` → `[x]`.
   - `Add telemetry for branch selection, feedback unlock, mentor
@@ -92,29 +92,29 @@ Live bug surface still present:
     (mentor leak tests in CI, prompt caching + rate limits, share-card
     payload generation, branch_stats rollups). Banner already
     `2026-05-08` from a sibling agent.
-- `TODOS/01-mvp-platform.md` — already reconciled by sibling agent
+- `backlog/01-mvp-platform.md` — already reconciled by sibling agent
   (banner `2026-05-08`; checkbox states reflect verified failures from
   the API/CLI QA agents). 0 edits this pass.
-- `TODOS/02-erp-content-package.md` — already accurate. 0 edits.
-- `TODOS/03-cli-runner.md` — already reconciled by sibling agent
+- `backlog/02-erp-content-package.md` — already accurate. 0 edits.
+- `backlog/03-cli-runner.md` — already reconciled by sibling agent
   (`developer_force_approve` → real browser approval UI was already
   flipped to `[x]`). 0 edits.
-- `TODOS/04-validation-evaluator.md` — already reconciled
+- `backlog/04-validation-evaluator.md` — already reconciled
   (`runStageLeakTests` exports already flipped to `[x]`, validate sweep
   in CI flipped to `[x]`). 0 edits.
-- `TODOS/05-mentor-safety.md` — 2 checkbox flips `[ ]` → `[x]`:
+- `backlog/05-mentor-safety.md` — 2 checkbox flips `[ ]` → `[x]`:
   - `Store mentor threads and messages` `[ ]` → `[x]` with citation.
   - `Persist mentor_messages rows ...` `[ ]` → `[x]` with citation.
-- `TODOS/06-data-access-analytics.md` — 1 line edit:
+- `backlog/06-data-access-analytics.md` — 1 line edit:
   - "Add privacy plumbing" Open-gaps bullet rewritten to acknowledge
     that data export endpoint and deletion cascade workflow have landed
     (encryption-at-rest remains).
-- `TODOS/07-alpha-launch.md` — already accurate. 0 edits.
-- `TODOS/08-infra-foundations.md` — 1 checkbox flip `[ ]` → `[x]`:
+- `backlog/07-alpha-launch.md` — already accurate. 0 edits.
+- `backlog/08-infra-foundations.md` — 1 checkbox flip `[ ]` → `[x]`:
   - `Add user data export endpoint behind authentication` flipped with
     citation to `apps/web/app/api/account/export/route.ts`.
-- `TODOS/09-frontend-design.md` — already reconciled. 0 edits.
-- `TODOS/10-integration-quality-gaps.md` — 1 banner update
+- `backlog/09-frontend-design.md` — already reconciled. 0 edits.
+- `backlog/10-integration-quality-gaps.md` — 1 banner update
   (`2026-05-07` → `2026-05-08`); body already contains the verified
   failure list from a sibling QA agent.
 
@@ -146,7 +146,7 @@ Live bug surface still present:
 
 By policy this agent did not edit:
 
-- `TODOS/qa/{api,cli,content,fe,test-coverage}-qa-report.md` — owned by
+- `qa/{api,cli,content,fe,test-coverage}-qa-report.md` — owned by
   sibling QA agents.
-- `TODOS/README.md` — repo index; out of scope.
+- `backlog/README.md` — repo index; out of scope.
 - Source code, schemas, content packages, configs.

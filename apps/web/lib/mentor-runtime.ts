@@ -22,7 +22,7 @@
  *     `evaluator_redaction_triggered` telemetry event.
  *   - Every assistant message persisted to `mentor_messages` carries
  *     `modelTier`, `modelId`, `provider`, `promptTokens`, `completionTokens`,
- *     `redactionTriggered`, `flagged` (per TODOS/05).
+ *     `redactionTriggered`, `flagged` (per backlog/05).
  */
 
 import {
@@ -135,7 +135,7 @@ const DEFAULT_FEEDBACK_MODEL_ID = "claude-3-5-sonnet-latest";
 
 function modelTierFor(mode: MentorMode): ModelTier {
   // Hints route to the cheaper tier; feedback / draft review / branch
-  // explanations get the stronger model. See TODOS/05.
+  // explanations get the stronger model. See backlog/05.
   return mode === "hint" || mode === "explain_branch" ? "hint" : "feedback";
 }
 

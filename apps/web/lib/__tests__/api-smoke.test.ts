@@ -9,7 +9,7 @@
 // When `PLAYWRIGHT_BASE_URL` is unset the suite is skipped so unit-test runs
 // in CI don't try to reach a server that isn't there.
 //
-// Findings tracked in TODOS/qa/api-qa-report.md drove the assertion choices
+// Findings tracked in qa/api-qa-report.md drove the assertion choices
 // here: we explicitly assert the two-axis Bearer-ignore bug and the contract
 // shapes that ARE in `api-contract.ts`.
 
@@ -134,7 +134,7 @@ describeLive("api smoke (live)", () => {
   });
 
   // --- Auth-gap regression tests --------------------------------------------
-  // Documented in TODOS/qa/api-qa-report.md §3.A: 10 routes use the
+  // Documented in qa/api-qa-report.md §3.A: 10 routes use the
   // cookie-only `getSession()` and silently drop the Bearer header. These
   // assertions PIN that bug so the fix is observable as a green flip.
   //

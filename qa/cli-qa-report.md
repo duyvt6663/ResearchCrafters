@@ -155,13 +155,13 @@ All commands invoked with `RESEARCHCRAFTERS_API_URL=http://localhost:3001` set.
 
 ## Artifacts written
 
-- `/Users/duyvt6663/github/ResearchCrafters/TODOS/qa/cli-qa-report.md` (this file)
+- `/Users/duyvt6663/github/ResearchCrafters/qa/cli-qa-report.md` (this file)
 - `/Users/duyvt6663/github/ResearchCrafters/packages/cli/test/integration-live-api.test.ts` (new integration test)
 - `/tmp/rc-cli-qa/*` (transient command outputs, build manifests, etc. — not under the repo)
 
 ## Definition-of-done check
 
 - [x] Every subcommand (`--version`, `--help`, `validate`, `login`, `logout`, `start`, `test`, `submit`, `status`, `logs`, `preview`, `build`) was exercised live against `http://localhost:3001`.
-- [x] Report written to `TODOS/qa/cli-qa-report.md`.
+- [x] Report written to `qa/cli-qa-report.md`.
 - [x] No edits made to `packages/cli/src/**` or any production code.
 - [x] No destructive git/rm operations; no `pnpm install` invoked; web server left running untouched.

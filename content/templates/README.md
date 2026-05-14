@@ -6,6 +6,6 @@ placeholder files.
 - `erp-basic/` — minimum viable package shell matching the schema in
   `packages/erp-schema/`.
 
-## Primary TODO
+## Primary Backlog Item
 
-- `TODOS/02-erp-content-package.md` — anatomy these templates produce.
+- `backlog/02-erp-content-package.md` — anatomy these templates produce.

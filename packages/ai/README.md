@@ -3,16 +3,16 @@
 Mentor context builder, LLM gateway, prompt cache, leak tests, and cost caps.
 Provider-agnostic — model selection is per-call.
 
-## Primary TODO
+## Primary Backlog Item
 
-- `TODOS/05-mentor-safety.md` — stage_policy gates, leak tests, cost caps,
+- `backlog/05-mentor-safety.md` — stage_policy gates, leak tests, cost caps,
   authored refusal copy, telemetry of model tier per message.
 
-## Related TODOs
+## Related Backlog Items
 
-- `TODOS/04-validation-evaluator.md` — evaluator's LLM grading uses the same
+- `backlog/04-validation-evaluator.md` — evaluator's LLM grading uses the same
   gateway; redaction is shared.
-- `TODOS/06-data-access-analytics.md` — `mentor_threads`, `mentor_messages`,
+- `backlog/06-data-access-analytics.md` — `mentor_threads`, `mentor_messages`,
   cost telemetry.
 
 ## Depends on

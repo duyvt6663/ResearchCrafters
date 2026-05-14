@@ -18,7 +18,7 @@ export interface BranchStatsRollupResult {
 }
 
 /**
- * Min-N suppression rules from TODOS/06 §Branch Stats and Privacy.
+ * Min-N suppression rules from backlog/06 §Branch Stats and Privacy.
  *   - Per-decision-node N must be >= 20 before publishing any branch percent.
  *   - Per-branch N must be >= 5 before publishing that branch's percent.
  *   - Otherwise, persist the row with `percent = null` so the web shows

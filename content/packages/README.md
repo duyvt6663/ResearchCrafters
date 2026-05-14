@@ -1,7 +1,7 @@
 # content/packages/
 
 Each subdirectory here is one Executable Research Package. The flagship MVP
-package lands here first — see `TODOS/02-erp-content-package.md` for the
+package lands here first — see `backlog/02-erp-content-package.md` for the
 anatomy and `docs/PRD_v2.md` for the full spec.
 
 Layout per package:

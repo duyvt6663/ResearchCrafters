@@ -1,4 +1,4 @@
-# MVP Platform TODO
+# MVP Platform Backlog
 
 Goal: build the learner-facing loop for one flagship ERP.
 

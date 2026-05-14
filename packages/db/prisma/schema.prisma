@@ -1,6 +1,6 @@
 // ResearchCrafters relational data model.
 //
-// Source of truth: TODOS/06-data-access-analytics.md.
+// Source of truth: backlog/06-data-access-analytics.md.
 //
 // Conventions:
 // - Soft enums via String columns; allowed values documented in the comment
@@ -15,7 +15,7 @@
 //   (Membership -> User, Enrollment -> User, MentorMessage -> Thread, etc.)
 //   and disabled for grading/audit chains where we want a paper trail.
 //
-// PII inventory convention (see TODOS/08 §Privacy and Compliance Foundations):
+// PII inventory convention (see backlog/08 §Privacy and Compliance Foundations):
 //   Every field that stores personally identifying information, an auth secret,
 //   or free-text user-authored content carries a triple-slash JSDoc comment
 //   immediately above its declaration in the form:
@@ -106,10 +106,10 @@ model Account {
   /// PII: provider identifier. Sometimes a username (GitHub login) and therefore directly identifying. Subject to delete on User deletion (Account row cascades).
   providerAccountId String
   // OAuth refresh token (when issued).
-  /// PII: auth secret. Subject to delete on User deletion (Account row cascades). Encryption-at-rest tracked in TODOS/08 §Privacy.
+  /// PII: auth secret. Subject to delete on User deletion (Account row cascades). Encryption-at-rest tracked in backlog/08 §Privacy.
   refresh_token     String?
   // OAuth access token (when issued).
-  /// PII: auth secret. Subject to delete on User deletion (Account row cascades). Encryption-at-rest tracked in TODOS/08 §Privacy.
+  /// PII: auth secret. Subject to delete on User deletion (Account row cascades). Encryption-at-rest tracked in backlog/08 §Privacy.
   access_token      String?
   // OAuth access-token expiry as Unix epoch seconds.
   expires_at        Int?
@@ -118,7 +118,7 @@ model Account {
   // OAuth scope string, space-delimited.
   scope             String?
   // OIDC id_token when the provider issues one.
-  /// PII: auth secret. Carries identity claims about the user. Subject to delete on User deletion (Account row cascades). Encryption-at-rest tracked in TODOS/08 §Privacy.
+  /// PII: auth secret. Carries identity claims about the user. Subject to delete on User deletion (Account row cascades). Encryption-at-rest tracked in backlog/08 §Privacy.
   id_token          String?
   // OAuth session_state for OpenID Connect session management.
   session_state     String?
@@ -443,7 +443,7 @@ model StageAttempt {
 model Submission {
   id              String   @id @default(cuid())
   stageAttemptId  String
-  /// PII: user-authored artifact pointer. References an S3 object containing the learner's code bundle. Submissions are an audit artifact — DB row is retained on User deletion with the parent enrollment torn down via Restrict, but the underlying S3 object is purged out-of-band per TODOS/06 retention. Cascade strategy: retain (FK to attempt is Restrict); the deletion plan removes the Submission row explicitly after dependent Run/Grade rows are cleared.
+  /// PII: user-authored artifact pointer. References an S3 object containing the learner's code bundle. Submissions are an audit artifact — DB row is retained on User deletion with the parent enrollment torn down via Restrict, but the underlying S3 object is purged out-of-band per backlog/06 retention. Cascade strategy: retain (FK to attempt is Restrict); the deletion plan removes the Submission row explicitly after dependent Run/Grade rows are cleared.
   bundleObjectKey String
   bundleSha       String
   byteSize        Int
@@ -531,7 +531,7 @@ model MentorMessage {
   // Allowed values: 'user' | 'assistant' | 'system'
   role                String
   // NOTE: bodyText is sensitive (mentor transcripts) — encryption-at-rest is
-  // tracked in TODOS/08 §Privacy. Stored as plaintext in dev for now.
+  // tracked in backlog/08 §Privacy. Stored as plaintext in dev for now.
   /// PII: user-authored content. Free-text mentor transcripts (user role) and the model-generated coaching response (assistant role) referencing the user's prose. Subject to delete on User deletion (cascades through MentorThread → Enrollment).
   bodyText            String
   // Free-form tier label (e.g. 'fast' | 'deep' | 'guard').
@@ -616,7 +616,7 @@ model Review {
 }
 
 // Quasi-PII when joined to userId. Audit-grade rows (auditGrade=true) are
-// retained indefinitely per TODOS/06 §Events Storage; non-audit rows are
+// retained indefinitely per backlog/06 §Events Storage; non-audit rows are
 // scrubbed to anonymized aggregates after 24 months. On User deletion the
 // strategy is `retain` — events stay but the userId FK is nulled (SetNull)
 // so the audit trail of grading / payments / moderation actions survives
@@ -624,7 +624,7 @@ model Review {
 model Event {
   id               String   @id @default(cuid())
   // Telemetry name (e.g. 'grade_created'). See docs/TECHNICAL.md §5
-  // taxonomy and TODOS/06 §Events Storage for audit-grade rules.
+  // taxonomy and backlog/06 §Events Storage for audit-grade rules.
   name             String
   /// PII: foreign key to a deleted user is kept as null after account deletion (SetNull). The row itself remains for the audit retention window.
   userId           String?

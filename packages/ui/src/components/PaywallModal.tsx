@@ -14,7 +14,7 @@ import {
  * PaywallModal — composes Dialog + authored paywall copy + Button.
  *
  * Surface only at natural boundaries (per `docs/FRONTEND.md` section 13 and
- * `TODOS/09` Anti-Patterns: never interrupt mid-attempt).
+ * `backlog/09` Anti-Patterns: never interrupt mid-attempt).
  */
 export type PaywallEntryPoint =
   | "previewBoundary"

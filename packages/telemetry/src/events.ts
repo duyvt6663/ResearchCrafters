@@ -194,7 +194,7 @@ export type TelemetryEventName = TelemetryEvent['name'];
 
 /**
  * Events that affect entitlement, grading, mentor policy, payments, or
- * moderation. Per TODOS/06 §Events Storage, these are dual-written: PostHog
+ * moderation. Per backlog/06 §Events Storage, these are dual-written: PostHog
  * remains the primary product analytics store and Postgres `Event` rows are
  * persisted indefinitely as the audit-grade copy.
  */

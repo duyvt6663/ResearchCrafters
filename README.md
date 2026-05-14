@@ -52,37 +52,37 @@ ResearchCrafters is a CodeCrafters-style learning platform for AI engineers. Lea
 
 ### Core Services
 
-| Service | Package / App | Responsibility |
-|---|---|---|
-| **Web App** | `apps/web` | Catalog, session player, decision graph, share cards, paywall, authoring preview |
-| **CLI** | `packages/cli` | Auth, workspace init, local smoke checks, submission bundling, log streaming |
-| **Runner** | `apps/runner` | Execute untrusted learner code in isolated Docker containers; produce raw test/metric artifacts |
-| **Evaluator** | `packages/evaluator-sdk` | Map runner artifacts to structured grades via rubrics; LLM grading with redaction guardrails |
-| **AI Mentor** | `packages/ai` | Package-grounded hints and writing feedback; enforces `stage_policy` visibility gates |
-| **DB** | `packages/db` | Prisma schema, migrations, and typed client over Postgres |
-| **ERP Schema** | `packages/erp-schema` | Zod/JSON schemas for package, graph, stage, branch, rubric, and runner config |
-| **Content SDK** | `packages/content-sdk` | Package loader, ARA cross-link helpers, package build utilities |
-| **UI** | `packages/ui` | Shared components, design tokens, copy library |
+| Service         | Package / App            | Responsibility                                                                                  |
+| --------------- | ------------------------ | ----------------------------------------------------------------------------------------------- |
+| **Web App**     | `apps/web`               | Catalog, session player, decision graph, share cards, paywall, authoring preview                |
+| **CLI**         | `packages/cli`           | Auth, workspace init, local smoke checks, submission bundling, log streaming                    |
+| **Runner**      | `apps/runner`            | Execute untrusted learner code in isolated Docker containers; produce raw test/metric artifacts |
+| **Evaluator**   | `packages/evaluator-sdk` | Map runner artifacts to structured grades via rubrics; LLM grading with redaction guardrails    |
+| **AI Mentor**   | `packages/ai`            | Package-grounded hints and writing feedback; enforces `stage_policy` visibility gates           |
+| **DB**          | `packages/db`            | Prisma schema, migrations, and typed client over Postgres                                       |
+| **ERP Schema**  | `packages/erp-schema`    | Zod/JSON schemas for package, graph, stage, branch, rubric, and runner config                   |
+| **Content SDK** | `packages/content-sdk`   | Package loader, ARA cross-link helpers, package build utilities                                 |
+| **UI**          | `packages/ui`            | Shared components, design tokens, copy library                                                  |
 
 ### Tech Stack
 
-| Layer | Choice |
-|---|---|
-| Language | TypeScript throughout |
-| Monorepo | pnpm + Turborepo |
-| Web | Next.js + React |
-| UI | Tailwind CSS + Radix/shadcn primitives |
-| Graph UI | React Flow |
-| Database | Postgres (JSONB for package metadata) |
-| ORM | Prisma |
-| Queue | Redis/Valkey + BullMQ |
-| Storage | S3-compatible object storage |
-| Runner | Docker-isolated containers (gVisor / E2B later) |
-| Auth | GitHub OAuth + email |
-| Payments | Stripe |
-| AI | Provider-agnostic LLM gateway |
-| Observability | OpenTelemetry + structured logs |
-| Analytics | PostHog |
+| Layer         | Choice                                          |
+| ------------- | ----------------------------------------------- |
+| Language      | TypeScript throughout                           |
+| Monorepo      | pnpm + Turborepo                                |
+| Web           | Next.js + React                                 |
+| UI            | Tailwind CSS + Radix/shadcn primitives          |
+| Graph UI      | React Flow                                      |
+| Database      | Postgres (JSONB for package metadata)           |
+| ORM           | Prisma                                          |
+| Queue         | Redis/Valkey + BullMQ                           |
+| Storage       | S3-compatible object storage                    |
+| Runner        | Docker-isolated containers (gVisor / E2B later) |
+| Auth          | GitHub OAuth + email                            |
+| Payments      | Stripe                                          |
+| AI            | Provider-agnostic LLM gateway                   |
+| Observability | OpenTelemetry + structured logs                 |
+| Analytics     | PostHog                                         |
 
 ### Content — Executable Research Packages (ERPs)
 
@@ -124,7 +124,8 @@ The runner executes learner submissions against stage tests or cached fixtures. 
 ├── content/     # versioned ERPs and authoring templates (content/packages, content/templates)
 ├── infra/       # docker, terraform, ops scripts
 ├── docs/        # product, technical, and design specs
-└── TODOS/       # workstream execution plans
+├── qa/          # validation reports for backlog work
+└── backlog/     # workstream execution plans
 ```
 
 A folder-by-folder map lives in [`SCAFFOLD.md`](./SCAFFOLD.md).
@@ -160,7 +161,7 @@ CI runs `pnpm lint`, `pnpm typecheck`, `pnpm test`, and a `researchcrafters vali
 
 ## Status
 
-Live snapshot of what's built, stubbed, and outstanding: [`TODOS/PROGRESS.md`](./TODOS/PROGRESS.md). Per-workstream plans live alongside it in `TODOS/`.
+Live snapshot of what's built, stubbed, and outstanding: [`backlog/PROGRESS.md`](./backlog/PROGRESS.md). Per-workstream plans live alongside it in `backlog/`; validation reports live in [`qa/`](./qa/).
 
 ---
 

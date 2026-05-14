@@ -23,7 +23,7 @@ today" and `10-integration-quality-gaps.md`.
 
 ## Per-file edit count
 
-- `TODOS/PROGRESS.md` — major prose rewrite. Banner moved to "post Tier-1
+- `backlog/PROGRESS.md` — major prose rewrite. Banner moved to "post Tier-1
   API hygiene + Tailwind v4 migration"; "Status today" rewritten to
   reflect the await fixes, Bearer auth on 10 routes, body-validation
   guards on 3 routes, and the Tailwind v4 migration; "Closed since the
@@ -37,39 +37,39 @@ today" and `10-integration-quality-gaps.md`.
   branch reveal, second package); "01 — MVP Platform" Built/Stubbed/Gaps
   reflects 5 new Built bullets + 1 in-flight stub + 2 in-flight gap
   bullets; "Suggested next moves" rewritten 1→10.
-- `TODOS/00-roadmap.md` — 0 checkbox flips. 2 prose annotations on
+- `backlog/00-roadmap.md` — 0 checkbox flips. 2 prose annotations on
   Phase 3 share-card and branch-stats lines (in-flight markers).
-- `TODOS/01-mvp-platform.md` — **2 [ ]→[x]** flips (`/api/packages`
+- `backlog/01-mvp-platform.md` — **2 [ ]→[x]** flips (`/api/packages`
   await, `/api/enrollments/:id/graph` await), **1 [ ]→[x]** flip
   (Tailwind package-source scanning), **2 [x] gain Tier-1 fix
   citations**, **2 new `_(in flight)_` items added** (UI polish;
   CLI/entitlements polish).
-- `TODOS/02-erp-content-package.md` — 0 checkbox flips. 1 in-flight
+- `backlog/02-erp-content-package.md` — 0 checkbox flips. 1 in-flight
   annotation on `safety.redaction_targets`. 2 new gap items added in
   "Open gaps from snapshot" (math node, S004 redaction lengthen).
-- `TODOS/03-cli-runner.md` — 0 checkbox flips. 4 `_(in flight)_`
+- `backlog/03-cli-runner.md` — 0 checkbox flips. 4 `_(in flight)_`
   annotations on runner-loop and CLI/entitlements items.
-- `TODOS/04-validation-evaluator.md` — 0 checkbox flips. 1 in-flight
+- `backlog/04-validation-evaluator.md` — 0 checkbox flips. 1 in-flight
   annotation on `safety.redaction_targets`, 1 in-flight annotation on
   trace tree validation, 4 new gap items added in "Open gaps from
   snapshot" (`safetySchema`, `must_not_contain` capture, default-battery
   union, dropped stage-fields surfacing) — all marked `_(in flight)_`.
-- `TODOS/05-mentor-safety.md` — 0 checkbox flips. 2 in-flight
+- `backlog/05-mentor-safety.md` — 0 checkbox flips. 2 in-flight
   annotations on the leak-test default battery and on
   `safety.redaction_targets`.
-- `TODOS/06-data-access-analytics.md` — **2 [ ]→[x]** flips
+- `backlog/06-data-access-analytics.md` — **2 [ ]→[x]** flips
   (`/api/packages` await, `/api/enrollments/:id/graph` await). 2
   in-flight annotations on persisted traversals and branch-stats
   rollup.
-- `TODOS/07-alpha-launch.md` — 0 edits. The QA reports do not surface
+- `backlog/07-alpha-launch.md` — 0 edits. The QA reports do not surface
   any new alpha-launch deltas.
-- `TODOS/08-infra-foundations.md` — 0 checkbox flips. 1 in-flight
+- `backlog/08-infra-foundations.md` — 0 checkbox flips. 1 in-flight
   annotation on Redis port collision.
-- `TODOS/09-frontend-design.md` — Decision Graph note rewritten to
+- `backlog/09-frontend-design.md` — Decision Graph note rewritten to
   remove the "graph returns `{}`" claim now that the await fix
   landed; mobile/text-fits item annotated with the Tier-1 Tailwind
   fix; 1 new `_(in flight)_` UI-polish gap added.
-- `TODOS/10-integration-quality-gaps.md` — banner already on
+- `backlog/10-integration-quality-gaps.md` — banner already on
   2026-05-08; rewrote the Status header to reflect Tier-1 closures.
   **3 [ ]→[x]** flips in "Current Verified Failures"
   (`/api/packages`, `/api/enrollments/:id/graph`, Tailwind utility
@@ -78,7 +78,7 @@ today" and `10-integration-quality-gaps.md`.
   starter URL, branch traversal persistence, Redis port). 3 new
   failure rows added (no API route handler tests, untested CLI submit
   deny-list, mock-only `AnthropicGateway`).
-- `TODOS/qa/progress-sync-2-report.md` — NEW (this file).
+- `qa/progress-sync-2-report.md` — NEW (this file).
 
 ## Top 3 truth-vs-doc deltas
 

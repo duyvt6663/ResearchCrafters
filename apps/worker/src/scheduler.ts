@@ -35,7 +35,7 @@ export interface SchedulerConnection {
 
 /**
  * Cohorts we publish branch-stats for on a schedule. `alpha_beta` is excluded
- * from public percentages by policy (see TODOS/06 §Branch Stats and Privacy);
+ * from public percentages by policy (see backlog/06 §Branch Stats and Privacy);
  * we still don't roll it up on the recurring schedule because nothing public
  * consumes it yet — it can be backfilled via the admin trigger when needed.
  */

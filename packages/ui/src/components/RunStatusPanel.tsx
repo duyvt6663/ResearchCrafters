@@ -10,7 +10,7 @@ import type { StatusKey } from "../tokens.js";
 /**
  * RunStatusPanel — visualizes runner output and run status.
  *
- * Behaviors implemented (TODOS/09 Component Behaviors):
+ * Behaviors implemented (backlog/09 Component Behaviors):
  *  - Scroll-to-tail toggle (auto-follow latest line).
  *  - In-panel search (substring match, highlight count).
  *  - Severity filter (info/warn/error).

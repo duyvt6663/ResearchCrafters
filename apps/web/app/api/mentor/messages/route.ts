@@ -95,7 +95,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     if (!access.allowed) {
       // Pass through the authored refusal whenever the policy module signals
       // that the mentor itself blocked the request (vs an entitlement / lock
-      // failure). The reason name `mentor_policy` is reserved by TODOS/05 —
+      // failure). The reason name `mentor_policy` is reserved by backlog/05 —
       // when the policy module surfaces it, the body carries copy the client
       // can render verbatim without inventing strings.
       setActiveSpanAttributes({ "rc.access.denied": access.reason });

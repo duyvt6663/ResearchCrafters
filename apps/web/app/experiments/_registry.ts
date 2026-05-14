@@ -1,4 +1,5 @@
-import type { ComponentType, ReactElement } from "react";
+import type { ComponentType, ReactElement } from 'react';
+import { Mock as W2QuestionStackMock } from '../../experiments/w2-question-stack/Mock';
 
 /**
  * Registry of UX experiments. Each entry is statically imported so the Next
@@ -12,7 +13,7 @@ import type { ComponentType, ReactElement } from "react";
  *      module-grouped order so diffs read cleanly.
  *
  * Status lifecycle (see `experiments/README.md`):
- *   draft → validated → promoted → archived | dropped
+ *   draft → validated → backlog → promoted → archived | dropped
  *
  * When an experiment reaches `archived`, move its folder to the repo-root
  * `archive/<slug>/` location AND remove its registry entry — archived
@@ -21,13 +22,14 @@ import type { ComponentType, ReactElement } from "react";
  * explains the integration outcome.
  */
 
-export type ExperimentModule = "math" | "writing" | "coding" | "shared";
+export type ExperimentModule = 'math' | 'writing' | 'coding' | 'shared';
 export type ExperimentStatus =
-  | "draft"
-  | "validated"
-  | "promoted"
-  | "archived"
-  | "dropped";
+  | 'draft'
+  | 'validated'
+  | 'backlog'
+  | 'promoted'
+  | 'archived'
+  | 'dropped';
 
 export interface ExperimentEntry {
   slug: string;
@@ -40,7 +42,17 @@ export interface ExperimentEntry {
   Mock: ComponentType<Record<string, never>> | (() => ReactElement);
 }
 
-export const experiments: Readonly<Record<string, ExperimentEntry>> = {};
+export const experiments: Readonly<Record<string, ExperimentEntry>> = {
+  'w2-question-stack': {
+    slug: 'w2-question-stack',
+    title: 'W2 - Question Stack',
+    module: 'writing',
+    status: 'draft',
+    summary:
+      'Split multi-part writing prompts into focused answer sections while keeping the package stage path in the left rail.',
+    Mock: W2QuestionStackMock,
+  },
+};
 
 export const experimentSlugs = Object.keys(experiments);
 
