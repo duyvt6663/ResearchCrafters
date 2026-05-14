@@ -170,6 +170,20 @@ export type {
   DerivationStepValidation,
 } from "./DerivationStepList.js";
 
+export { SymbolPalette } from "./SymbolPalette.js";
+export type {
+  SymbolPaletteProps,
+  PaletteSpec,
+  PaletteTile,
+} from "./SymbolPalette.js";
+
+export { ClaimSkeleton } from "./ClaimSkeleton.js";
+export type {
+  ClaimSkeletonProps,
+  SkeletonSpec,
+  SkeletonDimension,
+} from "./ClaimSkeleton.js";
+
 export { ShapeTableEditor } from "./ShapeTableEditor.js";
 export type {
   ShapeTableEditorProps,

@@ -1,0 +1,14 @@
+# Copy to ~/.cloudflared/researchcrafters.yml after running:
+#   cloudflared tunnel login
+#   cloudflared tunnel create researchcrafters
+#   cloudflared tunnel route dns researchcrafters researchcrafters.example.com
+#
+# Replace the tunnel id, credentials path, and hostname below.
+
+tunnel: 00000000-0000-0000-0000-000000000000
+credentials-file: /Users/duyvt6663/.cloudflared/00000000-0000-0000-0000-000000000000.json
+
+ingress:
+  - hostname: researchcrafters.example.com
+    service: http://127.0.0.1:3000
+  - service: http_status:404

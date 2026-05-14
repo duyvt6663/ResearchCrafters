@@ -1,0 +1,67 @@
+# UX Experiments
+
+Sandbox for **UI/UX proposals that have not been integrated yet**. Each
+experiment lives in its own folder under `apps/web/experiments/<slug>/` with
+a writeup (`README.md`) and a runnable mock (`Mock.tsx`). The mocks are
+rendered live by the web app at `/experiments/<slug>` so reviewers can poke
+at them in a real browser alongside the actual product styling.
+
+> The folder is colocated with `apps/web/` (rather than at the repo root) so
+> mocks can import `react`, `@researchcrafters/ui`, and other web-app
+> dependencies without a separate workspace package.
+>
+> The mocks are intentionally *not* wired into the production user flow.
+> They exist to validate an idea before it earns the cost of integration
+> into `packages/ui`, `apps/web/app/*`, or the content-package schema.
+
+## Workflow
+
+1. **Propose.** Copy `TEMPLATE/` to `<slug>/` (slug format: `<module-code>-<short-name>`,
+   e.g. `m1-symbol-palette`, `w1-claim-skeleton`, `c1-callgraph-overlay`).
+2. **Mock.** Write the smallest interactive `Mock.tsx` that lets a reviewer
+   *feel* the proposal. No new production deps — reuse `@researchcrafters/ui`.
+   Mocks may stub out grading / persistence / mentor calls.
+3. **Register.** Add the experiment to
+   `apps/web/app/experiments/_registry.ts` (one entry, static import).
+4. **Validate.** View at `/experiments/<slug>` (`pnpm --filter @researchcrafters/web dev`).
+   Run the manual test script in your writeup. Capture findings in the
+   *Validation* section of your `README.md` (append, don't overwrite — keep
+   the audit trail).
+5. **Decide.** Update the `status:` field in `_registry.ts` to one of:
+   - `draft` — still being built / not ready for review
+   - `validated` — informally tested, idea is sound, ready to plan integration
+   - `promoted` — moved into `packages/ui` / content schema; mock kept here for history
+   - `dropped` — tried it, didn't pan out (writeup explains why)
+
+## Writeup contract
+
+Every `<slug>/README.md` MUST contain these sections (in this order):
+
+- **Goal** — one sentence: what learning friction does this remove?
+- **Hypothesis** — falsifiable statement we'd hold to.
+- **In scope / out of scope** — what the mock actually proves vs. defers.
+- **How to view** — `pnpm dev` and the URL.
+- **Manual test script** — the exact sequence a reviewer should walk through.
+- **Validation criteria** — what counts as "this works" / "this doesn't".
+- **Findings** — append-only log of review sessions (date, who, what they
+  noticed). Empty at first.
+- **Decision** — `pending` until validation is done; then `promote | iterate | drop` + rationale.
+- **Integration sketch** — *if promoted*, where in the codebase it lands and
+  what schema changes the content package needs. Cite file paths and line
+  numbers, not abstractions.
+
+## Why these constraints
+
+- **One folder per experiment** keeps reviews scoped — a PR that touches three
+  mocks is three reviews, not one bundle.
+- **Mock.tsx imported via `@experiments/*` alias** (see `apps/web/tsconfig.json`)
+  means the Next.js bundler picks the mock up automatically. No build step.
+- **Status lives in the registry, not in the writeup**, so a quick `git log`
+  on `_registry.ts` shows the lifecycle of every proposal.
+- **Findings are append-only.** When an idea gets dropped six months in, the
+  writeup remembers why so we don't re-propose it from scratch.
+
+## Currently registered
+
+See `apps/web/app/experiments/_registry.ts` for the live list, or visit
+`/experiments` in the running web app.

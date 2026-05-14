@@ -5,7 +5,8 @@
     "plugins": [{ "name": "next" }],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@experiments/*": ["./experiments/*"]
     },
     "incremental": true,
     "noEmit": true,
@@ -25,7 +26,9 @@
     "lib/**/*.ts",
     "lib/**/*.tsx",
     "middleware.ts",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "experiments/**/*.tsx",
+    "experiments/**/*.ts"
   ],
   "exclude": ["node_modules", ".next"]
 }

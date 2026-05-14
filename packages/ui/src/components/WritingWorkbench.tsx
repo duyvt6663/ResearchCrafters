@@ -6,6 +6,7 @@ import { EvidencePanel, type EvidenceItem } from "./EvidencePanel.js";
 import { RubricPanel, type RubricDimension } from "./RubricPanel.js";
 import { MentorPanel, type MentorMode } from "./MentorPanel.js";
 import { RichAnswerEditor } from "./RichAnswerEditor.js";
+import { ClaimSkeleton, type SkeletonSpec } from "./ClaimSkeleton.js";
 
 /**
  * WritingWorkbench — the academic-writing host the TODO calls for.
@@ -47,6 +48,16 @@ export interface WritingWorkbenchProps {
    * function if your stage wants a different ref syntax.
    */
   onInsertCitation?: (item: EvidenceItem) => void;
+  /**
+   * Opt-in scaffolded editor (promoted from experiment W1). When provided,
+   * the center pane renders a `ClaimSkeleton` instead of `RichAnswerEditor`.
+   * The submitted artifact is still a single string passed through
+   * `draft.value` / `draft.onChange`, so validation and grading do not
+   * change. The skeleton owns its own evidence column (replacing the
+   * separate left pane for the cite-into-card interaction). See
+   * `apps/web/experiments/w1-claim-skeleton/README.md` for the rationale.
+   */
+  skeleton?: SkeletonSpec;
   className?: string;
 }
 
@@ -56,6 +67,7 @@ export function WritingWorkbench({
   rubric,
   mentorReview,
   onInsertCitation,
+  skeleton,
   className,
 }: WritingWorkbenchProps) {
   const draftRef = React.useRef<HTMLDivElement | null>(null);
@@ -119,12 +131,21 @@ export function WritingWorkbench({
         ref={draftRef}
         className="flex flex-col gap-2"
         data-rc-writing-pane="draft"
+        data-rc-writing-draft-mode={skeleton ? "skeleton" : "free-prose"}
       >
-        <RichAnswerEditor
-          value={draft.value}
-          onChange={draft.onChange}
-          {...(draft.placeholder ? { placeholder: draft.placeholder } : {})}
-        />
+        {skeleton ? (
+          <ClaimSkeleton
+            spec={skeleton}
+            value={draft.value}
+            onChange={draft.onChange}
+          />
+        ) : (
+          <RichAnswerEditor
+            value={draft.value}
+            onChange={draft.onChange}
+            {...(draft.placeholder ? { placeholder: draft.placeholder } : {})}
+          />
+        )}
       </div>
 
       {/* RIGHT: rubric + mentor review */}
