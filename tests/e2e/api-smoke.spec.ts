@@ -82,7 +82,7 @@ test.describe("api surface (anon)", () => {
   }) => {
     // Today the policy treats this as a free-preview view_stage and lets it
     // through with an empty list. If the policy tightens, this expectation
-    // should flip to 401 — see TODOS/qa/fe-qa-report.md.
+    // should flip to 401 — see qa/fe-qa-report.md.
     const r = await request.get("/api/entitlements");
     expect(r.status()).toBe(200);
     expect(await r.json()).toEqual({ entitlements: [] });

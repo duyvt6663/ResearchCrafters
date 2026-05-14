@@ -1,56 +1,76 @@
 import type { ReactElement } from "react";
+import { LoginForm } from "@researchcrafters/ui/components";
 import { signIn } from "@/auth";
 
-// Server component. Renders the GitHub OAuth button as a server-action form
-// so the entire flow runs without client-side JS. Email magic-link is
-// declared in the auth config but is not yet wired to a transactional email
-// service — we render a disabled placeholder with a hint.
+/**
+ * /login — page-fallback surface for sign-in.
+ *
+ * In-app entry points (e.g. the package overview's "Start package" CTA) open
+ * `LoginModal` over the originating page so context isn't lost. This route
+ * remains for direct visits and shared `/login?next=…` links. The same
+ * `LoginForm` primitive renders in both surfaces, so the visual language
+ * stays in lockstep.
+ *
+ * Today only GitHub is wired (see `apps/web/auth.ts`); Google + email
+ * password render as visibly disabled inside `LoginForm` until their
+ * backend lands.
+ */
 
 export const metadata = {
   title: "Sign in — ResearchCrafters",
 };
 
-async function signInWithGithub(): Promise<void> {
-  "use server";
-  await signIn("github", { redirectTo: "/" });
+interface LoginPageProps {
+  searchParams: Promise<{ next?: string }>;
 }
 
-export default function LoginPage(): ReactElement {
+async function signInWithGithubAction(redirectTo: string): Promise<void> {
+  "use server";
+  await signIn("github", { redirectTo });
+}
+
+function safeNext(raw: string | undefined): string {
+  if (!raw) return "/";
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/";
+  return raw;
+}
+
+export default async function LoginPage({
+  searchParams,
+}: LoginPageProps): Promise<ReactElement> {
+  const { next } = await searchParams;
+  const redirectTo = safeNext(next);
+
   return (
     <main className="rc-page rc-page--login">
-      <header className="rc-band">
-        <h1>Sign in</h1>
-        <p>
-          Sign in with GitHub to enroll in a package and pick up where you
-          left off.
-        </p>
-      </header>
-
-      <section className="rc-band">
-        <form action={signInWithGithub}>
-          <button type="submit" className="rc-button rc-button--primary">
-            Sign in with GitHub
-          </button>
-        </form>
-      </section>
-
-      <section className="rc-band">
-        <h2>Email magic-link</h2>
-        <p>Magic-link login is coming. For now, please use GitHub.</p>
-        <form>
-          <label htmlFor="rc-login-email">Email</label>
-          <input
-            id="rc-login-email"
-            type="email"
-            placeholder="you@example.com"
-            disabled
-            aria-describedby="rc-login-email-hint"
-          />
-          <p id="rc-login-email-hint" className="rc-hint">
-            Magic-link login is coming.
+      <div className="mx-auto flex w-full max-w-[480px] flex-col items-center gap-6 px-6 py-16">
+        <div className="flex w-full flex-col gap-2 text-center">
+          <span className="font-(--font-rc-mono) text-(--text-rc-xs) uppercase tracking-[0.08em] text-(--color-rc-text-subtle)">
+            ResearchCrafters
+          </span>
+          <h1 className="text-(--text-rc-2xl) font-semibold text-(--color-rc-text)">
+            Sign in
+          </h1>
+          <p className="text-(--text-rc-sm) text-(--color-rc-text-muted)">
+            {redirectTo === "/"
+              ? "Pick up where you left off."
+              : "You'll come back to where you were after signing in."}
           </p>
-        </form>
-      </section>
+        </div>
+
+        <div className="w-full rounded-(--radius-rc-md) border border-(--color-rc-border) bg-(--color-rc-surface) p-6">
+          <LoginForm
+            onGithubSignIn={signInWithGithubAction.bind(null, redirectTo)}
+          />
+        </div>
+
+        <a
+          href="/"
+          className="text-(--text-rc-xs) text-(--color-rc-text-muted) underline-offset-4 hover:underline"
+        >
+          Back to catalog
+        </a>
+      </div>
     </main>
   );
 }

@@ -15,9 +15,17 @@ import {
 import { copy } from "@researchcrafters/ui/copy";
 import { cliCommands } from "@researchcrafters/ui/cli-commands";
 import { getPackageBySlug } from "@/lib/data/packages";
+import { getSession } from "@/lib/auth";
+import { signIn } from "@/auth";
 import { track } from "@/lib/telemetry";
+import { StartPackageCta } from "@/components/StartPackageCta";
 
 type Params = { slug: string };
+
+async function signInWithGithubForStart(redirectTo: string): Promise<void> {
+  "use server";
+  await signIn("github", { redirectTo });
+}
 
 /**
  * Opt out of static prerender: this page resolves the package by slug through
@@ -88,7 +96,9 @@ export default async function PackageOverviewPage({
 
   await track("package_viewed", { surface: "overview", slug });
 
-  const ctaHref = `/packages/${pkg.slug}/start`;
+  const session = await getSession();
+  const isAuthenticated = Boolean(session.userId);
+  const startRoute = `/packages/${pkg.slug}/start`;
 
   return (
     <main className="rc-page rc-page--package-overview">
@@ -308,17 +318,16 @@ export default async function PackageOverviewPage({
                       </dd>
                     </div>
                   </dl>
-                  <a
-                    href={ctaHref}
-                    className={
-                      "inline-flex w-full items-center justify-center rounded-(--radius-rc-md) " +
-                      "bg-(--color-rc-accent) px-4 py-2.5 text-(--text-rc-sm) font-semibold " +
-                      "text-(--color-rc-accent-foreground) transition-colors duration-(--duration-rc-fast) " +
-                      "hover:bg-(--color-rc-accent-hover)"
-                    }
-                  >
-                    {copy.packageOverview.startCta}
-                  </a>
+                  <StartPackageCta
+                    slug={pkg.slug}
+                    packageTitle={pkg.title}
+                    isAuthenticated={isAuthenticated}
+                    label={copy.packageOverview.startCta}
+                    onGithubSignIn={signInWithGithubForStart.bind(
+                      null,
+                      startRoute,
+                    )}
+                  />
                   <p className="text-(--text-rc-xs) leading-relaxed text-(--color-rc-text-subtle)">
                     Get started in your editor:
                   </p>

@@ -5,18 +5,18 @@ data model.
 
 `prisma/` holds schema and migrations; the typed client wrapper lives in `src/`.
 
-## Primary TODO
+## Primary Backlog Item
 
-- `TODOS/06-data-access-analytics.md` — table inventory, package build mirroring,
+- `backlog/06-data-access-analytics.md` — table inventory, package build mirroring,
   permissions policy, version + patch policy, branch-stats privacy, telemetry,
   events storage, migration UX.
 
-## Related TODOs
+## Related Backlog Items
 
-- `TODOS/08-infra-foundations.md` — provisioning, shadow DB, seed scripts,
+- `backlog/08-infra-foundations.md` — provisioning, shadow DB, seed scripts,
   encryption-at-rest fields.
-- `TODOS/04-validation-evaluator.md` — `grades` table consumed by the evaluator.
-- `TODOS/05-mentor-safety.md` — `mentor_threads`, `mentor_messages` cost fields.
+- `backlog/04-validation-evaluator.md` — `grades` table consumed by the evaluator.
+- `backlog/05-mentor-safety.md` — `mentor_threads`, `mentor_messages` cost fields.
 
 ## Notes
 

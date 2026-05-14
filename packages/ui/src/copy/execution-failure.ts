@@ -2,7 +2,7 @@
  * Execution-failure copy.
  *
  * Execution failure must read clearly distinct from research/grade failure
- * (per `docs/FRONTEND.md` section 11 and `TODOS/03` Execution Status).
+ * (per `docs/FRONTEND.md` section 11 and `backlog/03` Execution Status).
  * No grade is created until `execution_status=ok`.
  */
 

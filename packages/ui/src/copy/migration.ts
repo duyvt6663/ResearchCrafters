@@ -1,7 +1,7 @@
 /**
  * Package-version migration UX copy.
  *
- * Per `TODOS/06-data-access-analytics.md`, migrations are opt-in. The diff
+ * Per `backlog/06-data-access-analytics.md`, migrations are opt-in. The diff
  * summary should be plain English so learners can decide whether to take the
  * new version (which may reset stage state) or keep the version they started.
  */

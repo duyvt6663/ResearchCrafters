@@ -5,7 +5,7 @@ import { scrubLogs } from './log-scrub.js';
 
 /**
  * Sandbox abstraction. The interface enforces the security posture required
- * by TODOS/03:
+ * by backlog/03:
  *
  * - read-only base image,
  * - writable workspace mount,
@@ -73,7 +73,7 @@ export class DockerSandbox implements Sandbox {
 
   async run(_opts: SandboxRunOpts): Promise<SandboxRunResult> {
     // The real implementation calls dockerode here. We deliberately avoid
-    // pulling docker into the test path. See TODOS/08 for image setup.
+    // pulling docker into the test path. See backlog/08 for image setup.
     throw new Error(
       'DockerSandbox.run is not implemented in this scaffold. Wire up dockerode here.',
     );

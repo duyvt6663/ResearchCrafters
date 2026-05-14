@@ -17,7 +17,7 @@ import { cn } from "../lib/cn.js";
  *  - The primary action (e.g. Submit) is sticky at the bottom on mobile and
  *    pinned to the workspace footer on desktop.
  *  - A stage opened under entitlement is NEVER interrupted mid-attempt by a
- *    paywall (per `TODOS/09` Anti-Patterns). PaywallModal must only mount on
+ *    paywall (per `backlog/09` Anti-Patterns). PaywallModal must only mount on
  *    natural boundaries — controlled by the caller, not this layout.
  */
 export interface StagePlayerProps {

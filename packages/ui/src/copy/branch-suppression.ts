@@ -1,7 +1,7 @@
 /**
  * Rare-branch suppression copy.
  *
- * Per `TODOS/06-data-access-analytics.md`, branch percentages are suppressed
+ * Per `backlog/06-data-access-analytics.md`, branch percentages are suppressed
  * below minimum-N (per-node N >= 20, per-branch N >= 5). The graph and the
  * share card both reuse these strings so we never invent inline text.
  */

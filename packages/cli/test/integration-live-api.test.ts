@@ -61,7 +61,7 @@ describe('CLI integration against live web API', () => {
     });
     if (dcRes.statusCode === 500) {
       // Known dev-server regression where webpack chunks (e.g. './3879.js')
-      // go missing on the auth routes too — see TODOS/qa/cli-qa-report.md.
+      // go missing on the auth routes too — see qa/cli-qa-report.md.
       // Drain the body so the connection is reused and skip rather than fail.
       await dcRes.body.dump();
       return;

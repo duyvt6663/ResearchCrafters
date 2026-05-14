@@ -6,19 +6,19 @@ graph view, mentor panel, paywall, share cards.
 Stack target: Next.js + React + Tailwind, with route handlers serving the
 product API until pressure justifies splitting `apps/api`.
 
-## Primary TODO
+## Primary Backlog Item
 
-- `TODOS/01-mvp-platform.md` — product surfaces, enrollment, entitlement gates,
+- `backlog/01-mvp-platform.md` — product surfaces, enrollment, entitlement gates,
   error/empty states, share flow.
 
-## Related TODOs
+## Related Backlog Items
 
-- `TODOS/09-frontend-design.md` — visual system, stage player UX, copy library,
+- `backlog/09-frontend-design.md` — visual system, stage player UX, copy library,
   performance budget, anti-patterns.
-- `TODOS/06-data-access-analytics.md` — telemetry, branch-stats suppression,
+- `backlog/06-data-access-analytics.md` — telemetry, branch-stats suppression,
   share-card payload, migration UX.
-- `TODOS/04-validation-evaluator.md` — grade schema rendered by the grade panel.
-- `TODOS/05-mentor-safety.md` — mentor visibility states and authored copy.
+- `backlog/04-validation-evaluator.md` — grade schema rendered by the grade panel.
+- `backlog/05-mentor-safety.md` — mentor visibility states and authored copy.
 
 ## Depends on
 

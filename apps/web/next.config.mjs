@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   // Next 15 promoted typedRoutes out of `experimental`; keep it disabled for
-  // now until the route map stabilises (see TODOS/10 quality gates).
+  // now until the route map stabilises (see backlog/10 quality gates).
   typedRoutes: false,
   transpilePackages: [
     "@researchcrafters/ui",

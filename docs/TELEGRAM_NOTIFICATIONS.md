@@ -37,3 +37,11 @@ on:
 ```
 
 Keep this notification workflow separate from CI/CD jobs. It does not check out or execute pull request code, so it can safely send notifications after CI runs complete.
+
+## Pull Request Safety
+
+Pull request lifecycle notifications use `pull_request_target` so repository secrets are available even for fork-origin PR metadata. This workflow must stay metadata-only: do not add checkout steps, dependency installs, test commands, or any execution of pull request code to it.
+
+CI pass/fail notifications use `workflow_run` after the `CI` workflow completes. That is the failure path to rely on for fork PRs and Dependabot-style PRs.
+
+Comment and review notifications use GitHub's comment/review events. For same-repo PRs they should notify normally; for fork-origin PRs, GitHub secret restrictions can still prevent those event-specific notifications.

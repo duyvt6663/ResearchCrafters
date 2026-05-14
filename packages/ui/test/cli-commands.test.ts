@@ -8,7 +8,7 @@ import {
 } from "../src/cli-commands.js";
 
 describe("cli-commands surface", () => {
-  it("learner surface contains the canonical commands from TODOS/03", () => {
+  it("learner surface contains the canonical commands from backlog/03", () => {
     const names = LEARNER_COMMANDS.map((c) => c.name);
     expect(names).toEqual([
       "researchcrafters login",

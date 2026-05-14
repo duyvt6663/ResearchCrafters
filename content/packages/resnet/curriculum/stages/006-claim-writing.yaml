@@ -34,6 +34,34 @@ inputs:
   expected_length:
     min_words: 40
     max_words: 160
+  # Claim-skeleton config (promoted from experiment W1 — see
+  # `archive/w1-claim-skeleton/README.md`). When present,
+  # the writing stage view renders a `WritingWorkbench` with the
+  # `skeleton` prop set, replacing the free-text editor with reorderable
+  # rubric-keyed cards. The submitted artifact is still a single string.
+  skeleton:
+    joiner: "\n\n"
+    wordBudget:
+      min: 40
+      max: 160
+    evidenceTargetDimensionId: evidence
+    dimensions:
+      - id: mechanism
+        label: "Mechanism"
+        prompt: "State what residual learning does. One or two sentences."
+        accentVar: "--color-rc-info"
+      - id: conditions
+        label: "Conditions"
+        prompt: "Under what conditions does the claim hold? Name the depth, optimizer, BatchNorm setting, and dataset."
+        accentVar: "--color-rc-warning"
+      - id: evidence
+        label: "Evidence"
+        prompt: "Cite the supporting evidence. Use the Insert-ref buttons on the right."
+        accentVar: "--color-rc-icon-accent"
+      - id: scope
+        label: "Scope"
+        prompt: "Where does this NOT apply? Be honest about the limits of the claim."
+        accentVar: "--color-rc-accent"
 validation:
   kind: rubric
   rubric: curriculum/rubrics/claim-writing.yaml

@@ -26,7 +26,7 @@ export default async function SharePage({
   if (!pkg) notFound();
 
   // Snapshot payload that will eventually be persisted as an immutable
-  // share-card row per TODOS/06. Cohort percentages omitted here because the
+  // share-card row per backlog/06. Cohort percentages omitted here because the
   // stub data layer cannot yet evaluate the minimum-N suppression rule.
   const payload = {
     packageSlug: pkg.slug,

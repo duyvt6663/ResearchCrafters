@@ -33,6 +33,62 @@ export const inputModeEnum = z.enum([
   'mixed',
 ]);
 
+/**
+ * Symbol-palette authoring shape (promoted from `archive/m1-symbol-palette`).
+ *
+ * When `stage_policy.inputs.palette` is present on a math stage, the
+ * `MathStageView` in `apps/web` renders a one-blank `DerivationStepList`
+ * driven by this palette instead of asking the learner to type LaTeX.
+ *
+ * Tile fields are camelCase to mirror the runtime `PaletteTile` type
+ * exported from `@researchcrafters/ui/components` exactly. No data-layer
+ * transformation is required — the JSON survives the YAML→DB round trip
+ * unchanged.
+ */
+const paletteTileGlossSchema = z.object({
+  name: z.string().min(1),
+  plainEnglish: z.string().min(1),
+  appearsIn: z.string().min(1).optional(),
+});
+const paletteTileSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  latex: z.string().min(1),
+  category: z.string().min(1),
+  gloss: paletteTileGlossSchema.optional(),
+});
+export const stageInputsPaletteSchema = z.object({
+  tiles: z.array(paletteTileSchema).min(1),
+  categoryOrder: z.array(z.string().min(1)).optional(),
+  categoryLabels: z.record(z.string(), z.string()).optional(),
+});
+
+/**
+ * Claim-skeleton authoring shape (promoted from `archive/w1-claim-skeleton`).
+ *
+ * When `stage_policy.inputs.skeleton` is present on a writing stage, the
+ * `WritingStageView` in `apps/web` renders a `WritingWorkbench` with the
+ * `skeleton` prop set so the editor pane shows reorderable rubric-keyed
+ * cards in place of `RichAnswerEditor`.
+ */
+const skeletonDimensionSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  prompt: z.string().min(1),
+  accentVar: z.string().min(1).optional(),
+});
+export const stageInputsSkeletonSchema = z.object({
+  dimensions: z.array(skeletonDimensionSchema).min(1),
+  joiner: z.string().optional(),
+  wordBudget: z
+    .object({
+      min: z.number().int().nonnegative().optional(),
+      max: z.number().int().positive().optional(),
+    })
+    .optional(),
+  evidenceTargetDimensionId: z.string().min(1).optional(),
+});
+
 export const inputFieldKindEnum = z.enum([
   'string',
   'number',
@@ -137,6 +193,18 @@ export const stagePolicySchema = z.object({
      * form using these field descriptors instead of a single textarea.
      */
     fields: z.array(stageInputFieldSchema).optional(),
+    /**
+     * Symbol-palette config for math stages. The web UI renders a
+     * `DerivationStepList` with `inputMode: "palette"` when this is set.
+     * See `stageInputsPaletteSchema` for the shape.
+     */
+    palette: stageInputsPaletteSchema.optional(),
+    /**
+     * Claim-skeleton config for writing stages. The web UI renders a
+     * `WritingWorkbench` with the `skeleton` prop when this is set.
+     * See `stageInputsSkeletonSchema` for the shape.
+     */
+    skeleton: stageInputsSkeletonSchema.optional(),
   }),
   pass_threshold: z.number().min(0).max(1).optional(),
   hints: z

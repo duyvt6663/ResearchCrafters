@@ -1,5 +1,5 @@
 /**
- * CLI warning copy, aligned with `TODOS/03-cli-runner.md`.
+ * CLI warning copy, aligned with `backlog/03-cli-runner.md`.
  *
  * Stale-CLI warning is rendered both in the terminal (by the CLI itself) and
  * in the web app's CLI command block, so we keep one source.

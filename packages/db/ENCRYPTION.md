@@ -56,7 +56,7 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'
 ```
 
 **Store the key** in your secrets manager (Doppler / Vault / AWS Secrets
-Manager — see `TODOS/08-infra-foundations.md` §Secrets and Config). Each
+Manager — see `backlog/08-infra-foundations.md` §Secrets and Config). Each
 deployment environment (`dev` / `preview` / `staging` / `prod`) gets its
 own key; rotating one environment never affects the others.
 

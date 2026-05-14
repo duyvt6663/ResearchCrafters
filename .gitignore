@@ -44,3 +44,4 @@ pnpm-debug.log*
 .researchcrafters/
 .playwright-mcp/
 test-results/
+graphify-out/

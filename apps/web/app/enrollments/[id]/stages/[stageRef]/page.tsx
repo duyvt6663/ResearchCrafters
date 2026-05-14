@@ -13,6 +13,8 @@ import {
 } from "@researchcrafters/ui/components";
 import { cliCommands } from "@researchcrafters/ui/cli-commands";
 import { copy } from "@researchcrafters/ui/copy";
+import { MathStageView } from "./views/MathStageView";
+import { WritingStageView } from "./views/WritingStageView";
 import { getEnrollment, getStage } from "@/lib/data/enrollment";
 import { getSession } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
@@ -49,7 +51,7 @@ export default async function StagePage({
 
   if (!access.allowed) {
     // Stage opened under entitlement must not be paywall-interrupted mid-stage
-    // (see TODOS/09 mid-stage paywall guard). The paywall surface is the
+    // (see backlog/09 mid-stage paywall guard). The paywall surface is the
     // stage-load boundary itself, rendered via the typed error renderer.
     if (access.reason === "stage_locked" || access.reason === "no_entitlement") {
       return renderErrorPage("stage-locked", { retryHref: `/packages/${enrollment.packageSlug}` });
@@ -87,9 +89,47 @@ export default async function StagePage({
       );
     }
     if (mode === "writing") {
-      // Writing stages get the rich-text editor — markdown toolbar +
-      // live preview. Autosave / sanitize / undo-redo continue to live
-      // inside the wrapped `AnswerEditor`.
+      // Writing stages: when the stage YAML authors a `skeleton`, render
+      // the `WritingWorkbench` with `ClaimSkeleton` (promoted experiment W1).
+      // Otherwise keep the historical `RichAnswerEditor` — autosave /
+      // sanitize / undo-redo continue to live inside the wrapped
+      // `AnswerEditor`.
+      if (stage.skeleton) {
+        return (
+          <WritingStageView
+            stageRef={stage.ref}
+            skeleton={stage.skeleton}
+            rubric={stage.rubric ?? []}
+            evidence={[]}
+          />
+        );
+      }
+      return (
+        <RichAnswerEditor
+          stageRef={stage.ref}
+          rubric={stage.rubric ?? []}
+          submitHref={`/api/stage-attempts`}
+        />
+      );
+    }
+    if (mode === "math") {
+      // Math stages render the `MathWorkspace` workbench. When the stage
+      // YAML authors a `palette`, the blank derivation step uses the
+      // click-to-assemble symbol palette (promoted experiment M1) instead
+      // of the LaTeX text input.
+      if (stage.palette) {
+        return (
+          <MathStageView
+            stageRef={stage.ref}
+            prompt={stage.inputs.prompt}
+            palette={stage.palette}
+          />
+        );
+      }
+      // No palette authored — fall back to a plain prose answer so the
+      // stage still loads. (Pre-palette math stages used `RichAnswerEditor`
+      // implicitly via the `inferMode` → "code" mapping; we no longer
+      // misroute math → code.)
       return (
         <RichAnswerEditor
           stageRef={stage.ref}

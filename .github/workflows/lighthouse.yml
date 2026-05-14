@@ -35,10 +35,10 @@ jobs:
       RESEARCHCRAFTERS_API_URL: http://localhost:3001
       NEXTAUTH_URL: http://localhost:3001
       NEXTAUTH_SECRET: lighthouse-ci-non-secret-placeholder
-      RUNNER_DOCKER_ENABLED: "false"
+      RUNNER_DOCKER_ENABLED: 'false'
       # `next start` honors PORT; we use 3001 to avoid colliding with any
       # `next dev` running on 3000 inside the same workflow.
-      PORT: "3001"
+      PORT: '3001'
 
     steps:
       - name: Checkout
@@ -46,8 +46,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Setup Node
         uses: actions/setup-node@v4

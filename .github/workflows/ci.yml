@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 # Note: this workflow does not stand up Postgres / Redis / S3. The current
-# test suite uses mocks and stubs (see TODOS/PROGRESS.md). Integration tests
+# test suite uses mocks and stubs (see backlog/PROGRESS.md). Integration tests
 # that need live services will be added in a follow-up workflow that wires
 # `services:` (or `docker compose`) before the test step.
 
@@ -26,8 +26,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Setup Node
         uses: actions/setup-node@v4

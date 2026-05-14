@@ -14,7 +14,7 @@ services:
     container_name: researchcrafters-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: researchcrafters
       POSTGRES_PASSWORD: researchcrafters
@@ -34,7 +34,7 @@ services:
     # Host port is overridable via REDIS_HOST_PORT for hosts where 6379 is
     # already taken (e.g. another local Redis). Container side stays 6379.
     ports:
-      - "${REDIS_HOST_PORT:-6379}:6379"
+      - "127.0.0.1:${REDIS_HOST_PORT:-6379}:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -49,8 +49,8 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     environment:
       MINIO_ROOT_USER: researchcrafters
       MINIO_ROOT_PASSWORD: researchcrafters

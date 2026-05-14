@@ -1,7 +1,7 @@
 # Lighthouse CI threshold notes
 
 The thresholds in `lighthouserc.json` track the Performance Budget section in
-`TODOS/09-frontend-design.md`. This file documents per-metric rationale and any
+`backlog/09-frontend-design.md`. This file documents per-metric rationale and any
 intentional loosening so the budget evolves deliberately rather than drifting.
 
 ## Severity philosophy
@@ -57,7 +57,7 @@ When a metric trips repeatedly without a real regression:
 
 1. Confirm it is environmental (compare `.lighthouseci` artifacts across 5+
    runs).
-2. Open a TODO entry under `TODOS/09-frontend-design.md` Performance Budget
+2. Open a backlog entry under `backlog/09-frontend-design.md` Performance Budget
    referencing the metric.
 3. Update the threshold here with a new row in the table above explaining the
    change. Do not silently relax thresholds.

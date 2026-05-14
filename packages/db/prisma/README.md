@@ -2,7 +2,7 @@
 
 Prisma schema and migrations.
 
-Per `TODOS/08-infra-foundations.md`:
+Per `backlog/08-infra-foundations.md`:
 
 - Add baseline migration with empty schema.
 - Set up shadow database for safe migration generation.

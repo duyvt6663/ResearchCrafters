@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/cn.js";
 import { renderInlineMath } from "../lib/math.js";
+import { SymbolPalette, type PaletteSpec } from "./SymbolPalette.js";
 
 /**
  * DerivationStepList — a sequential list of derivation steps for a math
@@ -46,6 +47,19 @@ export interface DerivationStep {
   validation?: DerivationStepValidation;
   /** Hint string shown when the user toggles the hint chip. */
   hint?: string;
+  /**
+   * Input mode for `blank` steps. Defaults to `"latex-text"` (a plain `<input>`
+   * that learners type LaTeX into — historical behaviour). Set to `"palette"`
+   * to render a `SymbolPalette` instead so learners can click-to-assemble.
+   * Ignored for `given` / `computed` steps.
+   *
+   * See `apps/web/experiments/m1-symbol-palette/README.md` for the
+   * pedagogical rationale and validation criteria.
+   */
+  inputMode?: "latex-text" | "palette";
+  /** Palette spec — required when `inputMode === "palette"`. The composed
+   *  LaTeX is emitted through `onChange` exactly like the text input. */
+  palette?: PaletteSpec;
 }
 
 export interface DerivationStepListProps {
@@ -144,33 +158,51 @@ export function DerivationStepList({
             ) : null}
 
             {step.kind === "blank" ? (
-              <div className="flex flex-col gap-1.5">
-                <input
-                  type="text"
-                  inputMode="text"
-                  spellCheck={false}
-                  placeholder={
-                    step.blankPlaceholder ?? "Enter LaTeX, e.g. \\frac{dy}{dx}"
-                  }
-                  value={step.value ?? ""}
-                  onChange={(e) => step.onChange?.(e.target.value)}
-                  aria-label={step.label ?? `Step ${idx + 1} answer`}
-                  className={cn(
-                    "w-full rounded-(--radius-rc-sm) border border-(--color-rc-border) bg-(--color-rc-bg)",
-                    "px-2.5 py-1.5 font-(--font-rc-mono) text-(--text-rc-sm) text-(--color-rc-text)",
-                    "focus:outline-none focus:border-(--color-rc-accent)",
-                  )}
-                  data-rc-derivation-input
-                />
-                {step.value ? (
-                  <div
-                    className="rc-math-step-preview text-(--text-rc-sm) text-(--color-rc-text-muted)"
-                    data-rc-derivation-preview
-                  >
-                    {renderInlineMath(step.value)}
-                  </div>
-                ) : null}
-              </div>
+              step.inputMode === "palette" && step.palette ? (
+                <div className="flex flex-col gap-2" data-rc-derivation-input-mode="palette">
+                  <SymbolPalette
+                    spec={step.palette}
+                    value={step.value ?? ""}
+                    onChange={(v) => step.onChange?.(v)}
+                  />
+                  {step.value ? (
+                    <div
+                      className="rc-math-step-preview text-(--text-rc-sm) text-(--color-rc-text-muted)"
+                      data-rc-derivation-preview
+                    >
+                      {renderInlineMath(step.value)}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5" data-rc-derivation-input-mode="latex-text">
+                  <input
+                    type="text"
+                    inputMode="text"
+                    spellCheck={false}
+                    placeholder={
+                      step.blankPlaceholder ?? "Enter LaTeX, e.g. \\frac{dy}{dx}"
+                    }
+                    value={step.value ?? ""}
+                    onChange={(e) => step.onChange?.(e.target.value)}
+                    aria-label={step.label ?? `Step ${idx + 1} answer`}
+                    className={cn(
+                      "w-full rounded-(--radius-rc-sm) border border-(--color-rc-border) bg-(--color-rc-bg)",
+                      "px-2.5 py-1.5 font-(--font-rc-mono) text-(--text-rc-sm) text-(--color-rc-text)",
+                      "focus:outline-none focus:border-(--color-rc-accent)",
+                    )}
+                    data-rc-derivation-input
+                  />
+                  {step.value ? (
+                    <div
+                      className="rc-math-step-preview text-(--text-rc-sm) text-(--color-rc-text-muted)"
+                      data-rc-derivation-preview
+                    >
+                      {renderInlineMath(step.value)}
+                    </div>
+                  ) : null}
+                </div>
+              )
             ) : null}
 
             {/* Hint chip */}

@@ -3,7 +3,7 @@ import type { StagePolicy, MentorVisibility } from '@researchcrafters/erp-schema
 /**
  * Tier of model used for a request. Cheaper models handle hints; stronger
  * models handle evidence-grounded writing feedback. Recorded on every message
- * for cost and quality audits (see TODOS/05).
+ * for cost and quality audits (see backlog/05).
  */
 export type ModelTier = 'hint' | 'feedback';
 
@@ -38,7 +38,7 @@ export interface MentorMessage {
   threadId: string;
   role: 'user' | 'assistant' | 'system';
   text: string;
-  /* model metadata — required on every assistant message per TODOS/05 */
+  /* model metadata — required on every assistant message per backlog/05 */
   modelTier?: ModelTier;
   modelId?: string;
   provider?: Provider;

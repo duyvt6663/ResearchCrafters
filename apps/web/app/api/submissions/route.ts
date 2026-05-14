@@ -65,7 +65,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   // here, so we trust the policy to do the right thing with isLocked=false
   // and let it cross-reference packageVersionId+stageRef itself once the
   // policy gains a Prisma-backed lookup. TODO: wire to a stage-by-version
-  // helper once submissions are fully Prisma-backed (TODOS/06).
+  // helper once submissions are fully Prisma-backed (backlog/06).
   const stage = { isFreePreview: false, isLocked: false };
 
   const access = await permissions.canAccess({

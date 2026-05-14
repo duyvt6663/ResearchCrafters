@@ -3,7 +3,7 @@ import type { RedactionResult } from '@researchcrafters/ai';
 
 /**
  * Wraps `ai.redact` so any mentor message that quotes evaluator output goes
- * through the same redaction pass. Per TODOS/04 #LLM-grading: leaked text must
+ * through the same redaction pass. Per backlog/04 #LLM-grading: leaked text must
  * not escape through the mentor channel either.
  *
  * Mentor messages can include block quotes from grader output. This helper

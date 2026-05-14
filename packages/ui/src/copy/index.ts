@@ -4,7 +4,7 @@
  * Authored, safety- and tone-sensitive strings only. Never produced by an LLM.
  * Engineers MUST import from this module instead of inventing inline strings.
  *
- * Public shape: `cope.<category>.<key>(args?)` — see TODOS/09 Copy Library.
+ * Public shape: `cope.<category>.<key>(args?)` — see backlog/09 Copy Library.
  */
 
 import {
@@ -106,7 +106,7 @@ export type CopeNamespace = typeof cope;
 /**
  * `copy` — flat, app-facing namespace authored alongside `cope`.
  *
- * The `cope` export above mirrors the TODOS spec one-to-one (function-keyed
+ * The `cope` export above mirrors the backlog spec one-to-one (function-keyed
  * entries that can take args). `copy` is a sibling, more ergonomic surface
  * intended for the web app's pages: pre-applied copy with shapes the page
  * components consume directly. Keep both exports in sync — when a string
@@ -114,7 +114,7 @@ export type CopeNamespace = typeof cope;
  * one place.
  *
  * If you add a key here, also document the corresponding spec entry in the
- * relevant `TODOS/*.md` and (where applicable) reference it from `cope`.
+ * relevant `backlog/*.md` and (where applicable) reference it from `cope`.
  */
 const _emptyCatalog = emptyCatalog();
 const _runnerOffline = runnerOffline();

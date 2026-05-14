@@ -72,6 +72,15 @@ export type {
   PaywallEntryPoint,
 } from "./PaywallModal.js";
 
+export { LoginForm } from "./LoginForm.js";
+export type {
+  LoginFormProps,
+  CredentialsServerAction,
+} from "./LoginForm.js";
+
+export { LoginModal } from "./LoginModal.js";
+export type { LoginModalProps } from "./LoginModal.js";
+
 export { MentorPanel, MentorPanelIcons } from "./MentorPanel.js";
 export type { MentorPanelProps, MentorMode } from "./MentorPanel.js";
 
@@ -169,6 +178,20 @@ export type {
   DerivationStep,
   DerivationStepValidation,
 } from "./DerivationStepList.js";
+
+export { SymbolPalette } from "./SymbolPalette.js";
+export type {
+  SymbolPaletteProps,
+  PaletteSpec,
+  PaletteTile,
+} from "./SymbolPalette.js";
+
+export { ClaimSkeleton } from "./ClaimSkeleton.js";
+export type {
+  ClaimSkeletonProps,
+  SkeletonSpec,
+  SkeletonDimension,
+} from "./ClaimSkeleton.js";
 
 export { ShapeTableEditor } from "./ShapeTableEditor.js";
 export type {

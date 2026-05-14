@@ -1,11 +1,11 @@
 /**
- * Canonical CLI surface, mirrored from `TODOS/03-cli-runner.md`.
+ * Canonical CLI surface, mirrored from `backlog/03-cli-runner.md`.
  *
  * Importing this in stage copy and the web app is the ONLY supported way to
  * render `researchcrafters` commands. Hardcoded command strings outside this
  * module are forbidden (CI lint should fail the build).
  *
- * If `TODOS/03-cli-runner.md` adds a command, add it here in the same PR.
+ * If `backlog/03-cli-runner.md` adds a command, add it here in the same PR.
  */
 
 export interface CliCommand {
@@ -114,7 +114,7 @@ export function findCommand(name: string): CliCommand | undefined {
  * `cliCommands` — friendly, app-facing accessors for the canonical CLI surface.
  *
  * The `LEARNER_COMMANDS` / `AUTHOR_COMMANDS` arrays remain the source of truth
- * (see `TODOS/03-cli-runner.md`). This object exposes ready-to-render strings
+ * (see `backlog/03-cli-runner.md`). This object exposes ready-to-render strings
  * for the web app's stage player, where commands are interpolated with the
  * active stage ref. Add new accessors here whenever a new web flow needs a
  * specific command — never inline the string at the call site.

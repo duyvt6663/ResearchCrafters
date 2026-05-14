@@ -1,7 +1,7 @@
 /**
  * Mentor refusal copy.
  *
- * Per `TODOS/05-mentor-safety.md`, refusals must be authored — never produced
+ * Per `backlog/05-mentor-safety.md`, refusals must be authored — never produced
  * by the model itself. This module exposes default platform-wide copy and a
  * `mentorRefusal({ scope, packageTitle })` helper that picks the right line
  * for the refusal scope. Per-package overrides live alongside the package

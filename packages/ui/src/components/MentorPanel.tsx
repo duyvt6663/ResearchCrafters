@@ -11,7 +11,7 @@ import type { MentorRefusalCopy } from "../copy/mentor-refusal.js";
  * MentorPanel — skeleton with mode tabs (Hint, Clarify, Review draft,
  * Explain branch) and policy/usage badges.
  *
- * Per `TODOS/09` Component Behaviors:
+ * Per `backlog/09` Component Behaviors:
  *  - Surfaces what context is allowed for the current stage.
  *  - Shows authored refusal copy (never model-generated) via `refusal` slot.
  *  - Shows rate-limit and budget-cap badges from `05-mentor-safety.md`.

@@ -20,7 +20,7 @@ const MAX_MINI_EXPERIMENT_WALL_SECONDS = 120;
 export class GpuNotAvailableError extends Error {
   constructor(public readonly stageId: string) {
     super(
-      `GPU not available for mini_experiment stage ${stageId}. MVP runner is CPU-only; see TODOS/03.`,
+      `GPU not available for mini_experiment stage ${stageId}. MVP runner is CPU-only; see backlog/03.`,
     );
     this.name = 'GpuNotAvailableError';
   }

@@ -1,8 +1,8 @@
 // Single access-policy surface. Every API route MUST call this before
-// returning data, per docs/TECHNICAL.md §10 and TODOS/06 access policy.
+// returning data, per docs/TECHNICAL.md §10 and backlog/06 access policy.
 //
 // Implementation reads live `Membership` and `Entitlement` rows through
-// `@researchcrafters/db` (see TODOS/06 § Access Policy "Use memberships,
+// `@researchcrafters/db` (see backlog/06 § Access Policy "Use memberships,
 // entitlements, package status, free stages, stage gates, and roles"). The
 // previous in-memory stub keyed off magic user ids ("u-paid", "u-stub") and
 // has been replaced.
@@ -201,7 +201,7 @@ export const permissions = {
         return { allowed: true };
       }
       // Canonical solutions never leak from a free preview, regardless of
-      // membership tier — see TODOS/06 §Access Policy and TODOS/05 mentor
+      // membership tier — see backlog/06 §Access Policy and backlog/05 mentor
       // visibility rules.
       if (action === "view_solution") {
         return { allowed: false, reason: "no_entitlement" };

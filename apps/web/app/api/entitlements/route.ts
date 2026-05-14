@@ -28,7 +28,7 @@ export const runtime = "nodejs";
  *   }
  *
  * Replaces the previous stub that filtered on the legacy magic id `"u-paid"`
- * and always returned `[]` for real seed users (TODOS/qa/api-qa-report.md §2.HIGH).
+ * and always returned `[]` for real seed users (qa/api-qa-report.md §2.HIGH).
  */
 export async function GET(req: Request): Promise<NextResponse> {
   const session = await getSessionFromRequest(req);

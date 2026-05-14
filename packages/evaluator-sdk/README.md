@@ -3,17 +3,17 @@
 Grading service. Owns rubric application, deterministic + metric checks, and
 constrained LLM grading with redaction.
 
-## Primary TODO
+## Primary Backlog Item
 
-- `TODOS/04-validation-evaluator.md` — grade schema, rubric thresholds, LLM
+- `backlog/04-validation-evaluator.md` — grade schema, rubric thresholds, LLM
   guardrails, redaction, idempotency, human override.
 
-## Related TODOs
+## Related Backlog Items
 
-- `TODOS/05-mentor-safety.md` — redaction extends to mentor messages quoting
+- `backlog/05-mentor-safety.md` — redaction extends to mentor messages quoting
   evaluator output.
-- `TODOS/06-data-access-analytics.md` — `grades` and `grade_overridden` events.
-- `TODOS/03-cli-runner.md` — consumes runner artifacts after `execution_status=ok`.
+- `backlog/06-data-access-analytics.md` — `grades` and `grade_overridden` events.
+- `backlog/03-cli-runner.md` — consumes runner artifacts after `execution_status=ok`.
 
 ## Depends on
 

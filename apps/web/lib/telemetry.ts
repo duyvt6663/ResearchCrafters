@@ -1,5 +1,5 @@
 // Telemetry stub. Real implementation will dual-write to PostHog and the
-// Postgres `events` table per TODOS/06. For now we emit structured logs.
+// Postgres `events` table per backlog/06. For now we emit structured logs.
 
 export type TelemetryEvent =
   | "package_viewed"

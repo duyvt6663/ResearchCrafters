@@ -5,16 +5,16 @@ Sandbox runner that executes learner submissions in `test`, `replay`, and
 
 Docker base images live under `apps/runner/docker/`.
 
-## Primary TODO
+## Primary Backlog Item
 
-- `TODOS/03-cli-runner.md` — runner modes, execution status, fixture hash
+- `backlog/03-cli-runner.md` — runner modes, execution status, fixture hash
   verification, security posture, SLOs.
 
-## Related TODOs
+## Related Backlog Items
 
-- `TODOS/08-infra-foundations.md` — base images, secrets, observability,
+- `backlog/08-infra-foundations.md` — base images, secrets, observability,
   queue, object storage.
-- `TODOS/04-validation-evaluator.md` — runner artifacts hand off to evaluator.
+- `backlog/04-validation-evaluator.md` — runner artifacts hand off to evaluator.
 
 ## Depends on
 

@@ -2,7 +2,7 @@
 
 Reusable libraries shared by apps.
 
-| Package | Purpose | Primary TODO |
+| Package | Purpose | Primary Backlog Item |
 |---|---|---|
 | `cli/` | learner + author CLI binary | `03-cli-runner.md` |
 | `db/` | Prisma schema and typed client | `06-data-access-analytics.md` |
@@ -13,4 +13,4 @@ Reusable libraries shared by apps.
 | `ui/` | shared components, tokens, copy library | `09-frontend-design.md` |
 | `config/` | shared eslint and tsconfig | `08-infra-foundations.md` |
 
-See `SCAFFOLD.md` at the repo root for the full folder ↔ TODO map.
+See `SCAFFOLD.md` at the repo root for the full folder ↔ Backlog map.

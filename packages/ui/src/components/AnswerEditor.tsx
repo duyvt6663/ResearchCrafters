@@ -6,7 +6,7 @@ import { cn } from "../lib/cn.js";
 /**
  * AnswerEditor — textarea-based editor for writing/analysis stages.
  *
- * Behaviors implemented (TODOS/09):
+ * Behaviors implemented (backlog/09):
  *  - Draft autosave hook (`onAutoSave`) with debounce (default 800ms).
  *  - Word count display (live).
  *  - Paste sanitization stub: strips HTML markup and zero-width chars.

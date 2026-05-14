@@ -16,7 +16,7 @@ import { cn } from "../lib/cn.js";
  * Anti-patterns:
  *  - Stage authors MUST source command strings from
  *    `@researchcrafters/ui/cli-commands` rather than typing them inline (per
- *    `TODOS/09` CLI Surface Sync).
+ *    `backlog/09` CLI Surface Sync).
  *  - Workbench surfaces (stage player) must keep `typing` off — the typing
  *    animation is for marketing/hero surfaces only.
  */

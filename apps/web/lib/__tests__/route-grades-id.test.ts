@@ -14,7 +14,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
  *     denial rather than calling `denialHttpStatus(reason)`).
  *
  * These tests pin the live behaviour rather than the future-state design.
- * The TODO note for an actual Grade lookup belongs in TODOS/06.
+ * The backlog note for an actual Grade lookup belongs in backlog/06.
  */
 
 const mocks = vi.hoisted(() => ({
