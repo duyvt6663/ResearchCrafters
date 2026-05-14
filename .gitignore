@@ -6,8 +6,6 @@
 !.claude/hooks/*.sh
 !.claude/hooks/README.md
 .codex/
-AGENTS.md
-CLAUDE.md
 
 # Node / monorepo
 node_modules/

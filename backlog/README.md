@@ -38,9 +38,22 @@ and code copying do not.
 
 Backlog items move through this exact path:
 
-`backlog → coding → qa → done`
+`backlog → backlog refinement → coding → qa → done`
 
 - Implementation work starts from a checked or unchecked item in this folder.
+- Backlog is a planning state, not automatic permission to code. Before
+  implementation, check whether the item is still current against the codebase,
+  linked docs, experiment writeups, archive notes, and prior QA reports.
+- If the item is stale, unclear, too large, or missing validation criteria,
+  refine it here before coding. Add current-state notes, exact scope, non-goals,
+  implementation sketch, dependencies, acceptance criteria, and the QA commands
+  or manual checks that should prove it works.
+- If the next step is scaffolding, do the smallest useful scaffold first and
+  fold the result back into the backlog item. Examples: a UX mock in
+  `apps/web/experiments/`, a content/schema template, a throwaway technical
+  spike, a fixture, or a test harness that clarifies the implementation path.
+- If refinement shows the item has already shipped or is superseded, update the
+  backlog with evidence and send only the verification work to `qa/`.
 - After coding, validate the work in the QA step before marking the backlog
   item done. QA reports live in the repo-root `qa/` folder.
 - If QA passes, update the relevant backlog item and `PROGRESS.md` when the

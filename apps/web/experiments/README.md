@@ -33,7 +33,8 @@ at them in a real browser alongside the actual product styling.
      shaping
    - `backlog` — a matching `backlog/*.md` item exists with implementation
      scope, owner notes, and QA expectations. Production coding starts from
-     that backlog item, not from this experiment folder.
+     that backlog item, not from this experiment folder; stale or unclear
+     backlog items must be refined before implementation.
    - `promoted` — the backlog implementation shipped through QA and primitives
      landed in `packages/ui`; opt-in via a prop or mode field. Mock kept in
      the registry as a live demo of the integrated component.
@@ -72,7 +73,7 @@ Every `<slug>/README.md` MUST contain these sections (in this order):
   on `_registry.ts` shows the lifecycle of every proposal.
 - **Validated means backlog next.** Experiments do not jump straight into
   production coding. They become backlog work first, then move through
-  coding and `qa/`.
+  backlog refinement, coding, and `qa/`.
 - **Findings are append-only.** When an idea gets dropped six months in, the
   writeup remembers why so we don't re-propose it from scratch.
 
