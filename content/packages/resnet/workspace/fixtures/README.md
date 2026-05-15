@@ -67,6 +67,19 @@ shasum -a 256 workspace/fixtures/stage-004/training_log.json
 
 ## Refresh cadence
 
-The package metadata declares an `annual` fixture refresh cadence. A
-maintainer should regenerate fixtures yearly *or* whenever PyTorch /
-CUDA / cuDNN versions change in a way that alters the produced numbers.
+The authoritative cadence lives in `package.yaml` under
+`fixture_refresh_cadence` (see `packageSchema` /
+`fixtureRefreshCadenceSchema` in `packages/erp-schema`):
+
+- `interval: annual` — baseline schedule.
+- `triggers` — non-interval conditions that force a refresh outside the
+  regular schedule: `library_upgrade` (PyTorch / CUDA / cuDNN bumps that
+  shift numerics), `hardware_change` (different GPU SKU), `paper_revision`
+  (the underlying paper updates), `hash_drift` (the CI assertion in
+  `runner.yaml` reports a mismatch).
+- `owner` — contact responsible for running regeneration.
+- `last_refreshed_at` / `next_refresh_due` — ISO dates the maintainer
+  updates each time fixtures are regenerated.
+
+In short: regenerate fixtures yearly *or* as soon as any listed trigger
+fires, whichever comes first.
