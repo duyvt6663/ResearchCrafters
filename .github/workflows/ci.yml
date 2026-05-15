@@ -44,6 +44,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
+      - name: Verify ERP fixture hashes
+        run: node scripts/verify-fixture-hashes.mjs
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
