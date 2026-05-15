@@ -88,6 +88,16 @@ nodes:
     artifact_refs:
       - artifact/logic/experiments.md
       - artifact/logic/claims.md#vanishing-gradients-not-the-cause
+    unlocks: [N007R]
+
+  - id: N007R
+    type: writing
+    title: "Defend your critique under reviewer pressure."
+    stage: stages/007r-reviewer-rebuttal.yaml
+    artifact_refs:
+      - artifact/logic/experiments.md
+      - artifact/logic/claims.md#vanishing-gradients-not-the-cause
+      - artifact/logic/claims.md#identity-is-the-trick
     unlocks: [N008]
 
   - id: N008
