@@ -33,23 +33,25 @@ export interface EnrollResponse {
   enrollmentId: string;
   packageVersionId: string;
   firstStageRef: string;
+  starterUrl?: string;
+  smokeCommand?: string;
 }
 
 /**
  * Workspace-resolution payload returned by `start <slug>`. Mirrors what the
- * `/api/packages/[slug]/enroll` route actually returns today (`enrollResponseSchema`
- * plus a back-compat `enrollment.{packageSlug,packageVersionId,activeStageRef}`
- * envelope). The previous shape declared `starterUrl`/`apiUrl`/`smokeCommand`
- * but the route never populated them; those fields have been dropped here so
- * the CLI's type surface matches the wire surface. When the workspace
- * provisioning workstream lands a `/api/packages/[slug]/starter-url`
- * endpoint, we'll thread the bundle URL through that separate call —
- * tracked as a TODO in `commands/start.ts`.
+ * `/api/packages/[slug]/enroll` route returns: contract fields plus optional
+ * `starterUrl`/`smokeCommand` populated when a starter bundle has been seeded
+ * for the package version (deterministic key
+ * `starters/<slug>/<packageVersionId>.tar.gz` in the packages bucket).
+ * Fields are `undefined` when storage isn't seeded yet — the CLI then
+ * materializes an empty workspace.
  */
 export interface StartPackageResponse {
   packageSlug: string;
   packageVersionId: string;
   stageRef: string;
+  starterUrl?: string;
+  smokeCommand?: string;
 }
 
 export interface SubmitInitRequest {
@@ -210,10 +212,10 @@ export const api = {
   async startPackage(slug: string): Promise<StartPackageResponse> {
     // The web /enroll route returns a back-compat envelope: the contract
     // fields are at the top level (enrollmentId, packageVersionId,
-    // firstStageRef) and the legacy `enrollment` object carries
-    // `packageSlug` / `activeStageRef`. The CLI used to also reach for
-    // `starterUrl` / `apiUrl` / `smokeCommand` here, but the route never
-    // populated those — we now read only what the route guarantees.
+    // firstStageRef, optional starterUrl, optional smokeCommand) and the
+    // legacy `enrollment` object carries `packageSlug` / `activeStageRef`.
+    // `starterUrl`/`smokeCommand` are populated only when the package has a
+    // seeded starter bundle and a manifest-level smoke command respectively.
     type Envelope = EnrollResponse & {
       enrollment?: {
         id: string;
@@ -226,11 +228,14 @@ export const api = {
       method: 'POST',
       body: {},
     });
-    return {
+    const out: StartPackageResponse = {
       packageSlug: env.enrollment?.packageSlug ?? slug,
       packageVersionId: env.packageVersionId,
       stageRef: env.firstStageRef,
     };
+    if (env.starterUrl) out.starterUrl = env.starterUrl;
+    if (env.smokeCommand) out.smokeCommand = env.smokeCommand;
+    return out;
   },
 
   async initSubmission(args: SubmitInitRequest): Promise<SubmitInitResponse> {

@@ -42,12 +42,18 @@ Common:
 - [x] Use OAuth device code flow for login.
 - [x] Store auth token securely in local keychain or config fallback.
 - [x] Refresh tokens transparently; prompt re-login when refresh fails.
-- [ ] On `start`, resolve package version, entitlement, stage manifest, and
+- [x] On `start`, resolve package version, entitlement, stage manifest, and
       signed starter URL.
-      _(package version and stage resolve; signed starter URL is not returned.)_
-- [ ] Download starter workspace.
-      _(current workspace contains only `.researchcrafters/config.json` unless a
-      future `starterUrl` is present.)_
+      _(Enroll route surfaces optional `starterUrl` / `smokeCommand` when a
+      bundle exists at `starters/<slug>/<packageVersionId>.tar.gz` in the
+      packages bucket and `manifest.smokeCommand` is set. See
+      `qa/cli-start-starter-url-2026-05-15.md`.)_
+- [x] Download starter workspace.
+      _(`packages/cli/src/lib/starter.ts` provides a pure-Node USTAR/GNU/PAX
+      tar parser + gunzip extractor with per-file/total/file-count caps and
+      path-traversal defenses; `start.ts` downloads the signed `starterUrl`
+      and extracts into the project dir, refusing to overwrite a workspace
+      with existing files. See `qa/cli-starter-download-2026-05-15.md`.)_
 - [x] Write `.researchcrafters/config.json`.
 - [x] Show clear error UX for: not logged in, missing entitlement, fixture hash
       mismatch (package-author bug), runner offline, stage not unlocked.
