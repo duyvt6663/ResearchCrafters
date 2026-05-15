@@ -85,7 +85,7 @@ jobs:
           for dir in "${dirs[@]}"; do
             dir="${dir%/}"
             echo "::group::validate $dir"
-            if ! pnpm --filter @researchcrafters/cli exec node ./bin/researchcrafters.js validate "$dir"; then
+            if ! pnpm --filter @researchcrafters/cli exec node ./bin/researchcrafters.js validate "$(realpath "$dir")"; then
               echo "::error::validate failed for $dir"
               failed=1
             fi
