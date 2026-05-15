@@ -149,6 +149,7 @@ export { ShareCardPreview } from "./ShareCardPreview.js";
 export type {
   ShareCardPreviewProps,
   ShareBranchKind,
+  ShareCardPayload,
 } from "./ShareCardPreview.js";
 
 export { AppShell, TopNav, CatalogFilters, EmptyState } from "./Layout.js";
