@@ -18,7 +18,7 @@ local `README.md` with the same links and notes specific to that folder.
 | Folder                    | Owns                                                     | Primary Backlog Item               | Related Backlog Items                     |
 | ------------------------- | -------------------------------------------------------- | ---------------------------------- | ----------------------------------------- |
 | `apps/web/`               | learner web app, session player, catalog, paywall, share | `01-mvp-platform.md`               | `09-frontend-design.md`, `06`, `04`, `05` |
-| `apps/erp-agent/`         | planned paper-to-ERP authoring orchestrator              | `12-agentic-erp-reconstruction.md` | `02`, `04`, `05`, `11`                    |
+| `apps/erp-agent/`         | local paper-to-ERP authoring orchestrator skeleton        | `12-agentic-erp-reconstruction.md` | `02`, `04`, `05`, `11`                    |
 | `apps/runner/`            | sandbox runner, Docker base images, runner modes         | `03-cli-runner.md`                 | `08-infra-foundations.md`, `04`           |
 | `packages/cli/`           | learner + author CLI binary                              | `03-cli-runner.md`                 | `04-validation-evaluator.md`              |
 | `packages/db/`            | Prisma schema, migrations, typed client                  | `06-data-access-analytics.md`      | `08-infra-foundations.md`                 |
@@ -57,5 +57,6 @@ Deferred until justified by traffic or workflow:
   pressure appears.
 - `apps/worker/` — split out when BullMQ workers grow beyond one process.
 - `apps/authoring/` — Phase 4, after the first flagship package proves demand.
-- `apps/erp-agent/` — backlog/12, after the hand-authored ERP process is stable
+- `apps/erp-agent/` — local CLI skeleton exists; graph/LLM reconstruction nodes
+  remain backlog/12 follow-up work
   enough to provide a quality reference for automated reconstruction.

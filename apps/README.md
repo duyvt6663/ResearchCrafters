@@ -6,12 +6,12 @@ Runnable services and user-facing apps.
 
 - `web/` — learner web app (Next.js).
 - `runner/` — sandbox runner for code/experiment stages.
+- `worker/` — BullMQ worker process for background jobs.
+- `erp-agent/` — local paper-to-ERP authoring orchestrator skeleton.
 
 ## Deferred
 
 - `api/` — split from `web/` route handlers when background pressure appears.
-- `worker/` — BullMQ worker process; split from `web/` when jobs grow.
 - `authoring/` — Phase 4 authoring workbench.
-- `erp-agent/` — planned paper-to-ERP authoring orchestrator from `backlog/12`.
 
 See `SCAFFOLD.md` at the repo root for the folder ↔ Backlog map.

@@ -5,10 +5,10 @@ or PDF into a complete draft Executable Research Package (ERP), then iterates
 against ResearchCrafters validation, safety, and review gates until the package
 is ready for human expert review.
 
-Status (2026-05-14): planned. This is an authoring accelerator, not a publishing
-shortcut. Generated packages must use the normal `content/packages/<slug>/`
-filesystem contract and must pass `researchcrafters validate` before any
-promotion beyond `alpha`.
+Status (2026-05-16): Phase 0/1 local skeleton landed in `apps/erp-agent`.
+This is an authoring accelerator, not a publishing shortcut. Generated packages
+must use the normal `content/packages/<slug>/` filesystem contract and must pass
+`researchcrafters validate` before any promotion beyond `alpha`.
 
 Depends on: 02 (ERP content package), 03 (CLI and runner), 04 (validation and
 evaluator), 05 (mentor safety), 11 (math/writing modules). Later integration
@@ -59,34 +59,34 @@ resolve_input
 
 ## Phase 0 - Product Boundary
 
-- [ ] Define accepted inputs: arXiv id, paper URL, direct PDF URL, local PDF
+- [x] Define accepted inputs: arXiv id, paper URL, direct PDF URL, local PDF
       path, and optional seed links for official code or project pages.
-- [ ] Define output contract: a draft package under `content/packages/<slug>/`,
+- [x] Define output contract: a draft package under `content/packages/<slug>/`,
       an agent run folder under `.researchcrafters/erp-agent/runs/<run_id>/`,
       and a final `agent-report.md`.
-- [ ] Define statuses for generated packages: default to `alpha`; never emit
+- [x] Define statuses for generated packages: default to `alpha`; never emit
       `beta` or `live` without explicit human release approval.
-- [ ] Decide whether the first implementation runs only locally or also as an
+- [x] Decide whether the first implementation runs only locally or also as an
       internal worker job.
-- [ ] Decide where long-running source caches live: repo-local run directory,
+- [x] Decide where long-running source caches live: repo-local run directory,
       object storage, or both.
-- [ ] Add a policy that generated source excerpts must be summarized or cited
+- [x] Add a policy that generated source excerpts must be summarized or cited
       without copying large copyrighted passages.
 
 ## Phase 1 - Agent App Skeleton
 
-- [ ] Add `apps/erp-agent/` as a Python app with its own `pyproject.toml`.
-- [ ] Add a CLI entrypoint:
+- [x] Add `apps/erp-agent/` as a Python app with its own `pyproject.toml`.
+- [x] Add a CLI entrypoint:
       `erp-agent create --input <url|arxiv|pdf> --slug <slug>`.
-- [ ] Add a resumable run command:
+- [x] Add a resumable run command:
       `erp-agent resume --run-id <run_id>`.
-- [ ] Add a dry-run planning command:
+- [x] Add a dry-run planning command:
       `erp-agent plan --input <url|arxiv|pdf>`.
-- [ ] Add configuration for model providers, search providers, cache paths,
+- [x] Add configuration for model providers, search providers, cache paths,
       max source count, max repair iterations, and validation command path.
-- [ ] Add structured logging with run id, graph node name, package slug, and
+- [x] Add structured logging with run id, graph node name, package slug, and
       current package path.
-- [ ] Add a run manifest containing input hash, paper metadata, source snapshots,
+- [x] Add a run manifest containing input hash, paper metadata, source snapshots,
       generated file list, validation reports, review findings, and decisions.
 
 ## Phase 2 - LangGraph State and Persistence
