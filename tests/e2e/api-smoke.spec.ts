@@ -10,13 +10,13 @@ import { expect, test } from "@playwright/test";
  * - /api/cli/version     : 200 + { minCliVersion: "<semver>" }
  * - /api/auth/session    : 200 + null (NextAuth contract for unauth)
  * - /api/auth/csrf       : 200 + { csrfToken: "<hex>" }
- * - /api/auth/providers  : 200 + non-empty object when OAuth env is present
+ * - /api/auth/providers  : 200 + non-empty object
  * - /api/packages        : 200 + { packages: <object|array> }   (see report:
  *                          handler currently returns a Promise serialization)
  * - /api/packages/resnet : 200 + { package: { slug: "resnet", ... } }
  * - /api/packages/does-not-exist : 404 + { error: "not_found" }
- * - /api/entitlements    : 401 for anon (route is now wired to
- *                          getSessionFromRequest; previous stub returned [])
+ * - /api/entitlements    : 401 for anon (route now does live Prisma reads
+ *                          under Bearer/NextAuth and rejects unauth callers)
  */
 test.describe("api surface (anon)", () => {
   test("health is ok", async ({ request }) => {
@@ -77,14 +77,14 @@ test.describe("api surface (anon)", () => {
     expect(await r.json()).toEqual({ error: "not_found" });
   });
 
-  test("/api/entitlements is 401 for anonymous callers", async ({
+  test("/api/entitlements rejects anonymous callers with 401", async ({
     request,
   }) => {
     // Route is now wired to getSessionFromRequest — anonymous callers get 401.
-    // Previously the stub returned { entitlements: [] } for anon (qa/fe-qa-report.md).
     const r = await request.get("/api/entitlements");
     expect(r.status()).toBe(401);
-    expect(await r.json()).toMatchObject({ error: "not_authenticated" });
+    const body = await r.json();
+    expect(body).toEqual({ error: "not_authenticated" });
   });
 });
 
