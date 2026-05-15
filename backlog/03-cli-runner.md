@@ -114,7 +114,14 @@ Common:
 
 - [x] Treat all submissions as hostile.
 - [ ] Run in isolated containers with cgroup limits. _(stubbed)_
-- [ ] Use read-only base image plus writable workspace. _(stubbed)_
+- [x] Use read-only base image plus writable workspace.
+      _(Contract enforced by `sanitizeRunOpts` defaulting `readOnlyRootfs`
+      to `true` and by `runTestMode` / `runReplayMode` /
+      `runMiniExperimentMode` passing it explicitly to the sandbox, pinned
+      by `apps/runner/test/read-only-rootfs.test.ts`. The runtime
+      `--read-only` flag + writable workspace bind hookup land with the
+      `DockerSandbox.run` dockerode wiring in `backlog/08-infra-foundations.md`.
+      See `qa/runner-readonly-rootfs-2026-05-15.md`.)_
 - [x] Strip secrets from runner environment.
 - [x] Scrub logs before display.
 - [ ] Store runner logs separately from application logs.
