@@ -69,7 +69,7 @@ reflect that snapshot.
 - [x] Create `solutions/canonical/`. _(stubbed)_
 - [x] Create branch solution notes or examples under `solutions/branches/`.
 - [ ] Ensure starter fails target tests.
-- [ ] Ensure canonical solution passes target and previous required stages.
+- [x] Ensure canonical solution passes target and previous required stages.
 
 ## Cached Evidence and Fixture Acquisition
 
