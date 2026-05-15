@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 # Run independently from the `validate` job in ci.yml so PR feedback isn't
-# blocked on Lighthouse, and so the Lighthouse job can spin up Postgres + MinIO
-# without bloating the validate-job runtime.
+# blocked on Lighthouse, and so the Lighthouse job can spin up its backing
+# services without bloating the validate-job runtime.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -18,27 +18,6 @@ jobs:
     name: lighthouse
     runs-on: ubuntu-latest
     timeout-minutes: 30
-
-    env:
-      # Match docker-compose.yml + .env.example so the Next.js app and Prisma
-      # client both target the dev tier brought up below.
-      DATABASE_URL: postgresql://researchcrafters:researchcrafters@localhost:5432/researchcrafters?schema=public
-      REDIS_URL: redis://localhost:6379
-      RUNNER_CALLBACK_SECRET: dev-runner-secret
-      S3_ENDPOINT: http://localhost:9000
-      S3_ACCESS_KEY: researchcrafters
-      S3_SECRET_KEY: researchcrafters
-      S3_BUCKET_SUBMISSIONS: researchcrafters-submissions
-      S3_BUCKET_RUNS: researchcrafters-runs
-      S3_BUCKET_PACKAGES: researchcrafters-packages
-      S3_BUCKET_SHARE_CARDS: researchcrafters-share-cards
-      RESEARCHCRAFTERS_API_URL: http://localhost:3001
-      NEXTAUTH_URL: http://localhost:3001
-      NEXTAUTH_SECRET: lighthouse-ci-non-secret-placeholder
-      RUNNER_DOCKER_ENABLED: 'false'
-      # `next start` honors PORT; we use 3001 to avoid colliding with any
-      # `next dev` running on 3000 inside the same workflow.
-      PORT: '3001'
 
     steps:
       - name: Checkout
@@ -65,41 +44,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      # Boot Postgres + MinIO only. The Lighthouse perf check renders public
-      # pages via Prisma; it does not need Redis / BullMQ workers, and the
-      # Redis port-conflict gap is tracked separately in PROGRESS.md.
-      - name: Boot Postgres + MinIO
-        shell: bash
-        run: docker compose up -d postgres minio
-
-      - name: Wait for Postgres healthy
-        shell: bash
-        run: |
-          set -euo pipefail
-          tries=40
-          while (( tries > 0 )); do
-            if docker compose exec -T postgres pg_isready -U researchcrafters -d researchcrafters >/dev/null 2>&1; then
-              echo "postgres is ready"
-              exit 0
-            fi
-            sleep 2
-            tries=$((tries - 1))
-          done
-          echo "postgres did not become ready in time"
-          docker compose logs postgres
-          exit 1
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma client
-        run: pnpm --filter @researchcrafters/db exec prisma generate
-
-      - name: Apply Prisma migrations
-        run: pnpm --filter @researchcrafters/db exec prisma migrate deploy
-
-      - name: Seed database
-        run: pnpm --filter @researchcrafters/db db:seed
+      - name: Prepare integration environment
+        uses: ./.github/actions/prepare-integration-env
+        with:
+          # `next start` honors PORT; use 3001 to avoid colliding with any
+          # `next dev` running on 3000 inside the same workflow.
+          port: '3001'
 
       - name: Build web app
         run: pnpm --filter @researchcrafters/web build
@@ -114,14 +67,14 @@ jobs:
           # Poll /api/health until 200 or 60s elapsed.
           tries=30
           while (( tries > 0 )); do
-            if curl -fsS http://localhost:3001/api/health >/dev/null 2>&1; then
-              echo "web app is responding on :3001"
+            if curl -fsS "http://localhost:${PORT}/api/health" >/dev/null 2>&1; then
+              echo "web app is responding on :${PORT}"
               exit 0
             fi
             sleep 2
             tries=$((tries - 1))
           done
-          echo "web app did not respond on :3001 within timeout"
+          echo "web app did not respond on :${PORT} within timeout"
           echo "--- web.log ---"
           cat "$RUNNER_TEMP/web.log" || true
           exit 1
@@ -135,11 +88,13 @@ jobs:
       - name: Pre-warm pages before Lighthouse
         shell: bash
         run: |
-          for url in \
-            "http://localhost:3001/" \
-            "http://localhost:3001/packages/resnet"; do
+          urls=(
+            "http://localhost:${PORT}/"
+            "http://localhost:${PORT}/packages/resnet"
+          )
+          for url in "${urls[@]}"; do
             status=$(curl -fsS -o /dev/null -w "%{http_code}" "$url" || echo "000")
-            echo "warmup $url → $status"
+            echo "warmup $url -> $status"
           done
 
       - name: Run Lighthouse CI
@@ -154,6 +109,11 @@ jobs:
             pid="$(cat "$RUNNER_TEMP/web.pid")"
             kill "$pid" 2>/dev/null || true
           fi
+
+      - name: Stop integration services
+        if: always()
+        shell: bash
+        run: docker compose down
 
       - name: Upload Lighthouse report
         if: always()

@@ -123,6 +123,16 @@ export const enrollResponseSchema = z
     enrollmentId: z.string().min(1),
     packageVersionId: z.string().min(1),
     firstStageRef: z.string().min(1),
+    // Signed GET URL for the package's starter workspace bundle (tar.gz).
+    // Returned only when an object exists in the packages bucket at the
+    // deterministic `starters/<slug>/<packageVersionId>.tar.gz` key. Until
+    // a package is seeded, the field is omitted and the CLI materializes
+    // an empty workspace.
+    starterUrl: z.string().url().optional(),
+    // Smoke command surfaced from `PackageVersion.manifest.smokeCommand`
+    // (or `smoke_command`). The CLI's `test` command honours it; absent
+    // values fall back to `pnpm test`.
+    smokeCommand: z.string().min(1).optional(),
   })
   .strict();
 export type EnrollResponse = z.infer<typeof enrollResponseSchema>;

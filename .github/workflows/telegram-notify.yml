@@ -19,9 +19,15 @@ on:
   pull_request_review_comment:
     types: [created]
   deployment_status:
+  schedule:
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  checks: read
+  contents: read
+  pull-requests: read
+  statuses: read
 
 jobs:
   notify:
@@ -30,6 +36,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Send Telegram message
+        if: ${{ github.event_name != 'schedule' }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -267,6 +274,192 @@ jobs:
             }
 
             console.log("Telegram notification sent.");
+          }
+
+          main().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Trigger Skynet PR conflict resolver
+        if: ${{ github.event_name == 'pull_request_target' || github.event_name == 'workflow_run' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        env:
+          GOCLAW_SKYNET_HOOK_URL: ${{ secrets.GOCLAW_SKYNET_HOOK_URL }}
+          GOCLAW_SKYNET_HOOK_TOKEN: ${{ secrets.GOCLAW_SKYNET_HOOK_TOKEN }}
+          GOCLAW_SKYNET_TARGET_REPO: ${{ secrets.GOCLAW_SKYNET_TARGET_REPO }}
+          GOCLAW_SKYNET_CHANNEL: ${{ secrets.GOCLAW_SKYNET_CHANNEL }}
+          GOCLAW_SKYNET_CHAT_ID: ${{ secrets.GOCLAW_SKYNET_CHAT_ID }}
+          GOCLAW_SKYNET_LOCAL_KEY: ${{ secrets.GOCLAW_SKYNET_LOCAL_KEY }}
+          GOCLAW_SKYNET_PEER_KIND: ${{ secrets.GOCLAW_SKYNET_PEER_KIND }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node <<'NODE'
+          const fs = require("fs");
+
+          const hookUrl = (process.env.GOCLAW_SKYNET_HOOK_URL || "").trim();
+          const hookToken = (process.env.GOCLAW_SKYNET_HOOK_TOKEN || "").trim();
+          const githubToken = (process.env.GITHUB_TOKEN || "").trim();
+
+          if (!hookUrl || !hookToken) {
+            console.log("::notice::GOCLAW_SKYNET_HOOK_URL or GOCLAW_SKYNET_HOOK_TOKEN is not configured; skipping Skynet PR conflict dispatch.");
+            process.exit(0);
+          }
+          if (!githubToken) {
+            console.log("::notice::GITHUB_TOKEN is unavailable; skipping Skynet PR conflict dispatch.");
+            process.exit(0);
+          }
+
+          const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
+          const eventName = process.env.GITHUB_EVENT_NAME;
+          const repo = process.env.GITHUB_REPOSITORY;
+          const [owner, name] = repo.split("/");
+          const targetNumbers = new Set();
+
+          if (eventName === "pull_request_target" && event.pull_request?.number) {
+            targetNumbers.add(Number(event.pull_request.number));
+          }
+          if (eventName === "workflow_run") {
+            const pullRequests = Array.isArray(event.workflow_run?.pull_requests)
+              ? event.workflow_run.pull_requests
+              : [];
+            for (const pr of pullRequests) {
+              if (pr.number) targetNumbers.add(Number(pr.number));
+            }
+            if (targetNumbers.size === 0) {
+              console.log("Workflow run has no linked pull request; skipping PR conflict scan.");
+              process.exit(0);
+            }
+          }
+
+          function endpointFrom(value) {
+            const clean = value.replace(/\/+$/, "");
+            if (clean.endsWith("/v1/beta/skynet-workflows/pr-conflict")) {
+              return clean;
+            }
+            if (clean.endsWith("/v1/beta/skynet-workflows/cicd-failure")) {
+              return clean.replace(/\/cicd-failure$/, "/pr-conflict");
+            }
+            return `${clean}/v1/beta/skynet-workflows/pr-conflict`;
+          }
+
+          async function graphql(query, variables) {
+            const response = await fetch("https://api.github.com/graphql", {
+              method: "POST",
+              headers: {
+                "authorization": `Bearer ${githubToken}`,
+                "content-type": "application/json",
+              },
+              body: JSON.stringify({ query, variables }),
+            });
+            const body = await response.json();
+            if (!response.ok || body.errors) {
+              throw new Error(`GitHub GraphQL failed: ${response.status} ${JSON.stringify(body.errors || body)}`);
+            }
+            return body.data;
+          }
+
+          const query = `
+            query OpenPullRequests($owner: String!, $name: String!) {
+              repository(owner: $owner, name: $name) {
+                pullRequests(first: 50, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                  nodes {
+                    number
+                    title
+                    url
+                    isDraft
+                    mergeStateStatus
+                    headRefName
+                    headRefOid
+                    baseRefName
+                    baseRefOid
+                    author { login }
+                    commits(last: 1) {
+                      nodes {
+                        commit {
+                          statusCheckRollup {
+                            state
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }`;
+
+          function checkState(pr) {
+            const commits = pr.commits?.nodes || [];
+            const latest = commits[commits.length - 1];
+            return latest?.commit?.statusCheckRollup?.state || "UNKNOWN";
+          }
+
+          function actor(author) {
+            return author?.login ? `@${author.login}` : "unknown";
+          }
+
+          async function dispatch(pr) {
+            const payload = {
+              repository: repo,
+              pull_request: `#${pr.number}`,
+              title: pr.title || "",
+              url: pr.url || "",
+              branch: pr.headRefName || "",
+              base_branch: pr.baseRefName || "",
+              commit: pr.headRefOid || "",
+              base_sha: pr.baseRefOid || "",
+              author: actor(pr.author),
+              merge_state: pr.mergeStateStatus || "",
+              checks: checkState(pr),
+            };
+
+            for (const [envName, key] of [
+              ["GOCLAW_SKYNET_TARGET_REPO", "target_repo"],
+              ["GOCLAW_SKYNET_CHANNEL", "channel"],
+              ["GOCLAW_SKYNET_CHAT_ID", "chat_id"],
+              ["GOCLAW_SKYNET_LOCAL_KEY", "local_key"],
+              ["GOCLAW_SKYNET_PEER_KIND", "peer_kind"],
+            ]) {
+              const value = (process.env[envName] || "").trim();
+              if (value) payload[key] = value;
+            }
+
+            const response = await fetch(endpointFrom(hookUrl), {
+              method: "POST",
+              headers: {
+                "authorization": `Bearer ${hookToken}`,
+                "content-type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+            if (!response.ok) {
+              const body = await response.text();
+              throw new Error(`Skynet PR conflict dispatch failed for #${pr.number}: ${response.status} ${body}`);
+            }
+            const body = await response.text();
+            console.log(`Skynet PR conflict resolver accepted #${pr.number}: ${body}`);
+          }
+
+          async function main() {
+            const data = await graphql(query, { owner, name });
+            let prs = data.repository?.pullRequests?.nodes || [];
+            if (targetNumbers.size > 0) {
+              prs = prs.filter((pr) => targetNumbers.has(Number(pr.number)));
+            }
+            const conflicted = prs.filter((pr) => pr.mergeStateStatus === "DIRTY");
+            if (conflicted.length === 0) {
+              console.log("No conflicted open PRs found.");
+              return;
+            }
+            for (const pr of conflicted) {
+              await dispatch(pr);
+            }
           }
 
           main().catch((error) => {

@@ -101,7 +101,8 @@ export default async function PackageOverviewPage({
   const pkg = await getPackageBySlug(slug);
   if (!pkg) notFound();
 
-  await track("package_viewed", { surface: "overview", slug });
+  // fire-and-forget: track() is best-effort and must not block TTFB.
+  void track("package_viewed", { surface: "overview", slug });
 
   const session = await getSession();
   const isAuthenticated = Boolean(session.userId);

@@ -9,6 +9,7 @@ import { logsCommand } from './commands/logs.js';
 import { validateCommand } from './commands/validate.js';
 import { previewCommand } from './commands/preview.js';
 import { buildCommand } from './commands/build.js';
+import { completionCommand } from './commands/completion.js';
 import { CLI_VERSION, maybeWarnVersionMismatch } from './lib/version-check.js';
 import { CliError, formatCliError } from './lib/error-ux.js';
 
@@ -90,6 +91,13 @@ export function createProgram(): Command {
     .option('--out <dir>', 'Output directory (defaults to <package>/.build)')
     .action(async (pkgPath: string, opts: { out?: string }) => {
       await buildCommand(pkgPath, opts.out ? { outDir: opts.out } : {});
+    });
+
+  program
+    .command('completion <shell>')
+    .description('Print a shell completion script (bash, zsh, or fish)')
+    .action(async (shell: string) => {
+      await completionCommand(program, shell);
     });
 
   return program;
