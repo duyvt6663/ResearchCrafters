@@ -28,6 +28,8 @@ tracked procedure source is `qa/README.md`.
   `content/packages/<slug>/` contract and defaulted generated packages to
   `alpha`.
 - Updated backlog/docs to reflect the Phase 0/1 local skeleton.
+- Added repo-level `agents.md` and `claude.md` procedure files and stopped
+  ignoring those procedure docs in `.gitignore`.
 
 ## Verification
 
@@ -38,6 +40,7 @@ pnpm install --frozen-lockfile
 pnpm --filter @researchcrafters/cli... build
 tmpdir=$(mktemp -d); PYTHONPATH=apps/erp-agent/src python3 -m researchcrafters_erp_agent.cli create --input 1706.03762 --slug attention-draft --run-id smoke-run --package-root "$tmpdir/packages" --run-root "$tmpdir/runs" --quiet --json
 git diff --check -- .gitignore apps/erp-agent SCAFFOLD.md apps/README.md backlog/12-agentic-erp-reconstruction.md qa/erp-agent-skeleton-2026-05-16.md
+git diff --check -- .gitignore agents.md claude.md qa/erp-agent-skeleton-2026-05-16.md
 ```
 
 Results:
@@ -48,6 +51,7 @@ Results:
 - `create` wrote a throwaway package/run folder and validation returned
   `ok: true` through the existing ResearchCrafters CLI.
 - Focused diff whitespace check passed.
+- Focused procedure-doc whitespace check passed.
 
 ## Remaining Risks
 
