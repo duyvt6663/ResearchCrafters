@@ -6,10 +6,14 @@ intentional loosening so the budget evolves deliberately rather than drifting.
 
 ## Severity philosophy
 
-- `categories:performance` is currently `warn` (minScore 0.5). The `simulate` throttling method on GitHub Actions vCPUs consistently underscores production performance. Promoted back to `error` once a stable baseline is established.. Everything
+- `categories:performance` is currently `warn` (minScore 0.5). The `simulate`
+  throttling on GH Actions vCPUs consistently underscores production
+  performance. Restore to `error` once a stable baseline exists. Everything
   else stays at `warn` until we have a multi-run baseline from a stable
   production-like environment. Promoting more metrics to `error` without that
-  baseline would just add flake.
+  baseline would just add flake. Do not use an LHCI assertion preset here: the
+  built-in presets add audit-level hard failures beyond the gates documented
+  below.
 - The CI job uploads the full `.lighthouseci/` artifact so reviewers can drill
   into individual metric scores even when the run passes.
 

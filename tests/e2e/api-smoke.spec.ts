@@ -10,7 +10,7 @@ import { expect, test } from "@playwright/test";
  * - /api/cli/version     : 200 + { minCliVersion: "<semver>" }
  * - /api/auth/session    : 200 + null (NextAuth contract for unauth)
  * - /api/auth/csrf       : 200 + { csrfToken: "<hex>" }
- * - /api/auth/providers  : 200 + non-empty object
+ * - /api/auth/providers  : 200 + non-empty object when OAuth env is present
  * - /api/packages        : 200 + { packages: <object|array> }   (see report:
  *                          handler currently returns a Promise serialization)
  * - /api/packages/resnet : 200 + { package: { slug: "resnet", ... } }
