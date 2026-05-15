@@ -26,4 +26,13 @@ safety:
 review:
   expert_reviewer: ""
   last_reviewed_at: ""
-fixture_refresh_cadence: "annual"
+fixture_refresh_cadence:
+  interval: annual
+  triggers:
+    - library_upgrade
+    - hardware_change
+    - paper_revision
+    - hash_drift
+  owner: TODO_fixture_owner_contact
+  # last_refreshed_at and next_refresh_due are optional ISO dates
+  # (YYYY-MM-DD); fill in after the first fixture acquisition run.

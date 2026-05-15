@@ -233,25 +233,29 @@ describe('CLI <-> web API contract (drift guard)', () => {
       firstStageRef: 'S001',
     };
     expect(contract.enrollResponseSchema.safeParse(cliShape).success).toBe(true);
-    // The fields that used to live on EnrollResponse / StartPackageResponse
-    // (`starterUrl`, `apiUrl`, `smokeCommand`) MUST now be rejected by the
-    // strict schema if they leak back in.
+    // `starterUrl` and `smokeCommand` are part of the contract again — when
+    // present they MUST be accepted, when absent the response still parses.
     expect(
       contract.enrollResponseSchema.safeParse({
         ...cliShape,
-        starterUrl: 'https://example.invalid/starter.tar',
+        starterUrl: 'https://example.invalid/starter.tar.gz',
+        smokeCommand: 'pnpm test',
       }).success,
-    ).toBe(false);
+    ).toBe(true);
+    // `apiUrl` was never part of the contract and MUST remain rejected; the
+    // CLI reads its API base from auth state, not enroll responses.
     expect(
       contract.enrollResponseSchema.safeParse({
         ...cliShape,
         apiUrl: 'https://api.example.invalid',
       }).success,
     ).toBe(false);
+    // `starterUrl` must be a real URL — bare slugs MUST still fail strict
+    // parsing.
     expect(
       contract.enrollResponseSchema.safeParse({
         ...cliShape,
-        smokeCommand: 'pnpm test',
+        starterUrl: 'not-a-url',
       }).success,
     ).toBe(false);
   });

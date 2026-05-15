@@ -51,6 +51,7 @@ export interface LocalProjectConfig {
   stageRef: string;
   lastRunId?: string;
   smokeCommand?: string;
+  starterUrl?: string;
 }
 
 export const PROJECT_CONFIG_PATH = '.researchcrafters/config.json';
