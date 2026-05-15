@@ -137,7 +137,14 @@ section 11.
       `apps/web/app/packages/[slug]/page.tsx`; pinned by
       `packages/ui/test/decision-graph-mobile.test.tsx` (5 cases). Mobile
       sheet/tab UI for code/experiment stage-player still open — see `09`.)_
-- [ ] Generate real share-card public URLs and image assets.
+- [x] Generate real share-card public URLs and image assets. _(`/s/[slug]`
+      public landing + `getShareCardByPublicSlug` resolver +
+      `buildShareCardImageUrl` OG metadata. Unshared cards 404 on both the
+      page and the `/api/share-cards/[id]/image.svg` asset. Tests in
+      `apps/web/lib/__tests__/share-card-urls.test.ts`,
+      `route-share-card-image.test.ts`,
+      `route-public-share-page.test.tsx`. Real PNG asset remains tracked
+      under `apps/worker/src/jobs/share-card-render.ts` TODO.)_
 - [ ] Review the static prototype with target users.
 - [ ] UI polish for catalog/overview/stage layouts, AppShell, dark-mode
       toggle. _(in flight)_

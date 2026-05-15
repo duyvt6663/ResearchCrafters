@@ -11,7 +11,11 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["lib/**/*.test.ts", "lib/__tests__/**/*.test.ts"],
+    include: [
+      "lib/**/*.test.ts",
+      "lib/__tests__/**/*.test.ts",
+      "lib/__tests__/**/*.test.tsx",
+    ],
     globals: false,
     environment: "node",
   },
