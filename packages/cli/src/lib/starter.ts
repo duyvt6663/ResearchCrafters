@@ -139,7 +139,7 @@ export function safeEntryPath(name: string): string | null {
   if (!name || name.includes('\0')) return null;
   // Strip a leading "./" and any duplicate slashes; reject absolute / drive
   // paths and `..` segments outright rather than trying to fix them up.
-  let n = name.replace(/^\.\//u, '').replace(/\\/gu, '/');
+  const n = name.replace(/^\.\//u, '').replace(/\\/gu, '/');
   while (n.startsWith('/')) return null;
   if (/^[A-Za-z]:/u.test(n)) return null;
   const segments = n.split('/').filter((s) => s.length > 0 && s !== '.');
