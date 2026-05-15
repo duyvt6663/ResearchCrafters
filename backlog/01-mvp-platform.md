@@ -82,7 +82,7 @@ section 11.
 
 - [ ] Show paper title, skills trained, prerequisites, difficulty, and
       estimated time.
-- [ ] Show a sanitized example of one decision node and its branches.
+- [x] Show a sanitized example of one decision node and its branches.
 - [ ] Show one redacted example of a failed-branch lesson.
 - [ ] Show one example evidence artifact at preview fidelity.
 - [ ] Show pricing or waitlist call-to-action.
