@@ -80,8 +80,17 @@ Common:
 - [x] Validate `runner.yaml` schema.
 - [x] Verify fixtures before execution using declared `sha256`.
 - [x] Refuse execution on fixture hash mismatch.
-- [ ] Enforce resource caps: CPU, memory, timeout, network. _(stubbed)_
-- [ ] Disable outbound network by default. _(stubbed)_
+- [x] Enforce resource caps: CPU, memory, timeout, network.
+      _(`apps/runner/src/limits.ts::resolveStageLimits` clamps
+      cpu/memory_mb/wall_clock_seconds against per-mode MVP ceilings
+      (test/replay: 2 cpu, 2048MB, 60s; mini_experiment: 4 cpu, 4096MB, 120s)
+      and validates inputs via `ResourceLimitError`. Pinned by
+      `apps/runner/test/limits.test.ts`. See
+      `qa/runner-resource-caps-2026-05-15.md`.)_
+- [x] Disable outbound network by default.
+      _(`resolveStageLimits` returns `network: 'none'` unconditionally and
+      throws `NetworkPolicyNotSupportedError` if a caller requests
+      `'restricted'`. See `qa/runner-resource-caps-2026-05-15.md`.)_
 - [x] Write raw artifacts to declared output paths.
 
 ## Execution Status

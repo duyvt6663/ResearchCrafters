@@ -19,12 +19,19 @@ import { getSession } from "@/lib/auth";
 import { signIn } from "@/auth";
 import { track } from "@/lib/telemetry";
 import { StartPackageCta } from "@/components/StartPackageCta";
+import { PricingCta } from "@/components/PricingCta";
 
 type Params = { slug: string };
 
 async function signInWithGithubForStart(redirectTo: string): Promise<void> {
   "use server";
   await signIn("github", { redirectTo });
+}
+
+async function joinWaitlistAction(slug: string): Promise<void> {
+  "use server";
+  // fire-and-forget: track() is best-effort and must not block TTFB.
+  void track("waitlist_intent", { surface: "overview", slug });
 }
 
 /**
@@ -55,10 +62,11 @@ class ResidualBlock(nn.Module):
         return torch.relu(y + identity)
 `;
 
-// Faux training-curve data — derived from the seed's training_log shape so
-// the EvidenceCard reads as a real comparison without leaking the package's
+// Fallback training-curve data — used when a package's manifest does not
+// supply preview trajectories yet. The shape mirrors the seed's training_log
+// so the EvidenceCard reads as a real comparison without leaking the
 // canonical answer.
-const TRAINING_TRAJECTORIES = [
+const FALLBACK_TRAINING_TRAJECTORIES = [
   {
     name: "plain-34",
     tone: "plain" as const,
@@ -84,6 +92,17 @@ const TRAINING_TRAJECTORIES = [
     ] as ReadonlyArray<readonly [number, number]>,
   },
 ];
+
+// Map the manifest artifact `kind` ("plot"|"table"|"log") onto the
+// EvidenceCard's render kinds. The page only ships preview data for the
+// first two; "log" falls through to the figure placeholder.
+function artifactKindFor(
+  manifestKind: "plot" | "table" | "log",
+): "training-curve" | "metric-table" | "figure" {
+  if (manifestKind === "plot") return "training-curve";
+  if (manifestKind === "table") return "metric-table";
+  return "figure";
+}
 
 export default async function PackageOverviewPage({
   params,
@@ -383,14 +402,44 @@ export default async function PackageOverviewPage({
                     {copy.packageOverview.evidenceTitle}
                   </h2>
                 </header>
-                <EvidenceCard
-                  kind="training-curve"
-                  caption={
+                {(() => {
+                  const cardKind = artifactKindFor(pkg.sampleArtifact.kind);
+                  const caption =
                     pkg.sampleArtifact.caption ||
-                    "Validation accuracy across 90 epochs. Residual run pulls ahead after step 20."
+                    "Validation accuracy across 90 epochs. Residual run pulls ahead after step 20.";
+                  if (cardKind === "training-curve") {
+                    const trajectories =
+                      pkg.sampleArtifact.trajectories &&
+                      pkg.sampleArtifact.trajectories.length > 0
+                        ? pkg.sampleArtifact.trajectories
+                        : FALLBACK_TRAINING_TRAJECTORIES;
+                    return (
+                      <EvidenceCard
+                        kind="training-curve"
+                        caption={caption}
+                        data={{ trajectories }}
+                      />
+                    );
                   }
-                  data={{ trajectories: TRAINING_TRAJECTORIES }}
-                />
+                  if (cardKind === "metric-table") {
+                    const rows = pkg.sampleArtifact.rows ?? [];
+                    const columns = pkg.sampleArtifact.columns ?? [];
+                    return (
+                      <EvidenceCard
+                        kind="metric-table"
+                        caption={caption}
+                        data={{ rows, columns }}
+                      />
+                    );
+                  }
+                  return (
+                    <EvidenceCard
+                      kind="figure"
+                      caption={caption}
+                      data={{ alt: caption }}
+                    />
+                  );
+                })()}
               </section>
 
               <Card>
@@ -400,11 +449,18 @@ export default async function PackageOverviewPage({
                   </h2>
                 </CardHeader>
                 <CardBody className="p-5">
-                  <StatusBadge tone="info">
-                    {pkg.pricing.cta === "buy"
-                      ? copy.packageOverview.priceCta(pkg.pricing.monthlyUsd ?? 0)
-                      : copy.packageOverview.waitlistCta}
-                  </StatusBadge>
+                  <PricingCta
+                    slug={pkg.slug}
+                    cta={pkg.pricing.cta}
+                    {...(typeof pkg.pricing.monthlyUsd === "number"
+                      ? { monthlyUsd: pkg.pricing.monthlyUsd }
+                      : {})}
+                    buyLabel={copy.packageOverview.priceCta(
+                      pkg.pricing.monthlyUsd ?? 0,
+                    )}
+                    waitlistLabel={copy.packageOverview.waitlistCta}
+                    onJoinWaitlist={joinWaitlistAction.bind(null, pkg.slug)}
+                  />
                 </CardBody>
               </Card>
             </div>

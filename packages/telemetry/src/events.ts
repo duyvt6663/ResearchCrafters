@@ -156,6 +156,14 @@ export interface ShareCardCreatedEvent {
   publicSlug?: string;
 }
 
+export interface ShareCardUnsharedEvent {
+  name: 'share_card_unshared';
+  shareCardId: string;
+  enrollmentId: string;
+  packageVersionId: string;
+  previousSlug: string;
+}
+
 export interface PaywallViewedEvent {
   name: 'paywall_viewed';
   packageVersionId?: string;
@@ -187,6 +195,7 @@ export type TelemetryEvent =
   | MentorFeedbackRequestedEvent
   | StageCompletedEvent
   | ShareCardCreatedEvent
+  | ShareCardUnsharedEvent
   | PaywallViewedEvent
   | SubscriptionStartedEvent;
 
