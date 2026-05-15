@@ -1,0 +1,117 @@
+name: Prepare integration environment
+description: Boot local services and seed the database for browser/integration checks.
+
+inputs:
+  port:
+    description: Port used by the web app in the calling workflow.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Export integration env
+      shell: bash
+      run: |
+        {
+          echo "DATABASE_URL=postgresql://researchcrafters:researchcrafters@localhost:5432/researchcrafters?schema=public"
+          echo "REDIS_URL=redis://localhost:6379"
+          echo "RUNNER_CALLBACK_SECRET=dev-runner-secret"
+          echo "S3_ENDPOINT=http://localhost:9000"
+          echo "S3_ACCESS_KEY=researchcrafters"
+          echo "S3_SECRET_KEY=researchcrafters"
+          echo "S3_BUCKET_SUBMISSIONS=researchcrafters-submissions"
+          echo "S3_BUCKET_RUNS=researchcrafters-runs"
+          echo "S3_BUCKET_PACKAGES=researchcrafters-packages"
+          echo "S3_BUCKET_SHARE_CARDS=researchcrafters-share-cards"
+          echo "RESEARCHCRAFTERS_API_URL=http://localhost:${{ inputs.port }}"
+          echo "NEXTAUTH_URL=http://localhost:${{ inputs.port }}"
+          echo "NEXTAUTH_SECRET=ci-integration-non-secret-placeholder"
+          echo "AUTH_SECRET=ci-integration-non-secret-placeholder"
+          echo "GITHUB_OAUTH_CLIENT_ID=ci-github-client"
+          echo "GITHUB_OAUTH_CLIENT_SECRET=ci-github-secret"
+          echo "RC_ENCRYPTION_DISABLED=true"
+          echo "RUNNER_DOCKER_ENABLED=false"
+          echo "PORT=${{ inputs.port }}"
+        } >> "$GITHUB_ENV"
+
+    - name: Boot Postgres, Redis, and MinIO
+      shell: bash
+      run: docker compose up -d postgres redis minio
+
+    - name: Wait for services
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        tries=40
+        while (( tries > 0 )); do
+          if docker compose exec -T postgres pg_isready -U researchcrafters -d researchcrafters >/dev/null 2>&1; then
+            echo "postgres is ready"
+            break
+          fi
+          sleep 2
+          tries=$((tries - 1))
+        done
+        if (( tries == 0 )); then
+          echo "postgres did not become ready in time"
+          docker compose logs postgres
+          exit 1
+        fi
+
+        tries=40
+        while (( tries > 0 )); do
+          if docker compose exec -T redis redis-cli ping | grep -q PONG; then
+            echo "redis is ready"
+            break
+          fi
+          sleep 2
+          tries=$((tries - 1))
+        done
+        if (( tries == 0 )); then
+          echo "redis did not become ready in time"
+          docker compose logs redis
+          exit 1
+        fi
+
+        tries=40
+        while (( tries > 0 )); do
+          if curl -fsS http://localhost:9000/minio/health/live >/dev/null 2>&1; then
+            echo "minio is ready"
+            exit 0
+          fi
+          sleep 2
+          tries=$((tries - 1))
+        done
+        echo "minio did not become ready in time"
+        docker compose logs minio
+        exit 1
+
+    - name: Create MinIO buckets
+      shell: bash
+      run: |
+        docker compose rm -f minio-init >/dev/null 2>&1 || true
+        docker compose run --rm minio-init
+
+    - name: Build workspace packages
+      shell: bash
+      run: |
+        pnpm --filter @researchcrafters/erp-schema build
+        pnpm --filter @researchcrafters/ai build
+        pnpm --filter @researchcrafters/content-sdk build
+        pnpm --filter @researchcrafters/cli build
+        pnpm --filter @researchcrafters/db build
+        pnpm --filter @researchcrafters/telemetry build
+        pnpm --filter @researchcrafters/ui build
+        pnpm --filter @researchcrafters/worker build
+
+    - name: Generate Prisma client
+      shell: bash
+      run: pnpm --filter @researchcrafters/db exec prisma generate
+
+    - name: Apply Prisma migrations
+      shell: bash
+      run: pnpm --filter @researchcrafters/db exec prisma migrate deploy
+
+    - name: Seed database
+      shell: bash
+      run: pnpm --filter @researchcrafters/db db:seed
