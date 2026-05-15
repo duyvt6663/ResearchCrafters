@@ -19,12 +19,18 @@ import { getSession } from "@/lib/auth";
 import { signIn } from "@/auth";
 import { track } from "@/lib/telemetry";
 import { StartPackageCta } from "@/components/StartPackageCta";
+import { PricingCta } from "@/components/PricingCta";
 
 type Params = { slug: string };
 
 async function signInWithGithubForStart(redirectTo: string): Promise<void> {
   "use server";
   await signIn("github", { redirectTo });
+}
+
+async function joinWaitlistAction(slug: string): Promise<void> {
+  "use server";
+  await track("waitlist_intent", { surface: "overview", slug });
 }
 
 /**
@@ -399,11 +405,18 @@ export default async function PackageOverviewPage({
                   </h2>
                 </CardHeader>
                 <CardBody className="p-5">
-                  <StatusBadge tone="info">
-                    {pkg.pricing.cta === "buy"
-                      ? copy.packageOverview.priceCta(pkg.pricing.monthlyUsd ?? 0)
-                      : copy.packageOverview.waitlistCta}
-                  </StatusBadge>
+                  <PricingCta
+                    slug={pkg.slug}
+                    cta={pkg.pricing.cta}
+                    {...(typeof pkg.pricing.monthlyUsd === "number"
+                      ? { monthlyUsd: pkg.pricing.monthlyUsd }
+                      : {})}
+                    buyLabel={copy.packageOverview.priceCta(
+                      pkg.pricing.monthlyUsd ?? 0,
+                    )}
+                    waitlistLabel={copy.packageOverview.waitlistCta}
+                    onJoinWaitlist={joinWaitlistAction.bind(null, pkg.slug)}
+                  />
                 </CardBody>
               </Card>
             </div>

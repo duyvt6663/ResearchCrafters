@@ -85,7 +85,7 @@ section 11.
 - [ ] Show a sanitized example of one decision node and its branches.
 - [ ] Show one redacted example of a failed-branch lesson.
 - [ ] Show one example evidence artifact at preview fidelity.
-- [ ] Show pricing or waitlist call-to-action.
+- [x] Show pricing or waitlist call-to-action.
 
 ## Share Flow
 
