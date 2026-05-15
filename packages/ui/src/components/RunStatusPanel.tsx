@@ -5,6 +5,7 @@ import { Search, ArrowDownToLine, ArrowDown, Copy, Filter } from "lucide-react";
 import { cn } from "../lib/cn.js";
 import { StatusBadge } from "./StatusBadge.js";
 import { Button } from "./Button.js";
+import { executionFailure } from "../copy/execution-failure.js";
 import type { StatusKey } from "../tokens.js";
 
 /**
@@ -18,6 +19,12 @@ import type { StatusKey } from "../tokens.js";
  *  - Minimal ANSI renderer for SGR color codes (no innerHTML).
  *  - Visually distinguishes execution status (timeout/OOM/crash/exit_nonzero
  *    vs. ok); execution failures are NOT collapsed into grade failures.
+ *  - Execution-failure banner renders authored copy + retry hint when
+ *    executionStatus is a failure kind (backlog/00 roadmap line 67 —
+ *    "run logs and execution failure handling").
+ *  - Self-fetches `/api/runs/{runId}` + `/api/runs/{runId}/logs` on a 1.5s
+ *    poll cadence when `runId` is supplied, stopping once the run reaches
+ *    a terminal status.
  */
 
 export type LogSeverity = "info" | "warn" | "error";
@@ -39,8 +46,8 @@ export type RunExecutionStatus =
 
 export interface RunStatusPanelProps {
   /**
-   * Log lines to render. Optional so the panel can be mounted as a self-
-   * fetching widget when only `stageRef` is supplied.
+   * Log lines to render. Optional so the panel can render a self-fetching
+   * widget when `runId` is supplied.
    */
   lines?: ReadonlyArray<RunLogLine>;
   executionStatus?: RunExecutionStatus;
@@ -50,13 +57,38 @@ export interface RunStatusPanelProps {
   /** Initial scroll-to-tail state. */
   initialScrollToTail?: boolean;
   /**
-   * Stage ref the panel should fetch logs for when no explicit `lines` are
-   * provided. Self-fetching variant.
-   *
-   * TODO: wire to API.
+   * Stage ref. Unused by the panel itself today — kept for callers that pass
+   * it for telemetry/data-key purposes; safe to omit when `runId` is set.
    */
   stageRef?: string;
+  /**
+   * When supplied, the panel polls `/api/runs/{runId}` and
+   * `/api/runs/{runId}/logs` to render live status + log lines. Polling
+   * stops once the run reaches a terminal status. Any `lines` /
+   * `executionStatus` / `runStatus` props provided alongside `runId` act as
+   * seeds for the initial render.
+   */
+  runId?: string;
+  /**
+   * Polling cadence in milliseconds. Defaults to 1500 ms. Set to 0 to
+   * disable polling (single fetch on first render).
+   */
+  pollIntervalMs?: number;
+  /**
+   * Override the fetch implementation. Defaults to global `fetch`. Tests
+   * inject a stub.
+   */
+  fetchImpl?: typeof fetch;
 }
+
+const TERMINAL_RUN_STATUSES = new Set<string>([
+  "ok",
+  "timeout",
+  "oom",
+  "crash",
+  "exit_nonzero",
+]);
+
 
 const SEVERITY_CLASS: Record<LogSeverity, string> = {
   info: "text-(--color-rc-text)",
@@ -162,10 +194,13 @@ function formatTimestamp(ts: string | number): string {
 
 export function RunStatusPanel({
   lines,
-  executionStatus = "ok",
+  executionStatus,
   runStatus,
   className,
   initialScrollToTail = true,
+  runId,
+  pollIntervalMs = 1500,
+  fetchImpl,
 }: RunStatusPanelProps) {
   const [scrollToTail, setScrollToTail] = React.useState(initialScrollToTail);
   const [query, setQuery] = React.useState("");
@@ -174,7 +209,124 @@ export function RunStatusPanel({
   );
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
 
-  const sourceLines = lines ?? [];
+  // Live state populated from `/api/runs/{runId}*` when `runId` is set.
+  // Otherwise these stay null and the props are the source of truth.
+  const [fetchedLines, setFetchedLines] = React.useState<RunLogLine[] | null>(
+    null,
+  );
+  const [fetchedExecStatus, setFetchedExecStatus] =
+    React.useState<RunExecutionStatus | null>(null);
+  const [fetchedRunStatus, setFetchedRunStatus] = React.useState<string | null>(
+    null,
+  );
+  const [fetchError, setFetchError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!runId) return undefined;
+    const doFetch = fetchImpl ?? (typeof fetch !== "undefined" ? fetch : null);
+    if (!doFetch) return undefined;
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    async function tick(): Promise<void> {
+      try {
+        const [statusRes, logsRes] = await Promise.all([
+          (doFetch as typeof fetch)(`/api/runs/${runId}`, {
+            credentials: "include",
+          }),
+          (doFetch as typeof fetch)(`/api/runs/${runId}/logs`, {
+            credentials: "include",
+          }),
+        ]);
+
+        if (cancelled) return;
+
+        let nextRunStatus: string | null = null;
+        let nextExecStatus: RunExecutionStatus | null = null;
+        if (statusRes.ok) {
+          const body = (await statusRes.json()) as {
+            status?: string;
+            executionStatus?: string;
+          };
+          if (typeof body.status === "string") nextRunStatus = body.status;
+          if (
+            body.executionStatus === "ok" ||
+            body.executionStatus === "timeout" ||
+            body.executionStatus === "oom" ||
+            body.executionStatus === "crash" ||
+            body.executionStatus === "exit_nonzero"
+          ) {
+            nextExecStatus = body.executionStatus;
+          }
+        } else if (statusRes.status >= 500) {
+          setFetchError(`status ${statusRes.status}`);
+        }
+
+        let nextLines: RunLogLine[] | null = null;
+        if (logsRes.ok) {
+          const body = (await logsRes.json()) as {
+            lines?: ReadonlyArray<{
+              ts?: string;
+              severity?: string;
+              text?: string;
+            }>;
+          };
+          if (Array.isArray(body.lines)) {
+            nextLines = body.lines.flatMap((l) => {
+              if (
+                typeof l?.ts !== "string" ||
+                typeof l?.text !== "string"
+              ) {
+                return [];
+              }
+              const sev: LogSeverity =
+                l.severity === "warn" ||
+                l.severity === "error" ||
+                l.severity === "debug"
+                  ? l.severity === "debug"
+                    ? "info"
+                    : l.severity
+                  : "info";
+              return [{ ts: l.ts, severity: sev, text: l.text }];
+            });
+          }
+        }
+
+        if (cancelled) return;
+        if (nextRunStatus !== null) setFetchedRunStatus(nextRunStatus);
+        if (nextExecStatus !== null) setFetchedExecStatus(nextExecStatus);
+        if (nextLines !== null) setFetchedLines(nextLines);
+        if (statusRes.ok && logsRes.ok) setFetchError(null);
+
+        const terminal =
+          nextRunStatus !== null && TERMINAL_RUN_STATUSES.has(nextRunStatus);
+        if (!terminal && pollIntervalMs > 0) {
+          timer = setTimeout(() => {
+            void tick();
+          }, pollIntervalMs);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        setFetchError(err instanceof Error ? err.message : "fetch_failed");
+        if (pollIntervalMs > 0) {
+          timer = setTimeout(() => {
+            void tick();
+          }, pollIntervalMs);
+        }
+      }
+    }
+
+    void tick();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [runId, pollIntervalMs, fetchImpl]);
+
+  const effectiveExecutionStatus: RunExecutionStatus =
+    fetchedExecStatus ?? executionStatus ?? "ok";
+  const sourceLines: ReadonlyArray<RunLogLine> = fetchedLines ?? lines ?? [];
 
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -233,7 +385,25 @@ export function RunStatusPanel({
     }
   };
 
-  const execBadge = EXECUTION_BADGE[executionStatus];
+  const execBadge = EXECUTION_BADGE[effectiveExecutionStatus];
+  const failureCopy =
+    effectiveExecutionStatus === "timeout" ||
+    effectiveExecutionStatus === "oom" ||
+    effectiveExecutionStatus === "crash" ||
+    effectiveExecutionStatus === "exit_nonzero"
+      ? executionFailure(effectiveExecutionStatus)
+      : null;
+  const fetchedRunBadge: StatusKey | null = (() => {
+    if (!fetchedRunStatus) return null;
+    if (fetchedRunStatus === "queued") return "in_progress";
+    if (fetchedRunStatus === "running") return "in_progress";
+    if (fetchedRunStatus === "ok") return "pass";
+    if (fetchedRunStatus === "timeout") return "timeout";
+    if (fetchedRunStatus === "oom") return "oom";
+    if (fetchedRunStatus === "crash") return "crash";
+    if (fetchedRunStatus === "exit_nonzero") return "exit_nonzero";
+    return null;
+  })();
 
   return (
     <section
@@ -249,7 +419,10 @@ export function RunStatusPanel({
           {execBadge ? (
             <StatusBadge status={execBadge} size="sm" />
           ) : (
-            <StatusBadge status={runStatus ?? "in_progress"} size="sm" />
+            <StatusBadge
+              status={runStatus ?? fetchedRunBadge ?? "in_progress"}
+              size="sm"
+            />
           )}
         </div>
 
@@ -318,6 +491,34 @@ export function RunStatusPanel({
           Copy
         </Button>
       </header>
+
+      {failureCopy ? (
+        <div
+          role="alert"
+          aria-label="Execution failure"
+          data-testid="execution-failure-banner"
+          data-execution-status={effectiveExecutionStatus}
+          className="border-b border-(--color-rc-border) bg-(--color-rc-surface-muted) px-3 py-2 text-(--text-rc-sm)"
+        >
+          <p className="font-semibold text-(--color-rc-danger)">
+            {failureCopy.title}
+          </p>
+          <p className="text-(--color-rc-text-muted)">{failureCopy.body}</p>
+          <p className="text-(--color-rc-text-subtle)">
+            {failureCopy.retryHint}
+          </p>
+        </div>
+      ) : null}
+      {fetchError ? (
+        <div
+          role="status"
+          aria-label="Log fetch error"
+          data-testid="log-fetch-error"
+          className="border-b border-(--color-rc-border) bg-(--color-rc-surface-muted) px-3 py-1 text-(--text-rc-xs) text-(--color-rc-warning)"
+        >
+          Live log stream interrupted ({fetchError}). Retrying…
+        </div>
+      ) : null}
 
       {/* Log body */}
       <div

@@ -436,6 +436,34 @@ export async function getDecisionGraph(
   return { nodes, edges };
 }
 
+/**
+ * Resolve the id of the latest Run for `(enrollmentId, stageRef)` — the
+ * stage page passes this to `<RunStatusPanel runId=…>` so the panel can
+ * poll `/api/runs/{runId}` and `/api/runs/{runId}/logs`. Returns `null`
+ * when no submission has produced a Run row yet for that stage.
+ *
+ * The path is Run → Submission → StageAttempt → Enrollment; we filter
+ * StageAttempt by `(enrollmentId, stageRef)` (which already has an index)
+ * and pick the most recently created Run row.
+ */
+export async function getLatestRunIdForStage(
+  enrollmentId: string,
+  stageRef: string,
+): Promise<string | null> {
+  const row = await withQueryTimeout(
+    prisma.run.findFirst({
+      where: {
+        submission: {
+          stageAttempt: { enrollmentId, stageRef },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    }),
+  );
+  return row?.id ?? null;
+}
+
 // Backwards-compat aliases for routes/pages that still import the old names.
 // New code should call getEnrollmentState / getStageForEnrollment directly.
 export { getEnrollmentState as getEnrollment, getStageForEnrollment as getStage };
