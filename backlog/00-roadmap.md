@@ -64,8 +64,24 @@ Goal: support real users completing the first package.
 - [x] Add evaluator output and structured grades.
 - [ ] Add interactive math and academic writing module primitives from
       `11-learning-modules-math-writing.md`.
-- [ ] Add run logs and execution failure handling. _(stubbed)_
-- [ ] Add basic billing or gated manual access for alpha.
+- [ ] Add run logs and execution failure handling. _(UI half wired:
+      `RunStatusPanel` now polls `/api/runs/{runId}` +
+      `/api/runs/{runId}/logs` when given a `runId` and renders the
+      authored execution-failure banner for
+      `timeout|oom|crash|exit_nonzero` — see
+      `packages/ui/src/components/RunStatusPanel.tsx` and the QA
+      report at `qa/run-logs-and-execution-failure-2026-05-15.md`.
+      Still pending: stage-page `runId` plumbing — the data layer
+      needs a `getLatestRunForStage()` so the page can pass `runId`
+      down. Real runner execution is tracked under
+      `backlog/03-cli-runner.md` Runner Modes.)_
+- [x] Add basic billing or gated manual access for alpha. _(Manual
+      access shipped via an env-driven email allowlist —
+      `ALPHA_ACCESS_ALLOWLIST` checked in `apps/web/auth.config.ts`
+      via `apps/web/lib/alpha-allowlist.ts`; sign-ins not on the list
+      bounce to `/login?error=AccessDenied`. Stripe-style billing is
+      still deferred until alpha demand justifies it — see
+      `qa/alpha-access-gate-2026-05-15.md`.)_
 
 Acceptance criteria:
 
@@ -84,10 +100,11 @@ Goal: add AI mentor safely and produce shareable proof of learning.
 - [x] Add evaluator leak tests and redaction checks.
 - [ ] Add prompt caching and per-user rate limits. _(rate-limit interface
       shipped in `packages/ai`; production wiring + caching still pending.)_
-- [ ] Add share-card payload generation. _(preview component exists;
-      `/api/share-cards` now validates body and returns 400 on malformed
-      input but still emits a synthesized payload — durable share-card
-      rows are still pending; see `06`.)_
+- [x] Add share-card payload generation. _(payload is now derived
+      end-to-end by `apps/web/lib/share-cards.ts` and consumed by
+      `/api/share-cards` + the share page — see
+      `qa/share-card-payload-2026-05-15.md`. Durable share-card rows and
+      live cohort percentages still pending under `06`.)_
 - [ ] Add `branch_stats` rollups with minimum-N suppression.
       _(schema, suppression copy, and admin trigger
       `/api/admin/rollup-branch-stats` exist; live execution depends on
@@ -101,8 +118,18 @@ Goal: add AI mentor safely and produce shareable proof of learning.
 Acceptance criteria:
 
 - [ ] Mentor never sees or reveals restricted solution files before allowed.
-- [ ] Share cards can show hardest decision and safe branch percentages.
-- [ ] Users can share results without leaking low-N cohort data.
+- [x] Share cards can show hardest decision and safe branch percentages.
+      _(payload + UI plumbing for both fields verified end-to-end;
+      see `qa/share-card-hardest-and-cohort-2026-05-15.md`. Live
+      cohort numbers still wait on persisted `node_traversals` /
+      `branch_stats` rollups under `backlog/06`.)_
+- [x] Users can share results without leaking low-N cohort data.
+      _(`buildShareCardPayload` now enforces `NODE_MIN_N=20` /
+      `BRANCH_MIN_N=5` independently of callers — see
+      `qa/share-cards-low-n-suppression-2026-05-15.md`. Worker
+      `computePercent` continues to suppress at write time; route
+      and share page still pass `cohortPercentage: null` until
+      persisted `node_traversals` land under `backlog/06`.)_
 
 ## Phase 4: Authoring System
 
