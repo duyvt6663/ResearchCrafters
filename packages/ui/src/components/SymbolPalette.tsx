@@ -132,7 +132,6 @@ export function SymbolPalette({
     // The component is uncontrolled w.r.t. chip array — we initialize from
     // `value` once and from then on the parent's `value` flows from
     // chip → LaTeX, not the other way. Documented in the JSDoc.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [chips, setChips] = React.useState<ReadonlyArray<Chip>>(initialChips);
 

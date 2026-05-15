@@ -149,7 +149,6 @@ async function renderShiki(
     // Don't crash the page if Shiki can't load (missing dep, grammar load
     // failure). Log so devs see the regression instead of silently shipping
     // plain code. Visible in server logs only — this branch is server-only.
-    // eslint-disable-next-line no-console
     console.warn(
       "[CodeBlock] Shiki rendering failed, falling back to plain text:",
       err instanceof Error ? err.message : err,

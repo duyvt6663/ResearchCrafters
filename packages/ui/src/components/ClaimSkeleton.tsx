@@ -114,7 +114,6 @@ export function ClaimSkeleton({
       out[id] = chunks[i] ?? "";
     });
     return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [texts, setTexts] = React.useState<Record<string, string>>(initialTexts);
   const [order, setOrder] = React.useState<ReadonlyArray<string>>(dimensionIds);
