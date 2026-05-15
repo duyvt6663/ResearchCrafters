@@ -262,11 +262,22 @@ export const api = {
     return call<RunLogsResponse>(`/api/runs/${encodeURIComponent(runId)}/logs${q}`);
   },
 
-  async uploadToSignedUrl(signedUrl: string, body: Buffer): Promise<void> {
+  async uploadToSignedUrl(
+    signedUrl: string,
+    body: Buffer,
+    uploadHeaders?: Record<string, string>,
+  ): Promise<void> {
+    // Normalise caller-supplied headers to lowercase keys so that
+    // Content-Type / content-type both override the default correctly.
+    const extra: Record<string, string> = {};
+    for (const [k, v] of Object.entries(uploadHeaders ?? {})) {
+      extra[k.toLowerCase()] = v;
+    }
+    const headers = { 'content-type': 'application/octet-stream', ...extra };
     const res = await request(signedUrl, {
       method: 'PUT',
       body,
-      headers: { 'content-type': 'application/octet-stream' },
+      headers,
     });
     await res.body.dump();
     if (res.statusCode >= 400) {
