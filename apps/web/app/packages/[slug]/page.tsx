@@ -30,7 +30,8 @@ async function signInWithGithubForStart(redirectTo: string): Promise<void> {
 
 async function joinWaitlistAction(slug: string): Promise<void> {
   "use server";
-  await track("waitlist_intent", { surface: "overview", slug });
+  // fire-and-forget: track() is best-effort and must not block TTFB.
+  void track("waitlist_intent", { surface: "overview", slug });
 }
 
 /**
