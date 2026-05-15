@@ -6,10 +6,9 @@ on:
   pull_request:
     branches: [main]
 
-# Note: this workflow does not stand up Postgres / Redis / S3. The current
-# test suite uses mocks and stubs (see backlog/PROGRESS.md). Integration tests
-# that need live services will be added in a follow-up workflow that wires
-# `services:` (or `docker compose`) before the test step.
+# The browser smoke suite renders live Prisma-backed pages. Keep the service
+# boot, env, migration, and seed path shared with Lighthouse through
+# `.github/actions/prepare-integration-env`.
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,7 +18,7 @@ jobs:
   validate:
     name: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,8 +47,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma client
-        run: pnpm --filter @researchcrafters/db exec prisma generate
+      - name: Prepare integration environment
+        uses: ./.github/actions/prepare-integration-env
+        with:
+          port: '3000'
 
       - name: Lint
         run: pnpm lint
@@ -61,15 +62,18 @@ jobs:
         run: pnpm test
 
       # Playwright e2e smoke tests run against the Next.js dev server defined
-      # in `playwright.config.ts`. The flagship browser flows (catalog →
-      # package overview → enroll → first stage) currently rely on the stub
-      # data layer and don't need a live Postgres; once the data layer lands
-      # on Prisma we'll add a `services:` section here for postgres/redis.
+      # in `playwright.config.ts`; the integration environment above supplies
+      # the database, auth secret, S3 emulator, migrations, and seeded content.
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
       - name: E2E (Playwright)
         run: pnpm test:e2e
+
+      - name: Stop integration services
+        if: always()
+        shell: bash
+        run: docker compose down
 
       - name: Validate ERP packages
         shell: bash
@@ -85,7 +89,7 @@ jobs:
           for dir in "${dirs[@]}"; do
             dir="${dir%/}"
             echo "::group::validate $dir"
-            if ! pnpm --filter @researchcrafters/cli exec node ./bin/researchcrafters.js validate "$dir"; then
+            if ! pnpm --filter @researchcrafters/cli exec node ./bin/researchcrafters.js validate "$(realpath "$dir")"; then
               echo "::error::validate failed for $dir"
               failed=1
             fi
