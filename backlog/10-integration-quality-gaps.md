@@ -78,10 +78,12 @@ local Next apps, so the web app was tested on `http://localhost:3003`.
       blank, `/api/entitlements` returning 401 for anonymous callers while the
       test still expects 200, and a stale StagePlayer selector
       (`h1.rc-stage-header`) even though the page renders a visible `h1`.
-- [ ] The README-style CLI validation command
+- [x] The README-style CLI validation command
       `pnpm --filter @researchcrafters/cli exec researchcrafters validate ./content/packages/resnet`
       resolves the package path relative to `packages/cli` and fails. Use an
       absolute path or a root-executed CLI command in docs and smoke scripts.
+      _(Fixed: README.md now documents `node packages/cli/bin/researchcrafters.js validate
+      ./content/packages/resnet` from repo root. See `qa/cli-validate-command-doc-fix-2026-05-15.md`.)_
 
 ## P0: Browser Route Health
 

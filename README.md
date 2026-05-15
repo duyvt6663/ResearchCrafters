@@ -151,8 +151,8 @@ pnpm dev
 pnpm typecheck                                                          # type-check every workspace
 pnpm test                                                               # run vitest across the repo
 pnpm --filter @researchcrafters/db db:migrate                           # apply Prisma migrations against $DATABASE_URL
-pnpm --filter @researchcrafters/cli exec researchcrafters validate ./content/packages/resnet
-                                                                        # validate the flagship ERP
+node packages/cli/bin/researchcrafters.js validate ./content/packages/resnet
+                                                                        # validate the flagship ERP (run from repo root)
 ```
 
 CI runs `pnpm lint`, `pnpm typecheck`, `pnpm test`, and a `researchcrafters validate` sweep over every directory in `content/packages/` on each push and pull request to `main`. See `.github/workflows/ci.yml`.

@@ -164,11 +164,14 @@ Common:
 - [ ] Return starter bundle URLs and smoke commands from enroll/start.
       _(CLI/entitlements agent in flight on the `EnrollResponse` cleanup —
       starter URL itself depends on storage seeding.)_
-- [ ] Fix the documented local validation command. `pnpm --filter
+- [x] Fix the documented local validation command. `pnpm --filter
       @researchcrafters/cli exec researchcrafters validate
       ./content/packages/resnet` resolves the path under `packages/cli`; docs
       and smoke scripts should use an absolute package path or invoke the CLI
       from the repo root.
+      _(README.md now uses `node packages/cli/bin/researchcrafters.js validate
+      ./content/packages/resnet` (run from repo root), matching the CI recipe.
+      See `qa/cli-validate-command-doc-fix-2026-05-15.md`.)_
 - [ ] Update CLI `submit` to pass signed upload headers (the
       `lastRunId` persistence half landed; `uploadHeaders` honoring
       remains).
