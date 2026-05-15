@@ -5,6 +5,11 @@ import { getSessionFromRequest } from "@/lib/auth";
 import { denialHttpStatus, permissions } from "@/lib/permissions";
 import { track } from "@/lib/telemetry";
 import { enrollResponseSchema } from "@/lib/api-contract";
+import {
+  getStorageEnv,
+  headObject,
+  signDownloadUrl,
+} from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -44,17 +49,19 @@ export async function POST(
   // (the data layer is still partly stubbed).
   let enrollmentId = `enr-${pkg.slug}-${Date.now()}`;
   let packageVersionId = stubVersionId;
+  let liveManifest: unknown = null;
   if (session.userId) {
     try {
       const liveVersion = await withQueryTimeout(
         prisma.packageVersion.findFirst({
           where: { package: { slug: pkg.slug }, status: "live" },
-          select: { id: true },
+          select: { id: true, manifest: true },
           orderBy: { createdAt: "desc" },
         }),
       );
       if (liveVersion) {
         packageVersionId = liveVersion.id;
+        liveManifest = liveVersion.manifest;
         const existing = await withQueryTimeout(
           prisma.enrollment.findFirst({
             where: { userId: session.userId, packageVersionId },
@@ -83,6 +90,41 @@ export async function POST(
     }
   }
 
+  // Best-effort workspace-provisioning resolution.
+  //
+  //  - `starterUrl` is signed only when an object exists at the deterministic
+  //    `starters/<slug>/<packageVersionId>.tar.gz` key in the packages
+  //    bucket. Missing object, MinIO/S3 unreachable, or any other error
+  //    leaves the field undefined — the CLI then materializes an empty
+  //    workspace (existing behaviour).
+  //  - `smokeCommand` is read from `manifest.smokeCommand` (or
+  //    `smoke_command`) when present and non-empty.
+  //
+  // Both fields are optional in `enrollResponseSchema`; CI strict-mode will
+  // flag drift if a future change emits something else.
+  let starterUrl: string | undefined;
+  let smokeCommand: string | undefined;
+  try {
+    const env = getStorageEnv();
+    const starterKey = `starters/${pkg.slug}/${packageVersionId}.tar.gz`;
+    const head = await headObject({ bucket: env.buckets.packages, key: starterKey });
+    if (head.exists) {
+      starterUrl = await signDownloadUrl({
+        bucket: env.buckets.packages,
+        key: starterKey,
+      });
+    }
+  } catch {
+    // Storage unreachable — fall back to no starter URL.
+  }
+  if (liveManifest && typeof liveManifest === "object") {
+    const m = liveManifest as { smokeCommand?: unknown; smoke_command?: unknown };
+    const cmd = m.smokeCommand ?? m.smoke_command;
+    if (typeof cmd === "string" && cmd.trim().length > 0) {
+      smokeCommand = cmd;
+    }
+  }
+
   await track("enrollment_started", {
     enrollmentId,
     packageSlug: pkg.slug,
@@ -91,10 +133,14 @@ export async function POST(
   });
 
   // Contract shape (lib/api-contract.ts) — the CLI consumes this directly.
+  // Omit `starterUrl`/`smokeCommand` entirely when unresolved so the strict
+  // schema doesn't carry `undefined` keys onto the wire.
   const contract = enrollResponseSchema.parse({
     enrollmentId,
     packageVersionId,
     firstStageRef: firstStage?.ref ?? "S1",
+    ...(starterUrl ? { starterUrl } : {}),
+    ...(smokeCommand ? { smokeCommand } : {}),
   });
 
   return NextResponse.json({

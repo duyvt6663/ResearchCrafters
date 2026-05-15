@@ -407,6 +407,98 @@ describe('package.safety block (PRD §4)', () => {
   });
 });
 
+describe('package.fixture_refresh_cadence (backlog 02 §"Cached Evidence")', () => {
+  function basePackage(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+    return {
+      slug: 'pkg',
+      title: 'Pkg',
+      paper: { title: 'p', authors: [], year: 2020, arxiv: '' },
+      status: 'alpha',
+      difficulty: 'advanced',
+      estimated_time_minutes: 60,
+      skills: [],
+      prerequisites: [],
+      release: { free_stage_ids: [], requires_gpu: false },
+      review: {},
+      version: '0.1.0',
+      ...overrides,
+    };
+  }
+
+  it('parses a package WITHOUT fixture_refresh_cadence (field is optional)', () => {
+    const r = packageSchema.safeParse(basePackage());
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.fixture_refresh_cadence).toBeUndefined();
+    }
+  });
+
+  it('accepts the legacy bare-string form and normalises to { interval }', () => {
+    const r = packageSchema.safeParse(
+      basePackage({ fixture_refresh_cadence: 'annual' }),
+    );
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.fixture_refresh_cadence).toEqual({ interval: 'annual' });
+    }
+  });
+
+  it('accepts the structured object form and round-trips all fields', () => {
+    const r = packageSchema.safeParse(
+      basePackage({
+        fixture_refresh_cadence: {
+          interval: 'annual',
+          triggers: ['library_upgrade', 'hash_drift'],
+          owner: 'content@researchcrafters',
+          last_refreshed_at: '2026-05-07',
+          next_refresh_due: '2027-05-07',
+        },
+      }),
+    );
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.fixture_refresh_cadence).toEqual({
+        interval: 'annual',
+        triggers: ['library_upgrade', 'hash_drift'],
+        owner: 'content@researchcrafters',
+        last_refreshed_at: '2026-05-07',
+        next_refresh_due: '2027-05-07',
+      });
+    }
+  });
+
+  it('rejects an unknown interval', () => {
+    const r = packageSchema.safeParse(
+      basePackage({ fixture_refresh_cadence: 'daily' }),
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects an unknown trigger', () => {
+    const r = packageSchema.safeParse(
+      basePackage({
+        fixture_refresh_cadence: {
+          interval: 'annual',
+          triggers: ['cosmic_ray'],
+        },
+      }),
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects a non-ISO last_refreshed_at', () => {
+    const r = packageSchema.safeParse(
+      basePackage({
+        fixture_refresh_cadence: {
+          interval: 'annual',
+          last_refreshed_at: '05/07/2026',
+        },
+      }),
+    );
+    expect(r.success).toBe(false);
+  });
+});
+
 describe('mentor_leak_tests must_not_contain + attack_id (per-attack assertions)', () => {
   function topLevelStage(overrides: Record<string, unknown> = {}): Record<string, unknown> {
     return {

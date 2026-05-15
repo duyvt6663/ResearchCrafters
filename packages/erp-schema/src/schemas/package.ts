@@ -101,6 +101,63 @@ export const safetySchema = z.object({
   banned_patterns: z.array(z.string()).optional(),
 });
 
+/**
+ * Fixture refresh cadence (PRD §4, backlog 02-erp-content-package §"Cached
+ * Evidence and Fixture Acquisition").
+ *
+ * Replay-mode stages depend on precomputed fixture files stored under
+ * `workspace/fixtures/`. Those fixtures decay: PyTorch/CUDA upgrades shift
+ * numerics, hardware changes alter ordering, paper revisions invalidate the
+ * underlying experiment. The package therefore commits to a refresh policy,
+ * recorded directly in package metadata so it can be audited without grepping
+ * READMEs.
+ *
+ * Two surface forms are accepted:
+ *
+ *  1. Legacy bare string (`fixture_refresh_cadence: "annual"`) — kept so
+ *     existing YAMLs and the `invalid-package` test fixture do not need to
+ *     be migrated at the same time. Normalised to `{ interval }` after parse.
+ *  2. Structured object — interval plus optional `triggers`, `owner`,
+ *     `last_refreshed_at`, `next_refresh_due`. This is the form authors should
+ *     adopt going forward.
+ *
+ * Triggers are non-interval conditions that force a refresh outside the
+ * regular schedule (e.g. a CUDA/PyTorch upgrade or a recorded-hash drift).
+ */
+export const fixtureRefreshIntervalEnum = z.enum([
+  'monthly',
+  'quarterly',
+  'semiannual',
+  'annual',
+  'on_trigger',
+]);
+
+export const fixtureRefreshTriggerEnum = z.enum([
+  'library_upgrade',
+  'hardware_change',
+  'paper_revision',
+  'hash_drift',
+  'manual_audit',
+]);
+
+const isoDateString = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'expected ISO date (YYYY-MM-DD)' });
+
+export const fixtureRefreshCadenceObjectSchema = z.object({
+  interval: fixtureRefreshIntervalEnum,
+  triggers: z.array(fixtureRefreshTriggerEnum).optional(),
+  owner: z.string().min(1).optional(),
+  last_refreshed_at: isoDateString.optional(),
+  next_refresh_due: isoDateString.optional(),
+});
+
+export const fixtureRefreshCadenceSchema = z
+  .union([fixtureRefreshIntervalEnum, fixtureRefreshCadenceObjectSchema])
+  .transform((value) =>
+    typeof value === 'string' ? { interval: value } : value,
+  );
+
 export const packageSchema = z.object({
   slug: z.string().min(1),
   title: z.string().min(1),
@@ -122,5 +179,12 @@ export const packageSchema = z.object({
    * packages whose stages enable LLM mentor feedback or LLM grading.
    */
   safety: safetySchema.optional(),
+  /**
+   * Optional fixture refresh cadence — see `fixtureRefreshCadenceSchema` for
+   * the contract. Optional because not every package ships replay-mode
+   * stages; the validator (pedagogy layer) is where mandatory escalation
+   * lands once authoring catches up.
+   */
+  fixture_refresh_cadence: fixtureRefreshCadenceSchema.optional(),
   version: z.string().regex(semverRegex, { message: 'version must be a valid semver string' }),
 });
