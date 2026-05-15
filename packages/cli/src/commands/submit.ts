@@ -106,7 +106,7 @@ export async function submitCommand(opts: { cwd?: string } = {}): Promise<Submit
     byteSize: bundle.length,
     sha256: sha,
   });
-  await api.uploadToSignedUrl(init.uploadUrl, bundle);
+  await api.uploadToSignedUrl(init.uploadUrl, bundle, init.uploadHeaders);
   const finalize = await api.finalizeSubmission(init.submissionId, {
     uploadedSha256: sha,
     uploadedBytes: bundle.length,
