@@ -19,6 +19,10 @@ dist/
 .turbo/
 *.tsbuildinfo
 
+# Python
+__pycache__/
+*.py[cod]
+
 # Test output
 coverage/
 

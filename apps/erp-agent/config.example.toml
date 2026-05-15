@@ -1,0 +1,22 @@
+[providers]
+# Disabled in the first local skeleton. Later graph nodes can bind these to
+# OpenAI/Anthropic/search providers without changing manifest shape.
+model = "disabled"
+search = "disabled"
+
+[paths]
+run_root = ".researchcrafters/erp-agent/runs"
+cache_root = ".researchcrafters/erp-agent/cache"
+package_root = "content/packages"
+template_path = "content/templates/erp-basic"
+validation_command = [
+  "node",
+  "packages/cli/bin/researchcrafters.js",
+  "validate",
+  "{package_path}",
+  "--json",
+]
+
+[limits]
+max_source_count = 12
+max_repair_iterations = 3
