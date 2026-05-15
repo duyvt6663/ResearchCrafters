@@ -77,13 +77,14 @@ test.describe("api surface (anon)", () => {
     expect(await r.json()).toEqual({ error: "not_found" });
   });
 
-  test("/api/entitlements is 401 for anonymous callers", async ({
+  test("/api/entitlements rejects anonymous callers with 401", async ({
     request,
   }) => {
     // Route is now wired to getSessionFromRequest — anonymous callers get 401.
     const r = await request.get("/api/entitlements");
     expect(r.status()).toBe(401);
-    expect(await r.json()).toMatchObject({ error: "not_authenticated" });
+    const body = await r.json();
+    expect(body).toEqual({ error: "not_authenticated" });
   });
 });
 

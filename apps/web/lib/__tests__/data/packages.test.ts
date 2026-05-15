@@ -258,4 +258,75 @@ describe("getPackageBySlug", () => {
     );
     expect(detail.pricing.cta).toBe("waitlist");
   });
+
+  it("projects sample-artifact preview data (trajectories and rows) when present", async () => {
+    const manifestWithPreview = {
+      ...RESNET_MANIFEST,
+      sampleArtifact: {
+        kind: "plot",
+        caption: "Plain vs residual at depth 56.",
+        trajectories: [
+          {
+            name: "plain",
+            tone: "plain",
+            points: [
+              [0, 0.1],
+              [80, 0.78],
+              [164, 0.885],
+            ],
+          },
+          {
+            name: "residual",
+            tone: "residual",
+            points: [
+              [0, 0.1],
+              [80, 0.84],
+              [164, 0.931],
+            ],
+          },
+          // Malformed entries are dropped silently.
+          { name: "", tone: "plain", points: [[0, 0]] },
+          { name: "no-points", tone: "plain", points: [] },
+          "not-an-object",
+        ],
+        rows: [
+          { label: "test error", values: ["0.115", "0.069"] },
+          { label: "missing-values", values: [] },
+        ],
+        columns: ["plain-56", "residual-56"],
+      },
+    };
+
+    packageFindUnique.mockResolvedValue({
+      slug: "resnet",
+      versions: [
+        {
+          id: RESNET_PV_ID,
+          status: "live",
+          manifest: manifestWithPreview,
+          releaseFreeStageIds: ["S001"],
+          stages: [],
+        },
+      ],
+    });
+
+    const detail = await getPackageBySlug("resnet");
+    expect(detail).not.toBeNull();
+    if (!detail) return;
+
+    expect(detail.sampleArtifact.kind).toBe("plot");
+    expect(detail.sampleArtifact.caption).toBe(
+      "Plain vs residual at depth 56.",
+    );
+    expect(detail.sampleArtifact.trajectories).toBeDefined();
+    expect(detail.sampleArtifact.trajectories?.length).toBe(2);
+    expect(detail.sampleArtifact.trajectories?.[0]?.name).toBe("plain");
+    expect(detail.sampleArtifact.trajectories?.[1]?.tone).toBe("residual");
+    expect(detail.sampleArtifact.rows?.length).toBe(1);
+    expect(detail.sampleArtifact.rows?.[0]?.label).toBe("test error");
+    expect(detail.sampleArtifact.columns).toEqual([
+      "plain-56",
+      "residual-56",
+    ]);
+  });
 });
