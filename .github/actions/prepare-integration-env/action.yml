@@ -27,6 +27,8 @@ runs:
           echo "NEXTAUTH_URL=http://localhost:${{ inputs.port }}"
           echo "NEXTAUTH_SECRET=ci-integration-non-secret-placeholder"
           echo "AUTH_SECRET=ci-integration-non-secret-placeholder"
+          echo "GITHUB_OAUTH_CLIENT_ID=ci-github-client"
+          echo "GITHUB_OAUTH_CLIENT_SECRET=ci-github-secret"
           echo "RC_ENCRYPTION_DISABLED=true"
           echo "RUNNER_DOCKER_ENABLED=false"
           echo "PORT=${{ inputs.port }}"

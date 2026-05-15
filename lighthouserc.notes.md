@@ -6,7 +6,9 @@ intentional loosening so the budget evolves deliberately rather than drifting.
 
 ## Severity philosophy
 
-- `categories:performance` is currently `warn` (minScore 0.5). The `simulate` throttling on GH Actions vCPUs consistently underscores production performance. Restore to `error` once a stable baseline exists.. Everything
+- `categories:performance` is currently `warn` (minScore 0.5). The `simulate`
+  throttling on GH Actions vCPUs consistently underscores production
+  performance. Restore to `error` once a stable baseline exists. Everything
   else stays at `warn` until we have a multi-run baseline from a stable
   production-like environment. Promoting more metrics to `error` without that
   baseline would just add flake. Do not use an LHCI assertion preset here: the
