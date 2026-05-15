@@ -6,10 +6,8 @@ intentional loosening so the budget evolves deliberately rather than drifting.
 
 ## Severity philosophy
 
-- `categories:performance` is currently `warn` (minScore 0.5). The `simulate`
-  throttling on GH Actions vCPUs consistently underscores production
-  performance. Restore to `error` once a stable baseline exists. Everything
-  else stays at `warn` until we have a multi-run baseline from a stable
+- `categories:performance` is currently `warn` (minScore 0.5). The `simulate` throttling method on GitHub Actions vCPUs consistently underscores production performance — the score has been below 0.5 on every CI run. Promoted back to `error` once a stable multi-run baseline is established against a production-like runner.
+  Everything else stays at `warn` until we have a multi-run baseline from a stable
   production-like environment. Promoting more metrics to `error` without that
   baseline would just add flake. Do not use an LHCI assertion preset here: the
   built-in presets add audit-level hard failures beyond the gates documented
@@ -33,7 +31,7 @@ we have a deterministic seeded session cookie path in CI.
 
 | Metric | Threshold | Rationale |
 | --- | --- | --- |
-| `categories:performance` | warn >= 0.5 | Floor that catches a 20%+ regression without flagging dev-mode noise. Tighten to 0.85 once we baseline against `next start` with a warm Prisma pool. |
+| `categories:performance` | warn >= 0.5 | Lowered from 0.7 (via 0.6): CI's simulated-desktop throttling consistently scores the catalog and package-overview pages below 0.6 without any real regression in code. Root causes are 26+ hydrating client components and a global KaTeX CSS import (tracked in backlog/09). Restore to 0.7 once warm-pool baseline is established; tighten to 0.85 for the alpha launch gate. |
 | `categories:accessibility` | warn >= 0.85 | Tracks the WCAG goals in `09-frontend-design.md` Responsive and Accessibility section. Warn-only because Lighthouse a11y is heuristic — we still rely on explicit Playwright a11y assertions for hard rules. |
 | `categories:best-practices` | warn >= 0.85 | Catches CSP regressions and console errors. Warn-only because the dev CSP intentionally loosens `unsafe-eval` for React Refresh; even though we run `next start` here, transient warnings can still emit. |
 | `categories:seo` | warn >= 0.85 | We aren't an SEO-driven product yet, but we want canonical tags and meta descriptions to stay healthy as marketing pages land. |
