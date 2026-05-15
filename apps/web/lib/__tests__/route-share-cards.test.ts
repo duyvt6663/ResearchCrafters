@@ -10,6 +10,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getEnrollment: vi.fn(),
+  getPackageBySlug: vi.fn(),
   getSessionFromRequest: vi.fn(),
   canAccess: vi.fn(),
   track: vi.fn(),
@@ -17,6 +18,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/data/enrollment", () => ({
   getEnrollment: mocks.getEnrollment,
+}));
+
+vi.mock("@/lib/data/packages", () => ({
+  getPackageBySlug: mocks.getPackageBySlug,
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -36,6 +41,7 @@ import { POST } from "../../app/api/share-cards/route";
 
 beforeEach(() => {
   mocks.getEnrollment.mockReset();
+  mocks.getPackageBySlug.mockReset();
   mocks.getSessionFromRequest.mockReset();
   mocks.canAccess.mockReset();
   mocks.track.mockReset();
@@ -121,6 +127,16 @@ describe("POST /api/share-cards", () => {
       packageSlug: "resnet",
       completedStageRefs: ["S001", "S002"],
     });
+    mocks.getPackageBySlug.mockResolvedValue({
+      slug: "resnet",
+      stages: [
+        { ref: "S001" },
+        { ref: "S002" },
+        { ref: "S003" },
+        { ref: "S004" },
+      ],
+      sampleDecision: { prompt: "Pick a residual init strategy" },
+    });
     mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
     mocks.canAccess.mockResolvedValue({ allowed: true });
 
@@ -137,10 +153,18 @@ describe("POST /api/share-cards", () => {
     expect(body.shareCard).toBeDefined();
     expect(body.shareCard.id).toMatch(/^sc-/);
     expect(body.shareCard.enrollmentId).toBe("enr-1");
+    expect(body.shareCard.payload).toMatchObject({
+      packageSlug: "resnet",
+      packageVersionId: "pv-1",
+      completionStatus: "in_progress",
+      scoreSummary: { passed: 2, total: 4 },
+      hardestDecision: "S002",
+      selectedBranchType: "canonical",
+      cohortPercentage: null,
+    });
     expect(body.shareCard.payload.learnerInsight).toContain(
       "Residual reformulation",
     );
-    expect(body.shareCard.payload.cohortPercentage).toBeNull();
     expect(mocks.track).toHaveBeenCalledWith(
       "share_card_created",
       expect.objectContaining({
@@ -148,5 +172,77 @@ describe("POST /api/share-cards", () => {
         packageVersionId: "pv-1",
       }),
     );
+  });
+
+  it("derives completion='complete' when every stage is in completedStageRefs", async () => {
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-2",
+      packageVersionId: "pv-1",
+      activeStageRef: "S002",
+      packageSlug: "resnet",
+      completedStageRefs: ["S001", "S002"],
+    });
+    mocks.getPackageBySlug.mockResolvedValue({
+      slug: "resnet",
+      stages: [{ ref: "S001" }, { ref: "S002" }],
+      sampleDecision: { prompt: "Pick a strategy" },
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+
+    const res = await POST(
+      makeRequest({ enrollmentId: "enr-2", insight: "done" }),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.shareCard.payload.completionStatus).toBe("complete");
+    expect(body.shareCard.payload.scoreSummary).toEqual({
+      passed: 2,
+      total: 2,
+    });
+    // Falls back to sampleDecision when caller omits hardestDecision.
+    expect(body.shareCard.payload.hardestDecision).toBe("Pick a strategy");
+  });
+
+  it("maps authored 'failed' branch to public 'alternative' for the share surface", async () => {
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-3",
+      packageVersionId: "pv-1",
+      activeStageRef: "S004",
+      packageSlug: "resnet",
+      completedStageRefs: ["S001"],
+    });
+    mocks.getPackageBySlug.mockResolvedValue({
+      slug: "resnet",
+      stages: [{ ref: "S001" }, { ref: "S002" }],
+      sampleDecision: null,
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+
+    const res = await POST(
+      makeRequest({
+        enrollmentId: "enr-3",
+        insight: "Took a dead end and learned.",
+        selectedBranchType: "failed",
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.shareCard.payload.selectedBranchType).toBe("alternative");
+  });
+
+  it("rejects unknown branch types with 400 invalid_branch_type", async () => {
+    const res = await POST(
+      makeRequest({
+        enrollmentId: "enr-1",
+        insight: "x",
+        selectedBranchType: "garbage" as never,
+      }),
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.reason).toBe("invalid_branch_type");
+    expect(mocks.getEnrollment).not.toHaveBeenCalled();
   });
 });

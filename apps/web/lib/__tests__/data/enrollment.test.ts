@@ -15,12 +15,14 @@ const {
   branchFindMany,
   decisionNodeFindMany,
   nodeTraversalFindMany,
+  runFindFirst,
 } = vi.hoisted(() => ({
   enrollmentFindUnique: vi.fn(),
   stageFindUnique: vi.fn(),
   branchFindMany: vi.fn(),
   decisionNodeFindMany: vi.fn(),
   nodeTraversalFindMany: vi.fn(),
+  runFindFirst: vi.fn(),
 }));
 
 vi.mock("@researchcrafters/db", () => ({
@@ -30,6 +32,7 @@ vi.mock("@researchcrafters/db", () => ({
     branch: { findMany: branchFindMany },
     decisionNode: { findMany: decisionNodeFindMany },
     nodeTraversal: { findMany: nodeTraversalFindMany },
+    run: { findFirst: runFindFirst },
   },
   withQueryTimeout: async <T>(p: PromiseLike<T>): Promise<T> => p,
 }));
@@ -37,6 +40,7 @@ vi.mock("@researchcrafters/db", () => ({
 import {
   getDecisionGraph,
   getEnrollmentState,
+  getLatestRunIdForStage,
   getStageForEnrollment,
 } from "../../data/enrollment.js";
 
@@ -49,6 +53,7 @@ beforeEach(() => {
   branchFindMany.mockReset();
   decisionNodeFindMany.mockReset();
   nodeTraversalFindMany.mockReset();
+  runFindFirst.mockReset();
 });
 
 describe("getEnrollmentState", () => {
@@ -267,5 +272,28 @@ describe("getDecisionGraph", () => {
       { from: "N002", to: "N003" },
       { from: "N003", to: "N004" },
     ]);
+  });
+});
+
+describe("getLatestRunIdForStage", () => {
+  it("returns null when no Run row exists for the stage", async () => {
+    runFindFirst.mockResolvedValue(null);
+    const id = await getLatestRunIdForStage(ENR_ID, "S003");
+    expect(id).toBeNull();
+    expect(runFindFirst).toHaveBeenCalledWith({
+      where: {
+        submission: {
+          stageAttempt: { enrollmentId: ENR_ID, stageRef: "S003" },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    });
+  });
+
+  it("returns the id of the most recent Run row when present", async () => {
+    runFindFirst.mockResolvedValue({ id: "run-42" });
+    const id = await getLatestRunIdForStage(ENR_ID, "S003");
+    expect(id).toBe("run-42");
   });
 });

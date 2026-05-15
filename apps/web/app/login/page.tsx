@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import Link from "next/link";
 import { LoginForm } from "@researchcrafters/ui/components";
 import { signIn } from "@/auth";
 
@@ -14,6 +15,11 @@ import { signIn } from "@/auth";
  * Today only GitHub is wired (see `apps/web/auth.ts`); Google + email
  * password render as visibly disabled inside `LoginForm` until their
  * backend lands.
+ *
+ * Error surface: NextAuth redirects sign-in failures back here as
+ * `?error=…`. Today the only application-level reason is `AccessDenied`,
+ * emitted by the alpha-access gate in `auth.config.ts` when a user's email
+ * is not on `ALPHA_ACCESS_ALLOWLIST`.
  */
 
 export const metadata = {
@@ -21,7 +27,7 @@ export const metadata = {
 };
 
 interface LoginPageProps {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; error?: string }>;
 }
 
 async function signInWithGithubAction(redirectTo: string): Promise<void> {
@@ -35,11 +41,20 @@ function safeNext(raw: string | undefined): string {
   return raw;
 }
 
+function errorMessage(raw: string | undefined): string | null {
+  if (!raw) return null;
+  if (raw === "AccessDenied") {
+    return "This email isn't on the alpha access list yet. Reply to your invite or contact the team to be added.";
+  }
+  return "Sign-in didn't complete. Try again, or contact the team if this keeps happening.";
+}
+
 export default async function LoginPage({
   searchParams,
 }: LoginPageProps): Promise<ReactElement> {
-  const { next } = await searchParams;
+  const { next, error } = await searchParams;
   const redirectTo = safeNext(next);
+  const errMsg = errorMessage(error);
 
   return (
     <main className="rc-page rc-page--login">
@@ -58,18 +73,28 @@ export default async function LoginPage({
           </p>
         </div>
 
+        {errMsg ? (
+          <div
+            role="alert"
+            data-rc-login-error
+            className="w-full rounded-(--radius-rc-md) border border-(--color-rc-border) bg-(--color-rc-surface-alt) px-4 py-3 text-(--text-rc-sm) text-(--color-rc-text)"
+          >
+            {errMsg}
+          </div>
+        ) : null}
+
         <div className="w-full rounded-(--radius-rc-md) border border-(--color-rc-border) bg-(--color-rc-surface) p-6">
           <LoginForm
             onGithubSignIn={signInWithGithubAction.bind(null, redirectTo)}
           />
         </div>
 
-        <a
+        <Link
           href="/"
           className="text-(--text-rc-xs) text-(--color-rc-text-muted) underline-offset-4 hover:underline"
         >
           Back to catalog
-        </a>
+        </Link>
       </div>
     </main>
   );

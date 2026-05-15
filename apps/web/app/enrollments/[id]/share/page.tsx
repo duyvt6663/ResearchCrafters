@@ -4,6 +4,7 @@ import { ShareCardPreview } from "@researchcrafters/ui/components";
 import { copy } from "@researchcrafters/ui/copy";
 import { getEnrollment } from "@/lib/data/enrollment";
 import { getPackageBySlug } from "@/lib/data/packages";
+import { buildShareCardPayload } from "@/lib/share-cards";
 
 type Params = { id: string };
 
@@ -26,20 +27,19 @@ export default async function SharePage({
   if (!pkg) notFound();
 
   // Snapshot payload that will eventually be persisted as an immutable
-  // share-card row per backlog/06. Cohort percentages omitted here because the
-  // stub data layer cannot yet evaluate the minimum-N suppression rule.
-  const payload = {
-    packageSlug: pkg.slug,
-    packageVersionId: enrollment.packageVersionId,
-    completionStatus: enrollment.completedStageRefs.length === pkg.stages.length
-      ? ("complete" as const)
-      : ("in_progress" as const),
-    scoreSummary: { passed: enrollment.completedStageRefs.length, total: pkg.stages.length },
-    hardestDecision: pkg.sampleDecision.prompt,
-    selectedBranchType: "canonical" as const,
+  // share-card row per backlog/06. Cohort percentage stays suppressed until
+  // persisted `node_traversals` allow the minimum-N rule to run.
+  const payload = buildShareCardPayload({
+    enrollment: {
+      packageSlug: pkg.slug,
+      packageVersionId: enrollment.packageVersionId,
+      completedStageRefs: enrollment.completedStageRefs,
+    },
+    pkg: { stages: pkg.stages, sampleDecision: pkg.sampleDecision },
+    insight: "",
+    selectedBranchType: "canonical",
     cohortPercentage: null,
-    learnerInsight: "",
-  };
+  });
 
   return (
     <main className="rc-page rc-page--share">

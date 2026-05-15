@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { getEnrollment } from "@/lib/data/enrollment";
+import { getPackageBySlug } from "@/lib/data/packages";
 import { getSessionFromRequest } from "@/lib/auth";
 import { denialHttpStatus, permissions } from "@/lib/permissions";
 import { track } from "@/lib/telemetry";
 import { setActiveSpanAttributes, withSpan } from "@/lib/tracing";
+import {
+  buildShareCardPayload,
+  type AuthoredBranchType,
+} from "@/lib/share-cards";
 
 export const runtime = "nodejs";
 
@@ -11,8 +16,14 @@ type Body = {
   enrollmentId: string;
   insight: string;
   hardestDecision?: string;
-  selectedBranchType?: "canonical" | "suboptimal" | "failed";
+  selectedBranchType?: AuthoredBranchType;
 };
+
+const VALID_BRANCH_TYPES: ReadonlySet<AuthoredBranchType> = new Set([
+  "canonical",
+  "suboptimal",
+  "failed",
+]);
 
 export async function POST(req: Request): Promise<NextResponse> {
   return withSpan("api.share-cards.create", async () => {
@@ -31,6 +42,15 @@ export async function POST(req: Request): Promise<NextResponse> {
     ) {
       return NextResponse.json(
         { error: "bad_request", reason: "missing_required_fields" },
+        { status: 400 },
+      );
+    }
+    if (
+      body.selectedBranchType !== undefined &&
+      !VALID_BRANCH_TYPES.has(body.selectedBranchType)
+    ) {
+      return NextResponse.json(
+        { error: "bad_request", reason: "invalid_branch_type" },
         { status: 400 },
       );
     }
@@ -56,6 +76,29 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
+    const pkg = await getPackageBySlug(enr.packageSlug);
+    const payload = buildShareCardPayload({
+      enrollment: {
+        packageSlug: enr.packageSlug,
+        packageVersionId: enr.packageVersionId,
+        completedStageRefs: enr.completedStageRefs,
+      },
+      pkg: pkg
+        ? {
+            stages: pkg.stages,
+            sampleDecision: pkg.sampleDecision
+              ? { prompt: pkg.sampleDecision.prompt }
+              : null,
+          }
+        : null,
+      insight: body.insight,
+      hardestDecision: body.hardestDecision ?? null,
+      selectedBranchType: body.selectedBranchType ?? null,
+      // Cohort percentage requires persisted `node_traversals` + minimum-N
+      // suppression; until that lands (backlog/06), suppress by default.
+      cohortPercentage: null,
+    });
+
     const id = `sc-${Date.now()}`;
     setActiveSpanAttributes({ "rc.share_card.id": id });
     await track("share_card_created", {
@@ -64,8 +107,9 @@ export async function POST(req: Request): Promise<NextResponse> {
       packageVersionId: enr.packageVersionId,
     });
 
-    // DB stub. Real impl writes an immutable share-card row with the snapshot
-    // payload, then returns the public URL and rendered image asset.
+    // DB stub. Durable share-card rows are tracked under backlog/06; this
+    // route still returns the freshly-derived snapshot so the share page +
+    // preview component can render the real payload shape.
     return NextResponse.json({
       shareCard: {
         id,
@@ -73,15 +117,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         packageVersionId: enr.packageVersionId,
         publicUrl: `https://researchcrafters.example/share/${id}`,
         imageUrl: `https://researchcrafters.example/share/${id}.png`,
-        payload: {
-          packageSlug: enr.packageSlug,
-          completionStatus:
-            enr.completedStageRefs.length > 0 ? "in_progress" : "started",
-          learnerInsight: body.insight,
-          hardestDecision: body.hardestDecision ?? null,
-          selectedBranchType: body.selectedBranchType ?? null,
-          cohortPercentage: null,
-        },
+        payload,
       },
     });
   });

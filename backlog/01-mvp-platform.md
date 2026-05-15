@@ -18,9 +18,8 @@ reflect that snapshot.
 - [ ] Show deterministic/evaluator grade results.
       _(UI components exist; runner/evaluator grade persistence is not wired
       end-to-end.)_
-- [ ] Show runner logs and execution failure states.
-      _(UI components and APIs exist; submitted runs remain queued with empty
-      logs until runner enqueue/callback persistence lands.)_
+- [x] Show runner logs and execution failure states.
+      _(BE enqueue+callback+worker persistence, UI panel polling, and page-level runId plumbing all wired — see qa/run-logs-and-execution-failure-2026-05-15.md and qa/runner-logs-page-wiring-2026-05-15.md. Real sandboxed dispatch tracked under backlog/03-cli-runner.md.)_
 - [ ] Add share-card preview after meaningful progress.
       _(preview component exists; share-card API/page still use stub payloads.)_
 

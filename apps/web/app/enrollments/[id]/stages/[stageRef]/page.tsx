@@ -15,7 +15,7 @@ import { cliCommands } from "@researchcrafters/ui/cli-commands";
 import { copy } from "@researchcrafters/ui/copy";
 import { MathStageView } from "./views/MathStageView";
 import { WritingStageView } from "./views/WritingStageView";
-import { getEnrollment, getStage } from "@/lib/data/enrollment";
+import { getEnrollment, getLatestRunIdForStage, getStage } from "@/lib/data/enrollment";
 import { getSession } from "@/lib/auth";
 import { permissions } from "@/lib/permissions";
 import { renderErrorPage } from "@/lib/error-pages";
@@ -67,6 +67,14 @@ export default async function StagePage({
 
   const mode = stage.inputs.mode;
   const isCliStage = mode === "code" || mode === "experiment";
+
+  // CLI stages submit through the runner; resolve the latest Run row for
+  // (enrollmentId, stageRef) so the panel can self-poll status + logs
+  // against /api/runs/:id. Returns null for stages that have not produced
+  // a Run yet — the panel renders the empty shell in that case.
+  const latestRunId = isCliStage
+    ? await getLatestRunIdForStage(enrollment.id, stage.ref)
+    : null;
 
   // Build the workspace content. The StagePlayer layout slots accept React
   // nodes directly — the page is responsible for choosing what to render
@@ -174,7 +182,7 @@ export default async function StagePage({
               cliCommands.submit,
             ]}
           />
-          <RunStatusPanel stageRef={stage.ref} />
+          <RunStatusPanel stageRef={stage.ref} {...(latestRunId ? { runId: latestRunId } : {})} />
         </div>
       );
     }
