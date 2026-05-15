@@ -10,7 +10,7 @@ import { expect, test } from "@playwright/test";
  * - /api/cli/version     : 200 + { minCliVersion: "<semver>" }
  * - /api/auth/session    : 200 + null (NextAuth contract for unauth)
  * - /api/auth/csrf       : 200 + { csrfToken: "<hex>" }
- * - /api/auth/providers  : 200 + non-empty object when OAuth env is present
+ * - /api/auth/providers  : 200 + non-empty object
  * - /api/packages        : 200 + { packages: <object|array> }   (see report:
  *                          handler currently returns a Promise serialization)
  * - /api/packages/resnet : 200 + { package: { slug: "resnet", ... } }
@@ -80,6 +80,7 @@ test.describe("api surface (anon)", () => {
   test("/api/entitlements rejects anonymous callers with 401", async ({
     request,
   }) => {
+    // Route is now wired to getSessionFromRequest — anonymous callers get 401.
     const r = await request.get("/api/entitlements");
     expect(r.status()).toBe(401);
     const body = await r.json();
