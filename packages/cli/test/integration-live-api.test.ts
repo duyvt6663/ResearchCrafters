@@ -12,10 +12,10 @@
  *   - POST /api/auth/revoke
  *   - GET /api/runs/[id], /logs (synthesized 'queued' fallback for unknown id)
  *
- * The `start` flow currently exits early on the contract-shape envelope
- * because /api/packages/[slug]/enroll does not yet return `starterUrl` /
- * `apiUrl` / `smokeCommand`. We assert the documented behaviour rather than
- * the wished-for behaviour so this file is not a moving target.
+ * The `start` flow's enroll response now surfaces optional `starterUrl` /
+ * `smokeCommand` when a starter bundle is seeded for the package version;
+ * those fields are absent against an unseeded dev server, which is the
+ * default state of this suite.
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
