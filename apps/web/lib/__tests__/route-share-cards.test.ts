@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => ({
   getSessionFromRequest: vi.fn(),
   canAccess: vi.fn(),
   track: vi.fn(),
+  createShareCard: vi.fn(),
+  generatePublicSlug: vi.fn(),
 }));
 
 vi.mock("@/lib/data/enrollment", () => ({
@@ -37,6 +39,14 @@ vi.mock("@/lib/telemetry", () => ({
   track: mocks.track,
 }));
 
+vi.mock("@/lib/data/share-cards", () => ({
+  createShareCard: mocks.createShareCard,
+}));
+
+vi.mock("@researchcrafters/worker", () => ({
+  generatePublicSlug: mocks.generatePublicSlug,
+}));
+
 import { POST } from "../../app/api/share-cards/route";
 
 beforeEach(() => {
@@ -45,6 +55,10 @@ beforeEach(() => {
   mocks.getSessionFromRequest.mockReset();
   mocks.canAccess.mockReset();
   mocks.track.mockReset();
+  mocks.createShareCard.mockReset();
+  mocks.generatePublicSlug.mockReset();
+  mocks.createShareCard.mockResolvedValue({ id: "sc-test-id" });
+  mocks.generatePublicSlug.mockReturnValue("pub-test-slug");
 });
 
 function makeRequest(body: unknown): Request {
