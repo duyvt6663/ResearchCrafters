@@ -18,6 +18,7 @@ export type TelemetryEvent =
   | "mentor_feedback_requested"
   | "stage_completed"
   | "share_card_created"
+  | "share_card_unshared"
   | "paywall_viewed"
   | "subscription_started"
   | "waitlist_intent";
