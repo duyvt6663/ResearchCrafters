@@ -2,7 +2,7 @@ name: Telegram Notifications
 
 on:
   workflow_run:
-    workflows: ['CI']
+    workflows: ['CI', 'Lighthouse']
     types: [completed]
   pull_request_target:
     types:
@@ -267,6 +267,129 @@ jobs:
             }
 
             console.log("Telegram notification sent.");
+          }
+
+          main().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Trigger Skynet CI fixer
+        if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success' }}
+        env:
+          GOCLAW_SKYNET_HOOK_URL: ${{ secrets.GOCLAW_SKYNET_HOOK_URL }}
+          GOCLAW_SKYNET_HOOK_TOKEN: ${{ secrets.GOCLAW_SKYNET_HOOK_TOKEN }}
+          GOCLAW_SKYNET_TARGET_REPO: ${{ secrets.GOCLAW_SKYNET_TARGET_REPO }}
+          GOCLAW_SKYNET_CHANNEL: ${{ secrets.GOCLAW_SKYNET_CHANNEL }}
+          GOCLAW_SKYNET_CHAT_ID: ${{ secrets.GOCLAW_SKYNET_CHAT_ID }}
+          GOCLAW_SKYNET_LOCAL_KEY: ${{ secrets.GOCLAW_SKYNET_LOCAL_KEY }}
+          GOCLAW_SKYNET_PEER_KIND: ${{ secrets.GOCLAW_SKYNET_PEER_KIND }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node <<'NODE'
+          const fs = require("fs");
+
+          const hookUrl = (process.env.GOCLAW_SKYNET_HOOK_URL || "").trim();
+          const hookToken = (process.env.GOCLAW_SKYNET_HOOK_TOKEN || "").trim();
+
+          if (!hookUrl || !hookToken) {
+            console.log("::notice::GOCLAW_SKYNET_HOOK_URL or GOCLAW_SKYNET_HOOK_TOKEN is not configured; skipping Skynet CI fixer dispatch.");
+            process.exit(0);
+          }
+
+          const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
+          const run = event.workflow_run || {};
+          const conclusion = String(run.conclusion || "").toLowerCase();
+          const triggerable = new Set(["failure", "timed_out", "cancelled", "action_required", "startup_failure"]);
+
+          if (!triggerable.has(conclusion)) {
+            console.log(`Skipping Skynet CI fixer dispatch for workflow conclusion: ${conclusion || "unknown"}`);
+            process.exit(0);
+          }
+
+          const repo = process.env.GITHUB_REPOSITORY;
+          const serverUrl = process.env.GITHUB_SERVER_URL || "https://github.com";
+          const notifyRunUrl = `${serverUrl}/${repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+          const pullRequests = Array.isArray(run.pull_requests) ? run.pull_requests : [];
+          const pullRequest = pullRequests[0];
+
+          function actor(user) {
+            return user && user.login ? `@${user.login}` : "unknown";
+          }
+
+          function shortSha(value) {
+            return value ? String(value).slice(0, 7) : "unknown";
+          }
+
+          function endpointFrom(value) {
+            const clean = value.replace(/\/+$/, "");
+            if (clean.endsWith("/v1/beta/skynet-workflows/cicd-failure")) {
+              return clean;
+            }
+            return `${clean}/v1/beta/skynet-workflows/cicd-failure`;
+          }
+
+          const lines = [
+            `[${run.name || "Workflow"} ${conclusion.toUpperCase()}] ${repo}`,
+            `Branch: ${run.head_branch || "unknown"}`,
+            `Commit: ${shortSha(run.head_sha)}`,
+            `By: ${actor(run.actor || run.triggering_actor)}`,
+          ];
+
+          if (pullRequest) {
+            lines.push(`Pull request: #${pullRequest.number}`);
+          }
+
+          lines.push(`Run: ${run.html_url || notifyRunUrl}`);
+          lines.push("");
+          lines.push("Skynet: inspect the failing GitHub Actions run, patch the PR branch, run focused verification, and report the fix.");
+
+          const payload = {
+            log: lines.join("\n"),
+            repository: repo,
+            run_url: run.html_url || notifyRunUrl,
+            pull_request: pullRequest ? `#${pullRequest.number}` : "",
+            branch: run.head_branch || "",
+            commit: run.head_sha || "",
+            author: actor(run.actor || run.triggering_actor),
+          };
+
+          for (const [envName, key] of [
+            ["GOCLAW_SKYNET_TARGET_REPO", "target_repo"],
+            ["GOCLAW_SKYNET_CHANNEL", "channel"],
+            ["GOCLAW_SKYNET_CHAT_ID", "chat_id"],
+            ["GOCLAW_SKYNET_LOCAL_KEY", "local_key"],
+            ["GOCLAW_SKYNET_PEER_KIND", "peer_kind"],
+          ]) {
+            const value = (process.env[envName] || "").trim();
+            if (value) {
+              payload[key] = value;
+            }
+          }
+
+          async function main() {
+            const response = await fetch(endpointFrom(hookUrl), {
+              method: "POST",
+              headers: {
+                "authorization": `Bearer ${hookToken}`,
+                "content-type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+              const body = await response.text();
+              throw new Error(`Skynet CI fixer dispatch failed: ${response.status} ${body}`);
+            }
+
+            console.log("Skynet CI fixer dispatched.");
           }
 
           main().catch((error) => {
