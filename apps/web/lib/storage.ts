@@ -38,6 +38,7 @@
  */
 
 import {
+  DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
@@ -477,4 +478,15 @@ async function streamToString(body: unknown): Promise<string> {
     if (total > MAX_GET_OBJECT_BYTES) break;
   }
   return Buffer.concat(chunks).toString("utf-8");
+}
+
+export type DeleteObjectInput = {
+  bucket: string;
+  key: string;
+  client?: S3Client;
+};
+
+export async function deleteObject(input: DeleteObjectInput): Promise<void> {
+  const client = input.client ?? getS3Client();
+  await client.send(new DeleteObjectCommand({ Bucket: input.bucket, Key: input.key }));
 }

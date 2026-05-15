@@ -24,6 +24,8 @@ export type TelemetryEvent =
   | "share_card_unshared"
   | "paywall_viewed"
   | "subscription_started"
+  | "submission_bundle_purged"
+  | "submission_deleted"
   | "waitlist_intent";
 
 export type TelemetryPayload = Record<string, string | number | boolean | null>;
