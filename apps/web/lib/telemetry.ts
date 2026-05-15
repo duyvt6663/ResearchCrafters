@@ -1,5 +1,8 @@
-// Telemetry stub. Real implementation will dual-write to PostHog and the
-// Postgres `events` table per backlog/06. For now we emit structured logs.
+import {
+  track as workspaceTrack,
+  type TelemetryEvent as WorkspaceTelemetryEvent,
+  type TrackContext,
+} from "@researchcrafters/telemetry";
 
 export type TelemetryEvent =
   | "package_viewed"
@@ -18,24 +21,63 @@ export type TelemetryEvent =
   | "mentor_feedback_requested"
   | "stage_completed"
   | "share_card_created"
+  | "share_card_unshared"
   | "paywall_viewed"
-  | "subscription_started";
+  | "subscription_started"
+  | "waitlist_intent";
 
 export type TelemetryPayload = Record<string, string | number | boolean | null>;
 
+const CONTEXT_KEYS = ["userId", "packageVersionId", "stageRef"] as const;
+
+function extractContext(payload: TelemetryPayload): TrackContext {
+  const ctx: TrackContext = {};
+  for (const key of CONTEXT_KEYS) {
+    const value = payload[key];
+    if (typeof value === "string") {
+      ctx[key] = value;
+    }
+  }
+  return ctx;
+}
+
+/**
+ * Server-side telemetry entrypoint. Best-effort dual-write:
+ *   - PostHog product analytics when `POSTHOG_API_KEY` is set.
+ *   - Postgres `Event` row for audit-grade event names.
+ * Falls back to a structured stderr log when neither destination accepts
+ * the event so dev environments still see what would have been recorded.
+ */
 export async function track(
   event: TelemetryEvent,
   payload: TelemetryPayload = {},
 ): Promise<void> {
-  // Server-side stub: structured log, no network call.
-  // Replace with PostHog SDK + Postgres audit insert later.
-   
-  console.log(
-    JSON.stringify({
-      kind: "telemetry",
-      event,
-      payload,
-      ts: new Date().toISOString(),
-    }),
-  );
+  const ctx = extractContext(payload);
+  const wsEvent = { name: event, ...payload } as unknown as WorkspaceTelemetryEvent;
+
+  try {
+    await workspaceTrack(wsEvent, ctx);
+  } catch (err) {
+    console.warn(
+      JSON.stringify({
+        kind: "telemetry",
+        level: "warn",
+        message: "telemetry dispatch failed",
+        event,
+        err: err instanceof Error ? err.message : String(err),
+        ts: new Date().toISOString(),
+      }),
+    );
+  }
+
+  if (!process.env["POSTHOG_API_KEY"]) {
+    console.log(
+      JSON.stringify({
+        kind: "telemetry",
+        event,
+        payload,
+        ts: new Date().toISOString(),
+      }),
+    );
+  }
 }
