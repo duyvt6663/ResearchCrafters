@@ -67,7 +67,7 @@ Common:
 - [x] Hash submission bundle.
 - [x] Upload to signed object-storage URL.
 - [x] Record submission metadata.
-- [ ] Honor all API-returned `uploadHeaders` when uploading to the signed URL.
+- [x] Honor all API-returned `uploadHeaders` when uploading to the signed URL.
 - [x] Persist/display the `runId` returned by finalize so `status` and `logs`
       work without manual DB lookup. _(Iteration: `submit` now writes
       `lastRunId` via `setProjectConfig` (`packages/cli/src/commands/submit.ts:119`),
