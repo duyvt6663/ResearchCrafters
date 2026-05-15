@@ -70,7 +70,10 @@ class BasicBlock(nn.Module):
         happens *before* the final activation.
         """
         # TODO(student): replace this stub with the residual computation.
-        return x
+        raise NotImplementedError(
+            "BasicBlock.forward is not implemented. "
+            "Apply conv1, bn1, relu, conv2, bn2, add the shortcut, then relu."
+        )
 
 
 class CifarResNet(nn.Module):

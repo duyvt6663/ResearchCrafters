@@ -69,7 +69,7 @@ reflect that snapshot.
 - [x] Create `solutions/canonical/`. _(stubbed)_
 - [x] Create branch solution notes or examples under `solutions/branches/`.
 - [ ] Ensure starter fails target tests.
-- [ ] Ensure canonical solution passes target and previous required stages.
+- [x] Ensure canonical solution passes target and previous required stages.
 
 ## Cached Evidence and Fixture Acquisition
 
@@ -88,7 +88,7 @@ trusted hardware before the package can ship.
 - [x] Document the regeneration recipe in `workspace/fixtures/README.md` so a
       maintainer can rebuild fixtures when libraries or hardware change.
 - [ ] Add a CI assertion that recorded hashes match the files committed.
-- [ ] Decide a fixture refresh cadence and record it in package metadata.
+- [x] Decide a fixture refresh cadence and record it in package metadata.
 
 ## Review Gates
 

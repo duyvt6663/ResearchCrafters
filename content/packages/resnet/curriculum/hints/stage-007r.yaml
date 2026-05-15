@@ -1,0 +1,26 @@
+id: hints-stage-007r
+stage_id: S007R
+levels:
+  - level: 1
+    title: "Find the valid point first"
+    body_md: |
+      Before defending your critique, steelman the reviewer's position.
+      The reviewer is correct that real researchers do use proxy experiments
+      and that null results shift priors. Acknowledge this concisely before
+      you defend the objection — it makes the rebuttal stronger, not weaker.
+  - level: 2
+    title: "Anchor to a concrete confounder"
+    body_md: |
+      The objection is not that the experiment is a proxy in general; it
+      is that this proxy varies more than one thing at once. Name at least
+      one concrete difference between BatchNorm and LayerNorm that is
+      unrelated to gradient scale (hint: running statistics, batch
+      dependence). That is what makes the proxy conflated.
+  - level: 3
+    title: "State the condition for informativeness"
+    body_md: |
+      Turn the critique into a constructive suggestion: what single change
+      would make the proposed experiment informative? A clean test controls
+      one variable at a time. The "zero-init the last conv of every plain
+      block" design from the previous hints is a good model — it targets
+      identity-recovery directly without changing normalisation.

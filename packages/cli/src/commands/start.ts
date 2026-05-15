@@ -17,12 +17,11 @@ export async function startCommand(slug: string, opts: StartOptions = {}): Promi
   process.stdout.write(`Resolving package ${kleur.cyan(slug)}...\n`);
   const pkg = await api.startPackage(slug);
 
-  // TODO(workspace-provisioning): the enroll route does not yet return a
-  // signed `starterUrl` / `smokeCommand`. When the dedicated
-  // `/api/packages/<slug>/starter-url` endpoint lands, fetch the bundle
-  // here and unpack it into `projectDir`. Until then we materialize an
-  // empty workspace; learners can copy in their own scaffolding from the
-  // package's `content/` README.
+  // The enroll route surfaces `starterUrl` / `smokeCommand` only when a
+  // bundle object exists for `<slug>/<packageVersionId>` in the packages
+  // bucket and the manifest declares a smoke command. We persist them into
+  // `.researchcrafters/config.json` so downstream commands (`test`, future
+  // `start --refresh`) can consume them without re-hitting the API.
 
   const projectDir = path.join(cwd, slug);
   await fs.mkdir(projectDir, { recursive: true });
@@ -35,6 +34,8 @@ export async function startCommand(slug: string, opts: StartOptions = {}): Promi
     packageVersionId: pkg.packageVersionId,
     stageRef: pkg.stageRef,
   };
+  if (pkg.starterUrl) cfg.starterUrl = pkg.starterUrl;
+  if (pkg.smokeCommand) cfg.smokeCommand = pkg.smokeCommand;
   await fs.writeFile(path.join(cfgDir, 'config.json'), JSON.stringify(cfg, null, 2) + '\n');
 
   process.stdout.write(
@@ -42,4 +43,7 @@ export async function startCommand(slug: string, opts: StartOptions = {}): Promi
       ` Workspace: ${kleur.cyan(projectDir)}\n` +
       `  Stage: ${kleur.yellow(pkg.stageRef)}\n`,
   );
+  if (pkg.starterUrl) {
+    process.stdout.write(`  Starter bundle: ${kleur.dim('signed URL captured (download pending)')}\n`);
+  }
 }
