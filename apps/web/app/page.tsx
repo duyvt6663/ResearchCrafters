@@ -21,7 +21,8 @@ export default async function CatalogPage(): Promise<ReactElement> {
   const packages = await listPackages();
 
   // Catalog view is the primary marketing surface; record the visit.
-  await track("package_viewed", { surface: "catalog", count: packages.length });
+  // fire-and-forget: track() is best-effort and must not block TTFB.
+  void track("package_viewed", { surface: "catalog", count: packages.length });
 
   const firstPackage = packages[0];
   const heroSlug = firstPackage?.slug ?? "flash-attention";

@@ -10,13 +10,12 @@ import { expect, test } from "@playwright/test";
  * - /api/cli/version     : 200 + { minCliVersion: "<semver>" }
  * - /api/auth/session    : 200 + null (NextAuth contract for unauth)
  * - /api/auth/csrf       : 200 + { csrfToken: "<hex>" }
- * - /api/auth/providers  : 200 + non-empty object
+ * - /api/auth/providers  : 200 + non-empty object when OAuth env is present
  * - /api/packages        : 200 + { packages: <object|array> }   (see report:
  *                          handler currently returns a Promise serialization)
  * - /api/packages/resnet : 200 + { package: { slug: "resnet", ... } }
  * - /api/packages/does-not-exist : 404 + { error: "not_found" }
- * - /api/entitlements    : 200 + { entitlements: [] } for anon (free preview
- *                          policy lets view_stage through)
+ * - /api/entitlements    : 401 for anon
  */
 test.describe("api surface (anon)", () => {
   test("health is ok", async ({ request }) => {
@@ -77,15 +76,12 @@ test.describe("api surface (anon)", () => {
     expect(await r.json()).toEqual({ error: "not_found" });
   });
 
-  test("/api/entitlements is 200 with an empty list for anon", async ({
+  test("/api/entitlements requires auth for anon", async ({
     request,
   }) => {
-    // Today the policy treats this as a free-preview view_stage and lets it
-    // through with an empty list. If the policy tightens, this expectation
-    // should flip to 401 — see qa/fe-qa-report.md.
     const r = await request.get("/api/entitlements");
-    expect(r.status()).toBe(200);
-    expect(await r.json()).toEqual({ entitlements: [] });
+    expect(r.status()).toBe(401);
+    expect(await r.json()).toEqual({ error: "not_authenticated" });
   });
 });
 
