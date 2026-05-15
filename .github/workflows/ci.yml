@@ -19,10 +19,39 @@ jobs:
   validate:
     name: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+
+    env:
+      DATABASE_URL: postgresql://researchcrafters:researchcrafters@localhost:5432/researchcrafters
+      NEXTAUTH_SECRET: ci-validate-secret
+      NEXTAUTH_URL: http://localhost:3000
+      RUNNER_DOCKER_ENABLED: 'false'
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Boot Postgres
+        shell: bash
+        run: docker compose up -d postgres
+
+      - name: Wait for Postgres healthy
+        shell: bash
+        run: |
+          set -euo pipefail
+          tries=40
+          while (( tries > 0 )); do
+            if docker compose exec -T postgres pg_isready -U researchcrafters -d researchcrafters >/dev/null 2>&1; then
+              echo "postgres is ready"
+              exit 0
+            fi
+            sleep 2
+            tries=$((tries - 1))
+          done
+          echo "postgres did not become ready in time"
+          docker compose logs postgres
+          exit 1
+
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -51,6 +80,13 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter @researchcrafters/db exec prisma generate
 
+      - name: Apply Prisma migrations
+        run: pnpm --filter @researchcrafters/db exec prisma migrate deploy
+
+      - name: Seed database
+        run: pnpm --filter @researchcrafters/db db:seed
+
+
       - name: Lint
         run: pnpm lint
 
@@ -60,11 +96,9 @@ jobs:
       - name: Test
         run: pnpm test
 
-      # Playwright e2e smoke tests run against the Next.js dev server defined
-      # in `playwright.config.ts`. The flagship browser flows (catalog →
-      # package overview → enroll → first stage) currently rely on the stub
-      # data layer and don't need a live Postgres; once the data layer lands
-      # on Prisma we'll add a `services:` section here for postgres/redis.
+      # Playwright e2e smoke tests run against the Next.js dev server.
+      # Postgres is wired above; the dev server picks up DATABASE_URL from
+      # the job env so Prisma routes respond correctly.
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
