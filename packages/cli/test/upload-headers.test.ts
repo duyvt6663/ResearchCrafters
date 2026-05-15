@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
-import { AddressInfo } from 'node:net';
+import type { AddressInfo } from 'node:net';
 import { api, ApiError } from '../src/lib/api.js';
 
 // Pin the contract from backlog/03-cli-runner.md:64 — `uploadToSignedUrl`
