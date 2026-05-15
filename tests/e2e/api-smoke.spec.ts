@@ -15,8 +15,7 @@ import { expect, test } from "@playwright/test";
  *                          handler currently returns a Promise serialization)
  * - /api/packages/resnet : 200 + { package: { slug: "resnet", ... } }
  * - /api/packages/does-not-exist : 404 + { error: "not_found" }
- * - /api/entitlements    : 200 + { entitlements: [] } for anon (free preview
- *                          policy lets view_stage through)
+ * - /api/entitlements    : 401 for anon (route now requires auth)
  */
 test.describe("api surface (anon)", () => {
   test("health is ok", async ({ request }) => {
@@ -77,15 +76,13 @@ test.describe("api surface (anon)", () => {
     expect(await r.json()).toEqual({ error: "not_found" });
   });
 
-  test("/api/entitlements is 200 with an empty list for anon", async ({
+  test("/api/entitlements is 401 for anonymous callers", async ({
     request,
   }) => {
-    // Today the policy treats this as a free-preview view_stage and lets it
-    // through with an empty list. If the policy tightens, this expectation
-    // should flip to 401 — see qa/fe-qa-report.md.
+    // Route is now wired to getSessionFromRequest — anonymous callers get 401.
     const r = await request.get("/api/entitlements");
-    expect(r.status()).toBe(200);
-    expect(await r.json()).toEqual({ entitlements: [] });
+    expect(r.status()).toBe(401);
+    expect(await r.json()).toMatchObject({ error: "not_authenticated" });
   });
 });
 

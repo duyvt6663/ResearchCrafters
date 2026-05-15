@@ -131,6 +131,17 @@ jobs:
       # avoids the larger Playwright install footprint; if a future change
       # needs Playwright + Lighthouse together, swap to
       # `pnpm exec playwright install chromium` here.
+
+      - name: Pre-warm pages before Lighthouse
+        shell: bash
+        run: |
+          for url in \\
+            "http://localhost:3001/" \\
+            "http://localhost:3001/packages/resnet"; do
+            status=$(curl -fsS -o /dev/null -w "%{http_code}" "$url" || echo "000")
+            echo "warmup $url \u2192 $status"
+          done
+
       - name: Run Lighthouse CI
         run: npx -y @lhci/cli@0.14.x autorun
 
