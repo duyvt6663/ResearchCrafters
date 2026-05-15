@@ -4,6 +4,13 @@ import { runTestMode } from './modes/test.js';
 import { runReplayMode } from './modes/replay.js';
 import { runMiniExperimentMode } from './modes/mini-experiment.js';
 import type { RunJob, RunResult } from './types.js';
+import {
+  appLogger as defaultAppLogger,
+  NoopRunnerOutputSink,
+  persistSubmissionOutput,
+  type AppLogger,
+  type RunnerOutputSink,
+} from './logger.js';
 
 /**
  * Worker dispatches a queue job to the right mode handler. The actual BullMQ
@@ -15,33 +22,48 @@ export interface WorkerDeps {
   /** Image per mode. Production reads these from infra/docker manifests. */
   images: { test: string; replay: string; miniExperiment: string };
   fixtureReader: FixtureReader;
+  /** Operational logger. Defaults to process.stderr JSON logger. */
+  appLogger?: AppLogger;
+  /** Sink for captured submission stdout/stderr. Defaults to noop. */
+  outputSink?: RunnerOutputSink;
 }
 
 export async function handleJob(job: RunJob, deps: WorkerDeps): Promise<RunResult> {
+  const logger = deps.appLogger ?? defaultAppLogger;
+  const sink = deps.outputSink ?? new NoopRunnerOutputSink();
+
+  logger.info('job.start', { jobId: job.jobId });
+
+  let artifacts: RunResult['artifacts'];
   switch (job.mode) {
     case 'test': {
-      const artifacts = await runTestMode(job, {
+      artifacts = await runTestMode(job, {
         sandbox: deps.sandbox,
         image: deps.images.test,
       });
-      return { jobId: job.jobId, submissionId: job.submissionId, stageId: job.stageId, artifacts };
+      break;
     }
     case 'replay': {
-      const artifacts = await runReplayMode(job, {
+      artifacts = await runReplayMode(job, {
         sandbox: deps.sandbox,
         image: deps.images.replay,
         fixtureReader: deps.fixtureReader,
       });
-      return { jobId: job.jobId, submissionId: job.submissionId, stageId: job.stageId, artifacts };
+      break;
     }
     case 'mini_experiment': {
-      const artifacts = await runMiniExperimentMode(job, {
+      artifacts = await runMiniExperimentMode(job, {
         sandbox: deps.sandbox,
         image: deps.images.miniExperiment,
       });
-      return { jobId: job.jobId, submissionId: job.submissionId, stageId: job.stageId, artifacts };
+      break;
     }
   }
+
+  await persistSubmissionOutput(sink, job.jobId, artifacts);
+  logger.info('job.complete', { jobId: job.jobId });
+
+  return { jobId: job.jobId, submissionId: job.submissionId, stageId: job.stageId, artifacts };
 }
 
 /**
