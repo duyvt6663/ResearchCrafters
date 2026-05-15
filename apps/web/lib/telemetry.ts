@@ -19,7 +19,9 @@ export type TelemetryEvent =
   | "stage_completed"
   | "share_card_created"
   | "paywall_viewed"
-  | "subscription_started";
+  | "subscription_started"
+  | "submission_bundle_purged"
+  | "submission_deleted";
 
 export type TelemetryPayload = Record<string, string | number | boolean | null>;
 
