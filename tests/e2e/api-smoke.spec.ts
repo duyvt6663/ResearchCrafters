@@ -15,7 +15,8 @@ import { expect, test } from "@playwright/test";
  *                          handler currently returns a Promise serialization)
  * - /api/packages/resnet : 200 + { package: { slug: "resnet", ... } }
  * - /api/packages/does-not-exist : 404 + { error: "not_found" }
- * - /api/entitlements    : 401 for anon
+ * - /api/entitlements    : 401 for anon (route now does live Prisma reads
+ *                          under Bearer/NextAuth and rejects unauth callers)
  */
 test.describe("api surface (anon)", () => {
   test("health is ok", async ({ request }) => {
@@ -76,12 +77,13 @@ test.describe("api surface (anon)", () => {
     expect(await r.json()).toEqual({ error: "not_found" });
   });
 
-  test("/api/entitlements requires auth for anon", async ({
+  test("/api/entitlements rejects anonymous callers with 401", async ({
     request,
   }) => {
     const r = await request.get("/api/entitlements");
     expect(r.status()).toBe(401);
-    expect(await r.json()).toEqual({ error: "not_authenticated" });
+    const body = await r.json();
+    expect(body).toEqual({ error: "not_authenticated" });
   });
 });
 
