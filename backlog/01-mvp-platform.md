@@ -84,7 +84,7 @@ section 11.
       estimated time.
 - [ ] Show a sanitized example of one decision node and its branches.
 - [ ] Show one redacted example of a failed-branch lesson.
-- [ ] Show one example evidence artifact at preview fidelity.
+- [x] Show one example evidence artifact at preview fidelity.
 - [ ] Show pricing or waitlist call-to-action.
 
 ## Share Flow
