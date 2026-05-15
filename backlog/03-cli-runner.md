@@ -33,7 +33,7 @@ Common:
 
 - [x] `researchcrafters --version` and version-mismatch warning when the local
       CLI is older than the server expects.
-- [ ] Shell completion for bash, zsh, and fish.
+- [x] Shell completion for bash, zsh, and fish.
 
 ## CLI Foundations
 

@@ -38,9 +38,25 @@ export type FailedBranchLesson = {
   redactedSummary: string;
 };
 
+export type ArtifactPreviewTrajectory = {
+  name: string;
+  tone: "plain" | "residual";
+  points: ReadonlyArray<readonly [number, number]>;
+};
+
+export type ArtifactPreviewRow = {
+  label: string;
+  values: ReadonlyArray<string>;
+};
+
 export type ArtifactPreview = {
   kind: "log" | "table" | "plot";
   caption: string;
+  /** Optional inline preview data — when present, the page renders the
+   *  authored artifact instead of a hardcoded illustration. */
+  trajectories?: ReadonlyArray<ArtifactPreviewTrajectory>;
+  rows?: ReadonlyArray<ArtifactPreviewRow>;
+  columns?: ReadonlyArray<string>;
 };
 
 export type PackageStageSummary = {
@@ -374,9 +390,65 @@ function readArtifactPreview(value: unknown): ArtifactPreview {
   if (!value || typeof value !== "object") {
     return { kind: "log", caption: "" };
   }
-  const v = value as { kind?: unknown; caption?: unknown };
+  const v = value as {
+    kind?: unknown;
+    caption?: unknown;
+    trajectories?: unknown;
+    rows?: unknown;
+    columns?: unknown;
+  };
   const kind = v.kind === "log" || v.kind === "table" || v.kind === "plot" ? v.kind : "log";
-  return { kind, caption: asString(v.caption, "") };
+  const preview: ArtifactPreview = {
+    kind,
+    caption: asString(v.caption, ""),
+  };
+  const trajectories = readTrajectories(v.trajectories);
+  if (trajectories.length > 0) preview.trajectories = trajectories;
+  const rows = readRows(v.rows);
+  if (rows.length > 0) preview.rows = rows;
+  const columns = asStringArray(v.columns);
+  if (columns.length > 0) preview.columns = columns;
+  return preview;
+}
+
+function readTrajectories(value: unknown): readonly ArtifactPreviewTrajectory[] {
+  if (!Array.isArray(value)) return [];
+  const out: ArtifactPreviewTrajectory[] = [];
+  for (const raw of value) {
+    if (!raw || typeof raw !== "object") continue;
+    const r = raw as { name?: unknown; tone?: unknown; points?: unknown };
+    const name = asString(r.name, "");
+    const tone = r.tone === "residual" ? "residual" : "plain";
+    if (!Array.isArray(r.points)) continue;
+    const points: Array<readonly [number, number]> = [];
+    for (const p of r.points) {
+      if (!Array.isArray(p) || p.length < 2) continue;
+      const x = p[0];
+      const y = p[1];
+      if (typeof x === "number" && typeof y === "number" && Number.isFinite(x) && Number.isFinite(y)) {
+        points.push([x, y] as const);
+      }
+    }
+    if (name && points.length > 0) {
+      out.push({ name, tone, points });
+    }
+  }
+  return out;
+}
+
+function readRows(value: unknown): readonly ArtifactPreviewRow[] {
+  if (!Array.isArray(value)) return [];
+  const out: ArtifactPreviewRow[] = [];
+  for (const raw of value) {
+    if (!raw || typeof raw !== "object") continue;
+    const r = raw as { label?: unknown; values?: unknown };
+    const label = asString(r.label, "");
+    const values = asStringArray(r.values);
+    if (label && values.length > 0) {
+      out.push({ label, values });
+    }
+  }
+  return out;
 }
 
 function readPricing(value: unknown): PackageDetail["pricing"] {

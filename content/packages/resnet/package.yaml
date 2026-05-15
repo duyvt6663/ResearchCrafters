@@ -44,4 +44,13 @@ safety:
 review:
   expert_reviewer: ""
   last_reviewed_at: ""
-fixture_refresh_cadence: "annual"
+fixture_refresh_cadence:
+  interval: annual
+  triggers:
+    - library_upgrade
+    - hardware_change
+    - paper_revision
+    - hash_drift
+  owner: content@researchcrafters
+  last_refreshed_at: "2026-05-07"
+  next_refresh_due: "2027-05-07"

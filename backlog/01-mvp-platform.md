@@ -84,8 +84,8 @@ section 11.
       estimated time.
 - [ ] Show a sanitized example of one decision node and its branches.
 - [ ] Show one redacted example of a failed-branch lesson.
-- [ ] Show one example evidence artifact at preview fidelity.
-- [ ] Show pricing or waitlist call-to-action.
+- [x] Show one example evidence artifact at preview fidelity.
+- [x] Show pricing or waitlist call-to-action.
 
 ## Share Flow
 
@@ -121,7 +121,11 @@ section 11.
       `Membership` + `Entitlement` reads.
 - [x] Automate the package overview and stage-player browser smoke path from
       `10-integration-quality-gaps.md`. _(Playwright specs at `tests/e2e/`)_
-- [ ] Wire `lib/telemetry.ts` `track()` to a real analytics destination.
+- [x] Wire `lib/telemetry.ts` `track()` to a real analytics destination.
+      _(Workspace `@researchcrafters/telemetry` dual-writes to PostHog +
+      Postgres `Event`; wrapper preserves web-layer `track(eventName, payload)`
+      signature. Contract pinned by `apps/web/lib/__tests__/telemetry.test.ts`.
+      QA: `qa/telemetry-track-wired-2026-05-15.md`.)_
 - [ ] Render the React Flow decision graph (deferred to Phase 4).
 - [x] Fix `/api/enrollments/:id/graph` so it returns the awaited Prisma-backed
       graph instead of `{}`. _(Tier-1 fix landed: `await getDecisionGraph(id)`.)_
