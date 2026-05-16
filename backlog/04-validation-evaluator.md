@@ -116,7 +116,7 @@ reflect that snapshot.
 - [x] Add shape-table and memory/complexity checks for implementation-linked
       math stages.
 - [ ] Add per-step partial credit for derivation modules.
-- [ ] Add rubric fallback for proof outlines, counterexamples, and conceptual
+- [x] Add rubric fallback for proof outlines, counterexamples, and conceptual
       explanations.
 - [ ] Add adversarial grader tests for math stages that try to extract
       canonical derivations.

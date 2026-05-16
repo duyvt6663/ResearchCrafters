@@ -26,6 +26,28 @@ export {
   RunnerArtifactParseError,
 } from './parsers/runner-artifacts.js';
 export {
+  checkMathFallback,
+  checkProofOutline,
+  checkCounterexample,
+  checkConceptualExplanation,
+} from './math-fallback.js';
+export type {
+  MathFallbackKind,
+  MathFallbackStatus,
+  MathFallbackResult,
+  MathFallbackSpec,
+  MathFallbackSubmission,
+  RubricScaffold,
+  RubricScaffoldDimension,
+  ProofOutlineSpec,
+  ProofOutlineStep,
+  ProofOutlineSubmission,
+  CounterexampleSpec,
+  CounterexampleSubmission,
+  ConceptualExplanationSpec,
+  ConceptualExplanationSubmission,
+} from './math-fallback.js';
+export {
   checkNumeric,
   checkNumericBatch,
   inferShape,
