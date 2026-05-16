@@ -3,23 +3,29 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 /**
  * Regression suite for `app/api/grades/[id]/route.ts`.
  *
- * Today's route is a STUB — it does NOT read `prisma.grade.findUnique`. The
- * shape is hand-rolled from the path id and a fixed rubric payload. The auth
- * surface is `permissions.canAccess({ action: "view_stage", ... })` with a
- * synthetic stage descriptor (`packageVersionId: "unknown"`, `ref: "grade"`).
+ * The rubric panel is still a STUB — it does NOT read `prisma.grade` for
+ * the rubric / overall score. The auth surface is `permissions.canAccess`
+ * with a synthetic stage descriptor (`packageVersionId: "unknown"`,
+ * `ref: "grade"`).
  *
- * That means:
+ * What the route DOES read from Prisma: the `Grade.history` JSON column,
+ * so a reviewer override is surfaced back to the learner with the reviewer
+ * note (backlog/04 § Human Override). When the lookup fails or the row is
+ * missing the route degrades to an empty overrides array — the rubric
+ * panel still renders.
+ *
+ * Pinned details:
  *   - There is no 404 branch (the route can't tell missing from present).
  *   - 401 is emitted as 403 by the route (it hard-codes status 403 on
  *     denial rather than calling `denialHttpStatus(reason)`).
- *
- * These tests pin the live behaviour rather than the future-state design.
- * The backlog note for an actual Grade lookup belongs in backlog/06.
+ *   - DB unreachable: overrides=[], rubric stub still served.
  */
 
 const mocks = vi.hoisted(() => ({
   getSessionFromRequest: vi.fn(),
   canAccess: vi.fn(),
+  gradeFindUnique: vi.fn(),
+  withQueryTimeout: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -30,11 +36,17 @@ vi.mock("@/lib/permissions", () => ({
   permissions: { canAccess: mocks.canAccess },
 }));
 
+vi.mock("@researchcrafters/db", () => ({
+  prisma: { grade: { findUnique: mocks.gradeFindUnique } },
+  withQueryTimeout: mocks.withQueryTimeout,
+}));
+
 import { GET } from "../../app/api/grades/[id]/route";
 
 beforeEach(() => {
-  mocks.getSessionFromRequest.mockReset();
-  mocks.canAccess.mockReset();
+  Object.values(mocks).forEach((m) => m.mockReset());
+  mocks.withQueryTimeout.mockImplementation(async (p) => p);
+  mocks.gradeFindUnique.mockResolvedValue(null);
 });
 
 function makeCtx(id: string): {
@@ -118,6 +130,9 @@ describe("GET /api/grades/[id]", () => {
       expect(typeof line.score).toBe("number");
     }
     expect(typeof body.grade.nextAction).toBe("string");
+    // Overrides surface is always present and is an array (empty when there
+    // are no overrides, populated when there are).
+    expect(Array.isArray(body.grade.overrides)).toBe(true);
   });
 
   it("threads the route id through to the response body (not hard-coded)", async () => {
@@ -141,5 +156,70 @@ describe("GET /api/grades/[id]", () => {
     await GET(req, ctx);
     expect(mocks.getSessionFromRequest).toHaveBeenCalledTimes(1);
     expect(mocks.getSessionFromRequest.mock.calls[0]?.[0]).toBe(req);
+  });
+
+  it("surfaces reviewer overrides + notes when the grade row carries history", async () => {
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+    mocks.gradeFindUnique.mockResolvedValue({
+      history: [
+        {
+          reviewerId: "rev-1",
+          note: "Rescored after appendix figure cited.",
+          appliedAt: "2026-05-15T10:00:00Z",
+          override: { status: "passed", rubricScore: 0.92 },
+        },
+      ],
+    });
+
+    const { req, ctx } = makeCtx("grade-with-override");
+    const res = await GET(req, ctx);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.grade.overrides).toHaveLength(1);
+    const o = body.grade.overrides[0];
+    expect(o.reviewerId).toBe("rev-1");
+    expect(o.note).toBe("Rescored after appendix figure cited.");
+    expect(o.appliedAt).toBe("2026-05-15T10:00:00Z");
+    expect(o.patch).toEqual({ status: "passed", rubricScore: 0.92 });
+  });
+
+  it("degrades to overrides=[] when the DB lookup throws", async () => {
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+    mocks.gradeFindUnique.mockRejectedValue(new Error("db unreachable"));
+
+    const { req, ctx } = makeCtx("grade-db-down");
+    const res = await GET(req, ctx);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.grade.overrides).toEqual([]);
+    // Rubric panel still rendered — the override surface is best-effort.
+    expect(Array.isArray(body.grade.rubric)).toBe(true);
+  });
+
+  it("filters malformed override entries instead of leaking them", async () => {
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+    mocks.gradeFindUnique.mockResolvedValue({
+      history: [
+        // valid
+        {
+          reviewerId: "rev-1",
+          note: "ok",
+          appliedAt: "2026-05-15T10:00:00Z",
+          override: { rubricScore: 0.8 },
+        },
+        // missing required fields — must be dropped
+        { reviewerId: "rev-2" },
+        // non-object — must be dropped
+        "junk",
+      ],
+    });
+    const { req, ctx } = makeCtx("grade-mixed");
+    const res = await GET(req, ctx);
+    const body = await res.json();
+    expect(body.grade.overrides).toHaveLength(1);
+    expect(body.grade.overrides[0].reviewerId).toBe("rev-1");
   });
 });

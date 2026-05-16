@@ -7,6 +7,7 @@ const nextConfig = {
   transpilePackages: [
     "@researchcrafters/ui",
     "@researchcrafters/db",
+    "@researchcrafters/evaluator-sdk",
     "@researchcrafters/erp-schema",
     "@researchcrafters/content-sdk",
     "@researchcrafters/worker",
