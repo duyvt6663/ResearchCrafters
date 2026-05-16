@@ -40,3 +40,25 @@ export type {
   NumericTolerance,
   NumericValue,
 } from './numeric.js';
+export {
+  checkMathFallback,
+  checkProofOutline,
+  checkCounterexample,
+  checkConceptualExplanation,
+} from './math-fallback.js';
+export type {
+  MathFallbackKind,
+  MathFallbackStatus,
+  MathFallbackResult,
+  MathFallbackSpec,
+  MathFallbackSubmission,
+  RubricScaffold,
+  RubricScaffoldDimension,
+  ProofOutlineSpec,
+  ProofOutlineStep,
+  ProofOutlineSubmission,
+  CounterexampleSpec,
+  CounterexampleSubmission,
+  ConceptualExplanationSpec,
+  ConceptualExplanationSubmission,
+} from './math-fallback.js';
