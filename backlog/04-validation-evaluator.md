@@ -49,9 +49,27 @@ reflect that snapshot.
 
 - [ ] Run starter workspace and confirm target tests fail. _(stubbed)_
 - [ ] Run canonical solution and confirm target tests pass. _(stubbed)_
-- [ ] Confirm canonical solution passes previous required stages. _(stubbed)_
+- [x] Confirm canonical solution passes previous required stages.
+      _(static deterministic portion landed: `derivePrereqsPlans`
+      walks the curriculum graph backwards over `unlocks` +
+      `unlocks_by_choice`, filters to runner-gated stages, and
+      `validateSandbox` emits `sandbox.canonical.prereqs.plan` per
+      runner-gated stage plus a `sandbox.canonical.missing` warning
+      when runner-gated stages exist but `solutions/canonical/` is
+      empty. The Docker-backed pass that actually runs canonical
+      against each prior stage and asserts exit 0 is tracked under
+      "Wire layer-3 sandbox execution to the real runner once Docker
+      is online.")_
 - [x] Verify all replay fixtures match declared hashes.
-- [ ] Verify runner output paths are produced. _(stubbed)_
+- [x] Verify runner output paths are produced. _(static deterministic
+      portion landed: `validateSandbox` emits
+      `sandbox.output_paths.plan` per runner-gated stage, warns
+      `sandbox.output_paths.missing` when a runner-gated stage has no
+      declared outputs, and errors `sandbox.output_paths.invalid` when
+      an entry is absolute or escapes the package. The Docker-backed
+      executor that asserts the files actually exist after a run is
+      tracked under "Wire layer-3 sandbox execution to the real runner
+      once Docker is online.")_
 - [x] Verify no stage requires GPU in MVP.
 
 ## Pedagogy Validation
