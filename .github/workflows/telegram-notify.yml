@@ -1,6 +1,9 @@
 name: Telegram Notifications
 
 on:
+  push:
+    branches:
+      - main
   workflow_run:
     workflows: ['CI', 'Lighthouse']
     types: [completed]
@@ -217,6 +220,23 @@ jobs:
             return lines.join("\n");
           }
 
+          function pushMessage() {
+            const head = event.head_commit || {};
+            const lines = [
+              `[Push main] ${repo}`,
+              `Commit: ${shortSha(event.after)}`,
+              `By: ${actor(event.sender || head.author)}`,
+            ];
+
+            const message = compact(head.message, 240);
+            if (message) {
+              lines.push("", message);
+            }
+
+            lines.push("", `Compare: ${event.compare || runUrl}`);
+            return lines.join("\n");
+          }
+
           function workflowDispatchMessage() {
             return [
               `[Telegram test] ${repo}`,
@@ -234,6 +254,7 @@ jobs:
           }
 
           const builders = {
+            push: pushMessage,
             workflow_run: workflowRunMessage,
             pull_request_target: pullRequestMessage,
             issue_comment: issueCommentMessage,
@@ -274,6 +295,99 @@ jobs:
             }
 
             console.log("Telegram notification sent.");
+          }
+
+          main().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Trigger Skynet main sync
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          GOCLAW_SKYNET_HOOK_URL: ${{ secrets.GOCLAW_SKYNET_HOOK_URL }}
+          GOCLAW_SKYNET_HOOK_TOKEN: ${{ secrets.GOCLAW_SKYNET_HOOK_TOKEN }}
+          GOCLAW_SKYNET_TARGET_REPO: ${{ secrets.GOCLAW_SKYNET_TARGET_REPO }}
+          GOCLAW_SKYNET_DEPLOY_REPO: ${{ secrets.GOCLAW_SKYNET_DEPLOY_REPO }}
+          GOCLAW_SKYNET_WEB_PORT: ${{ secrets.GOCLAW_SKYNET_WEB_PORT }}
+          GOCLAW_SKYNET_CHANNEL: ${{ secrets.GOCLAW_SKYNET_CHANNEL }}
+          GOCLAW_SKYNET_CHAT_ID: ${{ secrets.GOCLAW_SKYNET_CHAT_ID }}
+          GOCLAW_SKYNET_LOCAL_KEY: ${{ secrets.GOCLAW_SKYNET_LOCAL_KEY }}
+          GOCLAW_SKYNET_PEER_KIND: ${{ secrets.GOCLAW_SKYNET_PEER_KIND }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node <<'NODE'
+          const fs = require("fs");
+
+          const hookUrl = (process.env.GOCLAW_SKYNET_HOOK_URL || "").trim();
+          const hookToken = (process.env.GOCLAW_SKYNET_HOOK_TOKEN || "").trim();
+
+          if (!hookUrl || !hookToken) {
+            console.log("::notice::GOCLAW_SKYNET_HOOK_URL or GOCLAW_SKYNET_HOOK_TOKEN is not configured; skipping Skynet main sync.");
+            process.exit(0);
+          }
+
+          const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
+
+          function endpointFrom(value) {
+            const clean = value.replace(/\/+$/, "");
+            for (const suffix of [
+              "/v1/beta/skynet-workflows/main-sync",
+              "/v1/beta/skynet-workflows/pr-conflict",
+              "/v1/beta/skynet-workflows/cicd-failure",
+            ]) {
+              if (clean.endsWith(suffix)) {
+                return clean.slice(0, -suffix.length) + "/v1/beta/skynet-workflows/main-sync";
+              }
+            }
+            return `${clean}/v1/beta/skynet-workflows/main-sync`;
+          }
+
+          const payload = {
+            repository: process.env.GITHUB_REPOSITORY,
+            branch: "main",
+            before: event.before || "",
+            commit: event.after || "",
+            compare_url: event.compare || "",
+            pusher: event.sender?.login ? `@${event.sender.login}` : "",
+            start_web: true,
+          };
+
+          for (const [envName, key] of [
+            ["GOCLAW_SKYNET_TARGET_REPO", "target_repo"],
+            ["GOCLAW_SKYNET_DEPLOY_REPO", "deploy_repo"],
+            ["GOCLAW_SKYNET_WEB_PORT", "port"],
+            ["GOCLAW_SKYNET_CHANNEL", "channel"],
+            ["GOCLAW_SKYNET_CHAT_ID", "chat_id"],
+            ["GOCLAW_SKYNET_LOCAL_KEY", "local_key"],
+            ["GOCLAW_SKYNET_PEER_KIND", "peer_kind"],
+          ]) {
+            const value = (process.env[envName] || "").trim();
+            if (value) payload[key] = value;
+          }
+
+          async function main() {
+            const response = await fetch(endpointFrom(hookUrl), {
+              method: "POST",
+              headers: {
+                "authorization": `Bearer ${hookToken}`,
+                "content-type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+              const body = await response.text();
+              throw new Error(`Skynet main sync failed: ${response.status} ${body}`);
+            }
+
+            const body = await response.text();
+            console.log(`Skynet main sync accepted: ${body}`);
           }
 
           main().catch((error) => {
