@@ -333,8 +333,7 @@ jobs:
               if (pr.number) targetNumbers.add(Number(pr.number));
             }
             if (targetNumbers.size === 0) {
-              console.log("Workflow run has no linked pull request; skipping PR conflict scan.");
-              process.exit(0);
+              console.log("Workflow run has no linked pull request; scanning all open PRs for conflicts.");
             }
           }
 
@@ -375,6 +374,7 @@ jobs:
                     url
                     isDraft
                     mergeStateStatus
+                    mergeable
                     headRefName
                     headRefOid
                     baseRefName
@@ -404,6 +404,12 @@ jobs:
             return author?.login ? `@${author.login}` : "unknown";
           }
 
+          function conflictState(pr) {
+            if (pr.mergeStateStatus === "DIRTY") return "DIRTY";
+            if (pr.mergeable === "CONFLICTING") return "CONFLICTING";
+            return "";
+          }
+
           async function dispatch(pr) {
             const payload = {
               repository: repo,
@@ -415,7 +421,7 @@ jobs:
               commit: pr.headRefOid || "",
               base_sha: pr.baseRefOid || "",
               author: actor(pr.author),
-              merge_state: pr.mergeStateStatus || "",
+              merge_state: conflictState(pr) || pr.mergeStateStatus || pr.mergeable || "",
               checks: checkState(pr),
             };
 
@@ -452,7 +458,11 @@ jobs:
             if (targetNumbers.size > 0) {
               prs = prs.filter((pr) => targetNumbers.has(Number(pr.number)));
             }
-            const conflicted = prs.filter((pr) => pr.mergeStateStatus === "DIRTY");
+            console.log(`Scanned ${prs.length} open PR candidate(s) for conflicts.`);
+            for (const pr of prs) {
+              console.log(`#${pr.number}: mergeStateStatus=${pr.mergeStateStatus || "UNKNOWN"} mergeable=${pr.mergeable || "UNKNOWN"} head=${pr.headRefName || "unknown"}`);
+            }
+            const conflicted = prs.filter((pr) => conflictState(pr));
             if (conflicted.length === 0) {
               console.log("No conflicted open PRs found.");
               return;
