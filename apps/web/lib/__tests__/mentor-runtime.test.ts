@@ -16,8 +16,14 @@
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { MockLLMGateway } from "@researchcrafters/ai";
+import type {
+  LLMGateway,
+  LLMRequest,
+  LLMResponse,
+} from "@researchcrafters/ai";
 import type { StagePolicy } from "@researchcrafters/erp-schema";
 import {
+  detectLowConfidence,
   runMentorRequest,
   type MentorRuntimePrisma,
 } from "../mentor-runtime.js";
@@ -179,6 +185,7 @@ describe("runMentorRequest", () => {
 
     if (result.kind !== "ok") throw new Error("expected ok outcome");
     expect(result.flagged).toBe(true);
+    expect(result.flagReason).toBe("policy_violation");
     expect(result.redactionTriggered).toBe(true);
     // The authored refusal copy never quotes the redaction target itself.
     expect(result.assistantText).not.toContain(REDACTION_TARGET);
@@ -187,6 +194,14 @@ describe("runMentorRequest", () => {
     expect(
       tracked.some((t) => t.event === "evaluator_redaction_triggered"),
     ).toBe(true);
+
+    const surfacing = tracked.find(
+      (t) => t.event === "mentor_output_flagged_for_review",
+    );
+    expect(surfacing).toBeDefined();
+    expect((surfacing!.payload as Record<string, unknown>)["reason"]).toBe(
+      "policy_violation",
+    );
 
     const assistantCall = stub.messageCreate.mock.calls[1]?.[0] as {
       data: Record<string, unknown>;
@@ -314,5 +329,230 @@ describe("runMentorRequest", () => {
     expect(result.threadId).toBe("thread-existing");
     expect(stub.threadCreate).not.toHaveBeenCalled();
     expect(stub.messageCreate).toHaveBeenCalledTimes(2);
+  });
+
+  // -------------------------------------------------------------------------
+  // Surface low-confidence + policy-violating outputs for review.
+  // -------------------------------------------------------------------------
+
+  it("flags low-confidence (empty) outputs and persists flagged=true", async () => {
+    const stub = makePrismaStub();
+    stub.threadFindFirst.mockResolvedValue({ id: "thread-lc-empty" });
+    stub.messageCreate
+      .mockResolvedValueOnce({ id: "u" })
+      .mockResolvedValueOnce({ id: "a" });
+
+    // 4 chars after trim — below LOW_CONFIDENCE_MIN_CHARS (16).
+    const gateway = new MockLLMGateway(() => "    ok   ");
+    const tracked: Array<{ event: string; payload: unknown }> = [];
+
+    const result = await runMentorRequest({
+      enrollment: { id: ENR_ID, packageVersionId: PV_ID },
+      stage: { ref: STAGE_REF, stagePolicy: policy() },
+      mode: "clarify",
+      message: "Anything?",
+      gateway,
+      prisma: stub.prisma,
+      withQueryTimeout: async (p) => p,
+      track: async (event, payload) => {
+        tracked.push({ event, payload });
+      },
+    });
+
+    if (result.kind !== "ok") throw new Error("expected ok outcome");
+    expect(result.flagged).toBe(true);
+    expect(result.flagReason).toBe("low_confidence:empty");
+    // Low-confidence does not trigger the redaction pathway.
+    expect(result.redactionTriggered).toBe(false);
+
+    const assistantCall = stub.messageCreate.mock.calls[1]?.[0] as {
+      data: Record<string, unknown>;
+    };
+    expect(assistantCall.data["flagged"]).toBe(true);
+
+    const surfaced = tracked.find(
+      (t) => t.event === "mentor_output_flagged_for_review",
+    );
+    expect(surfaced).toBeDefined();
+    expect((surfaced?.payload as { reason?: string } | undefined)?.reason).toBe(
+      "low_confidence:empty",
+    );
+  });
+
+  it("flags low-confidence (uncertainty marker) outputs", async () => {
+    const stub = makePrismaStub();
+    stub.threadFindFirst.mockResolvedValue({ id: "thread-lc-unc" });
+    stub.messageCreate.mockResolvedValue({ id: "row" });
+
+    const gateway = new MockLLMGateway(
+      () =>
+        "I don't know how to interpret that constraint without more information.",
+    );
+    const tracked: Array<{ event: string; payload: unknown }> = [];
+
+    const result = await runMentorRequest({
+      enrollment: { id: ENR_ID, packageVersionId: PV_ID },
+      stage: { ref: STAGE_REF, stagePolicy: policy() },
+      mode: "hint",
+      message: "Walk me through the constraint.",
+      gateway,
+      prisma: stub.prisma,
+      withQueryTimeout: async (p) => p,
+      track: async (event, payload) => {
+        tracked.push({ event, payload });
+      },
+    });
+
+    if (result.kind !== "ok") throw new Error("expected ok outcome");
+    expect(result.flagged).toBe(true);
+    expect(result.flagReason).toBe("low_confidence:uncertainty");
+
+    const surfaced = tracked.find(
+      (t) => t.event === "mentor_output_flagged_for_review",
+    );
+    expect(surfaced).toBeDefined();
+    expect((surfaced?.payload as { reason?: string } | undefined)?.reason).toBe(
+      "low_confidence:uncertainty",
+    );
+  });
+
+  it("flags low-confidence (truncated finish reason) outputs", async () => {
+    const stub = makePrismaStub();
+    stub.threadFindFirst.mockResolvedValue({ id: "thread-lc-trunc" });
+    stub.messageCreate.mockResolvedValue({ id: "row" });
+
+    // Custom gateway so we can set finishReason='max_tokens'. The mock
+    // gateway always reports 'end_turn', which doesn't exercise this path.
+    class TruncGateway implements LLMGateway {
+      async complete(req: LLMRequest): Promise<LLMResponse> {
+        const text =
+          "Here is the start of an explanation that runs over budget and gets cut";
+        return {
+          text,
+          modelTier: req.modelTier,
+          modelId: req.modelId,
+          provider: "mock",
+          promptTokens: 10,
+          completionTokens: 10,
+          finishReason: "max_tokens",
+        };
+      }
+    }
+
+    const tracked: Array<{ event: string; payload: unknown }> = [];
+    const result = await runMentorRequest({
+      enrollment: { id: ENR_ID, packageVersionId: PV_ID },
+      stage: { ref: STAGE_REF, stagePolicy: policy() },
+      mode: "hint",
+      message: "Explain the loss.",
+      gateway: new TruncGateway(),
+      prisma: stub.prisma,
+      withQueryTimeout: async (p) => p,
+      track: async (event, payload) => {
+        tracked.push({ event, payload });
+      },
+    });
+
+    if (result.kind !== "ok") throw new Error("expected ok outcome");
+    expect(result.flagged).toBe(true);
+    expect(result.flagReason).toBe("low_confidence:truncated");
+    const surfaced = tracked.find(
+      (t) => t.event === "mentor_output_flagged_for_review",
+    );
+    expect(surfaced).toBeDefined();
+    expect((surfaced?.payload as { reason?: string } | undefined)?.reason).toBe(
+      "low_confidence:truncated",
+    );
+  });
+
+  it("does not flag healthy responses and does not emit the surfacing event", async () => {
+    const stub = makePrismaStub();
+    stub.threadFindFirst.mockResolvedValue({ id: "thread-clean" });
+    stub.messageCreate.mockResolvedValue({ id: "row" });
+
+    const gateway = new MockLLMGateway(
+      () =>
+        "Try restating the constraint as an inequality and check which side the candidate violates.",
+    );
+    const tracked: Array<{ event: string; payload: unknown }> = [];
+
+    const result = await runMentorRequest({
+      enrollment: { id: ENR_ID, packageVersionId: PV_ID },
+      stage: { ref: STAGE_REF, stagePolicy: policy() },
+      mode: "hint",
+      message: "How do I read the constraint?",
+      gateway,
+      prisma: stub.prisma,
+      withQueryTimeout: async (p) => p,
+      track: async (event, payload) => {
+        tracked.push({ event, payload });
+      },
+    });
+
+    if (result.kind !== "ok") throw new Error("expected ok outcome");
+    expect(result.flagged).toBe(false);
+    expect(result.flagReason).toBeNull();
+    expect(
+      tracked.some((t) => t.event === "mentor_output_flagged_for_review"),
+    ).toBe(false);
+  });
+});
+
+describe("detectLowConfidence", () => {
+  it("returns 'low_confidence:empty' for blank or very short text", () => {
+    expect(detectLowConfidence("", "end_turn")).toBe("low_confidence:empty");
+    expect(detectLowConfidence("   ", "end_turn")).toBe(
+      "low_confidence:empty",
+    );
+    expect(detectLowConfidence("short.", "end_turn")).toBe(
+      "low_confidence:empty",
+    );
+  });
+
+  it("returns 'low_confidence:truncated' for max_tokens / length finish reasons", () => {
+    const longText =
+      "This is a reasonably long response that should be considered long enough.";
+    expect(detectLowConfidence(longText, "max_tokens")).toBe(
+      "low_confidence:truncated",
+    );
+    expect(detectLowConfidence(longText, "length")).toBe(
+      "low_confidence:truncated",
+    );
+  });
+
+  it("returns 'low_confidence:uncertainty' for refusal-style markers (case-insensitive)", () => {
+    expect(
+      detectLowConfidence(
+        "I'm not sure what this constraint means in this context.",
+        "end_turn",
+      ),
+    ).toBe("low_confidence:uncertainty");
+    expect(
+      detectLowConfidence(
+        "I cannot determine the right branch from the evidence shown.",
+        "end_turn",
+      ),
+    ).toBe("low_confidence:uncertainty");
+    expect(
+      detectLowConfidence(
+        "I DON'T KNOW which option matches the rubric here.",
+        "end_turn",
+      ),
+    ).toBe("low_confidence:uncertainty");
+  });
+
+  it("returns null for healthy, confident responses", () => {
+    expect(
+      detectLowConfidence(
+        "Consider restating the constraint as an inequality and checking the boundary.",
+        "end_turn",
+      ),
+    ).toBeNull();
+    expect(
+      detectLowConfidence(
+        "You might consider how the rubric weighs evidence vs structure here.",
+        undefined,
+      ),
+    ).toBeNull();
   });
 });

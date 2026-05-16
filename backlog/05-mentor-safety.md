@@ -48,7 +48,16 @@ reflect that snapshot.
 - [x] Record `model_tier`, `model_id`, `provider`, prompt token count, and
       completion token count on every `mentor_messages` row for cost and quality
       audits.
-- [ ] Surface low-confidence or policy-violating outputs for review.
+- [x] Surface low-confidence or policy-violating outputs for review.
+      _(landed: `apps/web/lib/mentor-runtime.ts` exports
+      `detectLowConfidence` and sets `MentorMessage.flagged=true` plus a
+      `flagReason` (`"policy_violation"` for leak-test failures, or
+      `"low_confidence:{empty,truncated,uncertainty}"`) on the assistant
+      row. Every flagged message emits an audit-grade
+      `mentor_output_flagged_for_review` telemetry event
+      (`packages/telemetry/src/events.ts`) carrying the same reason for
+      the review queue. Review queue UI / package-author + reviewer
+      visibility remain tracked under §Review Queue below.)_
 
 ## Cost Caps
 

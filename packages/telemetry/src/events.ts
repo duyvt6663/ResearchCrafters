@@ -140,6 +140,19 @@ export interface MentorFeedbackRequestedEvent {
   threadId?: string;
 }
 
+export interface MentorOutputFlaggedForReviewEvent {
+  name: 'mentor_output_flagged_for_review';
+  enrollmentId: string;
+  stageRef: string;
+  threadId?: string;
+  messageId?: string;
+  // 'policy_violation' (leak-test failure) | 'low_confidence:<sub>'
+  // where <sub> is one of: empty, truncated, uncertainty.
+  reason: string;
+  modelTier?: string;
+  modelId?: string;
+}
+
 export interface StageCompletedEvent {
   name: 'stage_completed';
   enrollmentId: string;
@@ -193,6 +206,7 @@ export type TelemetryEvent =
   | EvaluatorRedactionTriggeredEvent
   | MentorHintRequestedEvent
   | MentorFeedbackRequestedEvent
+  | MentorOutputFlaggedForReviewEvent
   | StageCompletedEvent
   | ShareCardCreatedEvent
   | ShareCardUnsharedEvent
@@ -213,6 +227,7 @@ export const AUDIT_GRADE_EVENTS: ReadonlySet<TelemetryEventName> = new Set<
   'grade_created',
   'grade_overridden',
   'evaluator_redaction_triggered',
+  'mentor_output_flagged_for_review',
   'subscription_started',
   'branch_feedback_unlocked',
 ]);

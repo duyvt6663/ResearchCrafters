@@ -39,6 +39,7 @@ describe('AUDIT_GRADE_EVENTS', () => {
         'grade_created',
         'grade_overridden',
         'evaluator_redaction_triggered',
+        'mentor_output_flagged_for_review',
         'subscription_started',
         'branch_feedback_unlocked',
       ]),

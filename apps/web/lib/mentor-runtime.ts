@@ -102,7 +102,8 @@ export interface MentorRuntimeInput {
 export type TelemetryEventName =
   | "mentor_hint_requested"
   | "mentor_feedback_requested"
-  | "evaluator_redaction_triggered";
+  | "evaluator_redaction_triggered"
+  | "mentor_output_flagged_for_review";
 export type TelemetryPayload = Record<string, string | number | boolean | null>;
 
 export type MentorRuntimeOutcome =
@@ -113,6 +114,20 @@ export type MentorRuntimeOutcome =
       assistantText: string;
       redactionTriggered: boolean;
       flagged: boolean;
+      /**
+       * Reason the assistant message was flagged for review, or `null` when
+       * it was not flagged. One of:
+       *   - "policy_violation" — leak-test attack surfaced a redaction target.
+       *   - "low_confidence:empty" — provider returned empty/very short text.
+       *   - "low_confidence:truncated" — provider stopped on max-tokens.
+       *   - "low_confidence:uncertainty" — output matches an uncertainty
+       *     marker (e.g. "I don't know", "I'm not sure", "I cannot determine").
+       * Surfaces the rationale to the review queue so reviewers can triage by
+       * cause. The persisted `MentorMessage.flagged` boolean index lets the
+       * future review queue query open items; `mentor_output_flagged_for_review`
+       * telemetry carries the same reason for the audit-grade event log.
+       */
+      flagReason: string | null;
       modelTier: ModelTier;
       modelId: string;
       provider: string;
@@ -123,6 +138,66 @@ export type MentorRuntimeOutcome =
       kind: "policy_misconfig";
       reason: string;
     };
+
+/**
+ * Low-confidence detection thresholds and uncertainty markers. Tuned to be
+ * conservative — false positives only increase the review queue volume; they
+ * do not refuse the learner. Reviewers can re-tune by walking the queue.
+ *
+ * Markers are matched case-insensitively as substrings on the post-redaction
+ * assistant text. Keep this list short and explicit; broad regex matches
+ * would catch legitimate hedged answers ("you might consider...").
+ */
+const LOW_CONFIDENCE_MIN_CHARS = 16;
+const LOW_CONFIDENCE_UNCERTAINTY_MARKERS: ReadonlyArray<string> = [
+  "i don't know",
+  "i do not know",
+  "i'm not sure",
+  "i am not sure",
+  "i cannot determine",
+  "i can't determine",
+  "i'm unable to answer",
+  "i am unable to answer",
+  "i don't have enough information",
+  "i do not have enough information",
+];
+const LOW_CONFIDENCE_TRUNCATED_FINISH_REASONS: ReadonlyArray<string> = [
+  "max_tokens",
+  "length",
+];
+
+/**
+ * Inspect the assistant response for low-confidence signals worth flagging
+ * for review. Returns `null` when the response looks healthy, otherwise a
+ * `"low_confidence:<sub>"` reason tag matching `MentorRuntimeOutcome.flagReason`.
+ *
+ * Heuristic only — the gateway does not expose calibrated confidence scores
+ * today. The reviewer queue ("Review Queue" section in
+ * `backlog/05-mentor-safety.md`) is the human-in-the-loop on top of this
+ * detector; tune thresholds from queue triage feedback.
+ */
+export function detectLowConfidence(
+  text: string,
+  finishReason: string | undefined,
+): string | null {
+  const trimmed = text.trim();
+  if (trimmed.length < LOW_CONFIDENCE_MIN_CHARS) {
+    return "low_confidence:empty";
+  }
+  if (
+    finishReason !== undefined &&
+    LOW_CONFIDENCE_TRUNCATED_FINISH_REASONS.includes(finishReason)
+  ) {
+    return "low_confidence:truncated";
+  }
+  const lower = trimmed.toLowerCase();
+  for (const marker of LOW_CONFIDENCE_UNCERTAINTY_MARKERS) {
+    if (lower.includes(marker)) {
+      return "low_confidence:uncertainty";
+    }
+  }
+  return null;
+}
 
 const DEFAULT_VISIBILITY: MentorRuntimeVisibility = {
   hasAttempt: false,
@@ -285,9 +360,11 @@ export async function runMentorRequest(
   let assistantText = gatewayResponse.text;
   let redactionTriggered = false;
   let flagged = false;
+  let flagReason: string | null = null;
 
   if (!leakResult.passed) {
     flagged = true;
+    flagReason = "policy_violation";
     redactionTriggered = true;
     const refusal = mentorRefusal({ scope: "flagged_output" });
     assistantText = `${refusal.title}\n\n${refusal.body}`;
@@ -313,6 +390,18 @@ export async function runMentorRequest(
         reason: "redaction_target_matched",
         targetCount: redaction.matchedTargets.length,
       });
+    }
+
+    // Low-confidence detection runs on the post-redaction text. Heuristic
+    // only — surfaces the message to the review queue but never refuses the
+    // learner. See `backlog/05-mentor-safety.md` §Review Queue for follow-ups.
+    const lowConfidence = detectLowConfidence(
+      assistantText,
+      gatewayResponse.finishReason,
+    );
+    if (lowConfidence !== null) {
+      flagged = true;
+      flagReason = lowConfidence;
     }
   }
 
@@ -368,6 +457,18 @@ export async function runMentorRequest(
     }),
   );
 
+  if (flagged && flagReason !== null) {
+    await track("mentor_output_flagged_for_review", {
+      enrollmentId: input.enrollment.id,
+      stageRef: input.stage.ref,
+      threadId: thread.id,
+      messageId: assistantRow.id,
+      reason: flagReason,
+      modelTier: tier,
+      modelId,
+    });
+  }
+
   return {
     kind: "ok",
     threadId: thread.id,
@@ -375,6 +476,7 @@ export async function runMentorRequest(
     assistantText,
     redactionTriggered,
     flagged,
+    flagReason,
     modelTier: tier,
     modelId,
     provider: gatewayResponse.provider,
