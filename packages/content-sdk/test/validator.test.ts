@@ -132,3 +132,181 @@ describe('validatePackage detects errors', () => {
     expect(r.errors.some((e) => e.code === 'fixture.hash_mismatch')).toBe(true);
   });
 });
+
+// Writing-module pedagogy contract. Synthetic in-memory LoadedPackage so the
+// test does not depend on a fixture on disk. `skipLeakTests: true` avoids
+// running the leak harness over a non-existent package directory.
+describe('validatePedagogy writing-module contract', () => {
+  function makeWritingPackage(overrides: {
+    evidenceRefs?: string[];
+    sourceRefs?: string[];
+    prompt?: string;
+    validationKind?: 'rubric' | 'hybrid' | 'test' | 'metric';
+    rubricRef?: string;
+    includeRubric?: boolean;
+    rubricDimensions?: number;
+    canonicalMd?: string;
+    misconceptions?: string[];
+    hintsRef?: string;
+  }) {
+    const rubricRef = overrides.rubricRef ?? 'curriculum/rubrics/writing.yaml';
+    const dims =
+      overrides.rubricDimensions ?? 4;
+    const stage = {
+      id: 'W001',
+      title: 'A writing stage',
+      type: 'writing',
+      difficulty: 'medium',
+      estimated_time_minutes: 15,
+      artifact_refs: [],
+      evidence_refs: overrides.evidenceRefs,
+      source_refs: overrides.sourceRefs,
+      task: {
+        prompt_md:
+          overrides.prompt ??
+          'Write a one-paragraph claim. Cite the supporting evidence by path.',
+      },
+      stage_policy: {
+        mentor_visibility: {
+          stage_copy: 'always',
+          artifact_refs: 'always',
+          rubric: 'always',
+          evidence: 'always',
+          branch_feedback: 'after_attempt',
+          canonical_solution: 'after_completion',
+          branch_solutions: 'never',
+        },
+        runner: { mode: 'none' },
+        validation: {
+          kind: overrides.validationKind ?? 'rubric',
+          rubric: overrides.rubricRef === null ? undefined : rubricRef,
+        },
+        inputs: { mode: 'free_text' },
+        hints: overrides.hintsRef
+          ? { progressive: overrides.hintsRef }
+          : undefined,
+        feedback: {
+          canonical_md: overrides.canonicalMd,
+          common_misconceptions: overrides.misconceptions,
+        },
+      },
+    } as never;
+    const rubrics =
+      overrides.includeRubric === false
+        ? []
+        : [
+            {
+              ref: rubricRef,
+              path: `/x/${rubricRef}`,
+              data: {
+                id: 'rubric-w',
+                pass_threshold: 0.6,
+                dimensions: Array.from({ length: dims }, (_, i) => ({
+                  id: `d${i}`,
+                  label: `dim ${i}`,
+                  description: '',
+                  weight: 1,
+                  criteria: ['c'],
+                })),
+              } as never,
+            },
+          ];
+    return {
+      root: '/tmp/synthetic-writing',
+      package: { slug: 'synthetic' } as never,
+      graph: { nodes: [] } as never,
+      stages: [{ ref: 'curriculum/stages/w001.yaml', path: '/x/w001.yaml', data: stage }],
+      branches: [],
+      rubrics,
+      hints: [],
+      runner: null,
+      solutions: { canonicalFiles: [], branchFiles: [] },
+      artifact: {
+        paperMd: null,
+        logicFiles: [],
+        srcFiles: [],
+        traceTreePath: null,
+        evidencePaths: [],
+      },
+    } as never;
+  }
+
+  it('accepts a writing stage with evidence, citation policy, rubric, and revision signal', async () => {
+    const loaded = makeWritingPackage({
+      evidenceRefs: ['artifact/evidence/x.md'],
+      canonicalMd: 'A strong claim looks like ...',
+    });
+    const r = await validatePedagogy(loaded, { skipLeakTests: true });
+    const writingErrors = r.errors.filter((e) =>
+      e.code.startsWith('stage.writing.'),
+    );
+    const writingWarnings = r.warnings.filter((w) =>
+      w.code.startsWith('stage.writing.'),
+    );
+    expect(writingErrors, JSON.stringify(writingErrors, null, 2)).toEqual([]);
+    expect(writingWarnings, JSON.stringify(writingWarnings, null, 2)).toEqual([]);
+  });
+
+  it('flags missing evidence_refs and source_refs as an error', async () => {
+    const loaded = makeWritingPackage({
+      canonicalMd: 'guidance',
+    });
+    const r = await validatePedagogy(loaded, { skipLeakTests: true });
+    expect(
+      r.errors.some(
+        (e) => e.code === 'stage.writing.evidence_constraints.missing',
+      ),
+    ).toBe(true);
+  });
+
+  it('warns when task.prompt_md omits a citation policy', async () => {
+    const loaded = makeWritingPackage({
+      evidenceRefs: ['artifact/evidence/x.md'],
+      prompt: 'Write three sentences explaining the mechanism.',
+      canonicalMd: 'guidance',
+    });
+    const r = await validatePedagogy(loaded, { skipLeakTests: true });
+    expect(
+      r.warnings.some(
+        (w) => w.code === 'stage.writing.citation_policy.unspecified',
+      ),
+    ).toBe(true);
+  });
+
+  it('errors when validation.kind is not rubric/hybrid for a writing stage', async () => {
+    const loaded = makeWritingPackage({
+      evidenceRefs: ['artifact/evidence/x.md'],
+      validationKind: 'test',
+      canonicalMd: 'guidance',
+    });
+    const r = await validatePedagogy(loaded, { skipLeakTests: true });
+    expect(
+      r.errors.some((e) => e.code === 'stage.writing.rubric.missing'),
+    ).toBe(true);
+  });
+
+  it('errors when the rubric reference cannot be resolved', async () => {
+    const loaded = makeWritingPackage({
+      evidenceRefs: ['artifact/evidence/x.md'],
+      includeRubric: false,
+      canonicalMd: 'guidance',
+    });
+    const r = await validatePedagogy(loaded, { skipLeakTests: true });
+    expect(
+      r.errors.some((e) => e.code === 'stage.writing.rubric.unresolved'),
+    ).toBe(true);
+  });
+
+  it('warns when no revision signal is present', async () => {
+    const loaded = makeWritingPackage({
+      evidenceRefs: ['artifact/evidence/x.md'],
+      // No canonical_md, no misconceptions, no hints.
+    });
+    const r = await validatePedagogy(loaded, { skipLeakTests: true });
+    expect(
+      r.warnings.some(
+        (w) => w.code === 'stage.writing.revision_behavior.missing',
+      ),
+    ).toBe(true);
+  });
+});
