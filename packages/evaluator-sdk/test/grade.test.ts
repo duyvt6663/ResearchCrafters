@@ -274,6 +274,117 @@ describe('gradeAttempt', () => {
     expect(grade.feedback).toContain('placeholder');
   });
 
+  it('omits writingEvaluator metadata for non-writing grades', async () => {
+    const store = new InMemoryGradeStore();
+    const grade = await gradeAttempt({
+      stage: makeStage('test'),
+      rubric: makeRubric(),
+      rubricVersion: 'v1',
+      submission,
+      runArtifacts: {
+        executionStatus: 'ok',
+        testResults: [{ name: 't1', passed: true }],
+      },
+      store,
+    });
+    expect(grade.writingEvaluator).toBeUndefined();
+  });
+
+  it('emits writingEvaluator metadata when a citation policy is enforced', async () => {
+    const store = new InMemoryGradeStore();
+    const grade = await gradeAttempt({
+      stage: makeStage('test'),
+      rubric: makeRubric(),
+      rubricVersion: 'v3-writing',
+      submission,
+      runArtifacts: {
+        executionStatus: 'ok',
+        testResults: [{ name: 't1', passed: true }],
+      },
+      store,
+      citationPolicy: {
+        policy: {
+          allowedEvidenceRefs: ['E1', 'E2'],
+          placeholderTokens: ['<TBD>'],
+          placeholderAllowed: true,
+        },
+        claims: [
+          { id: 'c1', text: 'cited', citedRefs: ['E1'] },
+          { id: 'c2', text: 'placeholder', citedRefs: ['<TBD>'] },
+        ],
+        mode: 'flag',
+      },
+    });
+    expect(grade.writingEvaluator).toBeDefined();
+    expect(grade.writingEvaluator?.rubricVersion).toBe('v3-writing');
+    expect(grade.writingEvaluator?.citationPolicy).toMatchObject({
+      mode: 'flag',
+      verdict: 'passed',
+      allowedEvidenceRefs: ['E1', 'E2'],
+      placeholderTokens: ['<TBD>'],
+      placeholderAllowed: true,
+      claimsTotal: 2,
+      claimsPassed: 2,
+      claimsFailed: 0,
+    });
+    expect(grade.writingEvaluator?.citationPolicy?.claimsFlagged).toBeGreaterThan(0);
+  });
+
+  it('emits writingEvaluator.redaction with targets even when redaction did not fire', async () => {
+    const store = new InMemoryGradeStore();
+    const grade = await gradeAttempt({
+      stage: makeStage('test'),
+      rubric: makeRubric(),
+      rubricVersion: 'v1',
+      submission,
+      runArtifacts: {
+        executionStatus: 'ok',
+        testResults: [{ name: 't1', passed: true }],
+      },
+      store,
+      redaction: {
+        triggered: false,
+        targets: ['secret-canonical-phrase'],
+      },
+    });
+    expect(grade.writingEvaluator?.redaction).toEqual({
+      triggered: false,
+      targets: ['secret-canonical-phrase'],
+      matchedTargets: [],
+    });
+    expect(grade.writingEvaluator?.citationPolicy).toBeUndefined();
+  });
+
+  it('emits writingEvaluator.redaction with matched targets when redaction fires', async () => {
+    const store = new InMemoryGradeStore();
+    const grade = await gradeAttempt({
+      stage: makeStage('test'),
+      rubric: makeRubric(),
+      rubricVersion: 'v1',
+      submission,
+      runArtifacts: {
+        executionStatus: 'ok',
+        testResults: [{ name: 't1', passed: true }],
+      },
+      store,
+      citationPolicy: {
+        policy: { allowedEvidenceRefs: ['E1'] },
+        claims: [{ id: 'c1', text: 'cited', citedRefs: ['E1'] }],
+        mode: 'flag',
+      },
+      redaction: {
+        triggered: true,
+        targets: ['canonical-token-A', 'canonical-token-B'],
+        matchedTargets: ['canonical-token-A'],
+      },
+    });
+    expect(grade.writingEvaluator?.redaction?.triggered).toBe(true);
+    expect(grade.writingEvaluator?.redaction?.matchedTargets).toEqual([
+      'canonical-token-A',
+    ]);
+    expect(grade.writingEvaluator?.citationPolicy?.claimsTotal).toBe(1);
+  });
+
   it('appends overrides without overwriting prior history', async () => {
     const store = new InMemoryGradeStore();
     const grade = await gradeAttempt({

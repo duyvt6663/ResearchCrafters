@@ -44,6 +44,51 @@ export interface GradeOverrideEntry {
   };
 }
 
+/**
+ * Provenance metadata for academic-writing stages. Emitted on the grade so
+ * downstream consumers (UI, audit log, telemetry) can render which evidence
+ * the stage allowed, which citation-policy mode was in effect, and whether a
+ * redaction pass was wired up — without re-reading the stage policy.
+ *
+ * The block is only attached when the caller supplied `citationPolicy` or
+ * `redaction` to `gradeAttempt`; non-writing stages omit it entirely so the
+ * payload shape stays the same as before.
+ */
+export interface WritingEvaluatorMetadata {
+  /** Rubric version captured at grade time. Mirrors `Grade.rubricVersion`. */
+  rubricVersion: string;
+  /** Citation-policy snapshot, populated when a policy was enforced. */
+  citationPolicy?: {
+    /** Mode under which the policy ran. */
+    mode: 'strict' | 'flag';
+    /** Verdict from `enforceCitationPolicy` (always `passed` for emitted grades). */
+    verdict: 'passed' | 'failed';
+    /** Allowed evidence refs the stage permitted. */
+    allowedEvidenceRefs: ReadonlyArray<string>;
+    /** Placeholder tokens, if the stage opted in. */
+    placeholderTokens?: ReadonlyArray<string>;
+    /** Whether placeholder tokens were honored as satisfying citations. */
+    placeholderAllowed?: boolean;
+    /** Total claims checked. */
+    claimsTotal: number;
+    /** Claims that satisfied the policy. */
+    claimsPassed: number;
+    /** Claims that failed (no citation, disallowed ref, disallowed placeholder, invalid). */
+    claimsFailed: number;
+    /** Claims surfaced for rubric attention (failing or placeholder-flagged). */
+    claimsFlagged: number;
+  };
+  /** Redaction snapshot for LLM-grader output, when supplied. */
+  redaction?: {
+    /** Whether the redactor matched at least one target. */
+    triggered: boolean;
+    /** Targets that were configured for redaction. */
+    targets: ReadonlyArray<string>;
+    /** Targets that actually matched in the LLM output. */
+    matchedTargets: ReadonlyArray<string>;
+  };
+}
+
 export interface Grade {
   id: string;
   submissionId: string;
@@ -65,6 +110,12 @@ export interface Grade {
     completionTokens: number;
     redactionTriggered: boolean;
   };
+  /**
+   * Writing-evaluator provenance: allowed evidence refs, citation policy,
+   * and redaction status. Present only for stages that exercised the writing
+   * evaluator path.
+   */
+  writingEvaluator?: WritingEvaluatorMetadata;
   /** Reviewer overrides — appended only, never mutated. */
   history: ReadonlyArray<GradeOverrideEntry>;
   createdAt: string;

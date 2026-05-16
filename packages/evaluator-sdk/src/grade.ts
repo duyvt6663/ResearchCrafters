@@ -6,6 +6,7 @@ import type {
   RubricDimensionScore,
   RunArtifacts,
   SubmissionInput,
+  WritingEvaluatorMetadata,
 } from './types.js';
 import { idempotencyKey, type GradeStore } from './idempotency.js';
 import type { IntermediateStore } from './intermediate.js';
@@ -71,6 +72,18 @@ export interface GradeAttemptInput {
     policy: WritingClaimPolicy;
     claims: ReadonlyArray<WritingClaimSpec>;
     mode?: CitationEnforcementMode;
+  };
+  /**
+   * Redaction snapshot for the writing-evaluator path. Callers that ran the
+   * LLM grader (or a mentor-quote redaction pass) supply the targets they
+   * configured plus the redactor's outcome. The values are surfaced on
+   * `Grade.writingEvaluator.redaction` so audit/telemetry can confirm a
+   * redaction pass was wired up even when nothing matched.
+   */
+  redaction?: {
+    triggered: boolean;
+    targets: ReadonlyArray<string>;
+    matchedTargets?: ReadonlyArray<string>;
   };
 }
 
@@ -261,6 +274,13 @@ export async function gradeAttempt(input: GradeAttemptInput): Promise<Grade> {
   const rubricScore = aggregateScore(dimensions);
   const status = deriveStatus(rubricScore, passThreshold);
 
+  const writingEvaluator = buildWritingEvaluatorMetadata({
+    rubricVersion: input.rubricVersion,
+    citationPolicy: input.citationPolicy,
+    citationResult,
+    redaction: input.redaction,
+  });
+
   const grade: Grade = {
     id: newId(),
     submissionId: input.submission.id,
@@ -272,11 +292,53 @@ export async function gradeAttempt(input: GradeAttemptInput): Promise<Grade> {
     passThreshold,
     dimensions,
     feedback: buildFeedback(status, dimensions, citationResult),
+    ...(writingEvaluator ? { writingEvaluator } : {}),
     history: [],
     createdAt: now(),
   };
 
   return input.store.insert(grade);
+}
+
+function buildWritingEvaluatorMetadata(args: {
+  rubricVersion: string;
+  citationPolicy: GradeAttemptInput['citationPolicy'];
+  citationResult: CitationEnforcementResult | undefined;
+  redaction: GradeAttemptInput['redaction'];
+}): WritingEvaluatorMetadata | undefined {
+  const { rubricVersion, citationPolicy, citationResult, redaction } = args;
+  if (!citationPolicy && !redaction) return undefined;
+
+  const meta: WritingEvaluatorMetadata = { rubricVersion };
+
+  if (citationPolicy && citationResult) {
+    const policy = citationPolicy.policy;
+    meta.citationPolicy = {
+      mode: citationResult.mode,
+      verdict: citationResult.verdict,
+      allowedEvidenceRefs: [...policy.allowedEvidenceRefs],
+      ...(policy.placeholderTokens !== undefined
+        ? { placeholderTokens: [...policy.placeholderTokens] }
+        : {}),
+      ...(policy.placeholderAllowed !== undefined
+        ? { placeholderAllowed: policy.placeholderAllowed }
+        : {}),
+      claimsTotal: citationResult.batch.total,
+      claimsPassed: citationResult.batch.passed,
+      claimsFailed: citationResult.batch.failed,
+      claimsFlagged: citationResult.batch.flagged,
+    };
+  }
+
+  if (redaction) {
+    meta.redaction = {
+      triggered: redaction.triggered,
+      targets: [...redaction.targets],
+      matchedTargets: redaction.matchedTargets ? [...redaction.matchedTargets] : [],
+    };
+  }
+
+  return meta;
 }
 
 function refusalFeedback(status: ExecutionStatus): string {
