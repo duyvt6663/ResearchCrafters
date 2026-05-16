@@ -88,7 +88,13 @@ reflect that snapshot.
 
 ## Math Evaluation
 
-- [ ] Add deterministic numeric checks with tolerance and unit/shape metadata.
+- [x] Add deterministic numeric checks with tolerance and unit/shape metadata.
+      _(Iteration: `packages/evaluator-sdk/src/numeric.ts` exposes
+      `checkNumeric`/`checkNumericBatch` with absolute+relative tolerance
+      (numpy-isclose semantics), unit equality, scalar/vector/tensor shape
+      inference and shape-table gating, and a `metricsToObservations`
+      adapter for `RunArtifacts.metrics`. Public types and helpers are
+      re-exported from `packages/evaluator-sdk/src/index.ts`.)_
 - [ ] Add shape-table and memory/complexity checks for implementation-linked
       math stages.
 - [ ] Add per-step partial credit for derivation modules.
