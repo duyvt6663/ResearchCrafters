@@ -6,7 +6,7 @@ import {
   InMemoryGradeStore,
   InMemoryIntermediateStore,
 } from '../src/index.js';
-import type { RunArtifacts, SubmissionInput } from '../src/index.js';
+import type { SubmissionInput } from '../src/index.js';
 
 function makeStage(
   runnerMode: 'test' | 'replay' | 'mini_experiment' | 'none' = 'test',
