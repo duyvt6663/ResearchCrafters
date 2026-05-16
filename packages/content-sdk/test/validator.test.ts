@@ -115,6 +115,68 @@ describe('validatePackage detects errors', () => {
     expect(titleIssue, JSON.stringify(structural, null, 2)).toBeDefined();
   });
 
+  it('flags trace exploration_tree dangling parents, edges, and branch_id', async () => {
+    const SAMPLE = path.join(__dirname, 'fixtures', 'sample-package');
+    const tmpRoot = path.join(__dirname, 'fixtures', '.tmp-trace-bad');
+    await fs.rm(tmpRoot, { recursive: true, force: true });
+    await fs.cp(SAMPLE, tmpRoot, { recursive: true });
+    const tracePath = path.join(tmpRoot, 'artifact', 'trace', 'exploration_tree.yaml');
+    const badTrace = [
+      'nodes:',
+      '  - id: T001',
+      '    refs:',
+      '      - artifact/logic/problem.md',
+      '    parents: [TGHOST]',
+      '    children: [TMISSING]',
+      '  - id: T002',
+      '    kind: branch',
+      '    branch_id: no-such-branch',
+      '    parents: [T001]',
+      '  - id: T003',
+      '    kind: branch',
+      '    branch_id: branch-a',
+      '    parents: [T001]',
+      '  - id: T004',
+      '    kind: branch',
+      '    branch_id: branch-a',
+      '    parents: [T001]',
+      'edges:',
+      '  - from: T001',
+      '    to: T002',
+      '  - from: T001',
+      '    to: TGHOST',
+      '  - from: T002',
+      '    to: T002',
+      '',
+    ].join('\n');
+    await fs.writeFile(tracePath, badTrace, 'utf8');
+    const loaded = await loadPackage(tmpRoot);
+    const r = await validateAraCrossLink(loaded);
+    const codes = new Set(r.errors.concat(r.warnings).map((i) => i.code));
+    expect(codes.has('trace.parent.missing'), JSON.stringify([...codes])).toBe(true);
+    expect(codes.has('trace.child.missing')).toBe(true);
+    expect(codes.has('trace.edge.endpoint_missing')).toBe(true);
+    expect(codes.has('trace.branch_id.unresolved')).toBe(true);
+    expect(codes.has('trace.edge.self_loop')).toBe(true);
+    expect(codes.has('trace.branch_id.duplicate')).toBe(true);
+    await fs.rm(tmpRoot, { recursive: true, force: true });
+  });
+
+  it('warns when a curriculum branch has no trace branch node', async () => {
+    const SAMPLE = path.join(__dirname, 'fixtures', 'sample-package');
+    const tmpRoot = path.join(__dirname, 'fixtures', '.tmp-trace-unmapped');
+    await fs.rm(tmpRoot, { recursive: true, force: true });
+    await fs.cp(SAMPLE, tmpRoot, { recursive: true });
+    // Sample fixture has branch-a in curriculum but no kind:branch trace node.
+    const loaded = await loadPackage(tmpRoot);
+    const r = await validateAraCrossLink(loaded);
+    const unmapped = r.warnings.find(
+      (w) => w.code === 'trace.branch.unmapped' && w.ref === 'branch-a',
+    );
+    expect(unmapped, JSON.stringify(r.warnings, null, 2)).toBeDefined();
+    await fs.rm(tmpRoot, { recursive: true, force: true });
+  });
+
   it('detects fixture hash mismatch', async () => {
     const loaded = await loadPackage(FIXTURE);
     if (loaded.runner) {
