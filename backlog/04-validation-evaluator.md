@@ -126,7 +126,17 @@ reflect that snapshot.
 - [ ] Add rubric dimensions for claim precision, evidence grounding, caveat
       discipline, contribution framing, citation hygiene, reproducibility
       detail, and concision.
-- [ ] Reject or flag unsupported claims that cite no allowed evidence ref.
+- [x] Reject or flag unsupported claims that cite no allowed evidence ref.
+      _(Iteration: `packages/evaluator-sdk/src/writing-claims.ts` adds the
+      deterministic primitive `checkWritingClaim` /
+      `checkWritingClaimBatch` plus stage-level composition
+      `enforceCitationPolicy` and the `extractCitationRefs` bracket
+      helper. Per-claim verdicts surface `{ passed, flagged, reason,
+      acceptedRefs, disallowedRefs, placeholderRefs }` with reason codes
+      `no_citation`, `disallowed_citation`, `placeholder_disallowed`,
+      `spec_invalid`. The primitive is intentionally not wired into
+      `gradeAttempt`/`llmGrade` yet — citation-policy enforcement is the
+      next item below.)_
 - [ ] Enforce citation policy: verified allowed citations only, or explicit
       placeholders where the stage allows placeholders.
 - [ ] Add evaluator regression fixtures for strong, weak, overclaiming,

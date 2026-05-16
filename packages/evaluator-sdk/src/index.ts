@@ -77,3 +77,19 @@ export type {
   ComplexityBoundResult,
   ComplexityBoundBatch,
 } from './implementation-checks.js';
+export {
+  checkWritingClaim,
+  checkWritingClaimBatch,
+  enforceCitationPolicy,
+  extractCitationRefs,
+} from './writing-claims.js';
+export type {
+  WritingClaimSpec,
+  WritingClaimPolicy,
+  WritingClaimResult,
+  WritingClaimBatch,
+  WritingClaimFailureReason,
+  CitationEnforcementMode,
+  CitationEnforcementVerdict,
+  CitationEnforcementResult,
+} from './writing-claims.js';
