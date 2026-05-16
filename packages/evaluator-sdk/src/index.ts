@@ -26,21 +26,6 @@ export {
   RunnerArtifactParseError,
 } from './parsers/runner-artifacts.js';
 export {
-  checkNumeric,
-  checkNumericBatch,
-  inferShape,
-  metricsToObservations,
-} from './numeric.js';
-export type {
-  NumericCheckSpec,
-  NumericCheckResult,
-  NumericCheckBatch,
-  NumericCheckFailureReason,
-  NumericObservation,
-  NumericTolerance,
-  NumericValue,
-} from './numeric.js';
-export {
   checkMathFallback,
   checkProofOutline,
   checkCounterexample,
@@ -62,3 +47,33 @@ export type {
   ConceptualExplanationSpec,
   ConceptualExplanationSubmission,
 } from './math-fallback.js';
+export {
+  checkNumeric,
+  checkNumericBatch,
+  inferShape,
+  metricsToObservations,
+} from './numeric.js';
+export type {
+  NumericCheckSpec,
+  NumericCheckResult,
+  NumericCheckBatch,
+  NumericCheckFailureReason,
+  NumericObservation,
+  NumericTolerance,
+  NumericValue,
+} from './numeric.js';
+export {
+  checkShapeTable,
+  checkComplexityBound,
+  checkComplexityBatch,
+} from './implementation-checks.js';
+export type {
+  ShapeTableSpec,
+  ShapeTableEntryStatus,
+  ShapeTableEntryResult,
+  ShapeTableResult,
+  ComplexityBoundSpec,
+  ComplexityBoundFailureReason,
+  ComplexityBoundResult,
+  ComplexityBoundBatch,
+} from './implementation-checks.js';
