@@ -148,8 +148,18 @@ reflect that snapshot.
       `qa/evaluator-citation-policy-enforcement-2026-05-16.md`.)_
 - [ ] Add evaluator regression fixtures for strong, weak, overclaiming,
       citation-missing, and prompt-injection writing submissions.
-- [ ] Emit writing-evaluator metadata for allowed evidence refs, rubric
+- [x] Emit writing-evaluator metadata for allowed evidence refs, rubric
       version, citation policy, and redaction status.
+      _(Iteration: `packages/evaluator-sdk/src/types.ts` adds
+      `WritingEvaluatorMetadata` and `Grade.writingEvaluator`;
+      `gradeAttempt` (`src/grade.ts`) builds the block from the citation
+      policy snapshot (mode, verdict, allowedEvidenceRefs,
+      placeholderTokens, placeholderAllowed, claim totals) and a new
+      `redaction: { triggered, targets, matchedTargets? }` input. The
+      block is attached only when a writing-evaluator surface
+      (citationPolicy or redaction) is exercised so non-writing grades
+      are unchanged. QA report:
+      `qa/evaluator-writing-metadata-2026-05-16.md`.)_
 
 ## Human Override
 
