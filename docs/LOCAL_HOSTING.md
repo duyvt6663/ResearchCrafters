@@ -122,6 +122,37 @@ RESEARCHCRAFTERS_API_URL=https://researchcrafters.example.com
 
 Restart `./infra/scripts/host-local.sh` after changing `.env`.
 
+## Main Branch Refresh
+
+The public tunnel should point at a clean main deployment worktree, not an
+active agent or human feature branch. The Skynet main-sync hook uses the
+configured target repository as the git remote/worktree host, then maintains a
+sibling deployment worktree:
+
+```text
+/Users/duyvt6663/github/ResearchCrafters       # active development checkout
+/Users/duyvt6663/github/ResearchCrafters-main  # managed main deployment
+```
+
+On every push to `main`, `.github/workflows/telegram-notify.yml` posts to
+GoClaw's `/v1/beta/skynet-workflows/main-sync` hook. GoClaw fetches `origin`,
+fast-forwards the clean deployment worktree, and restarts the managed
+`screen` session `researchcrafters-host-main` through `infra/scripts/host-local.sh`.
+
+The refresh refuses to overwrite local edits in the deployment worktree and
+refuses to take over port `3000` if an unmanaged process is already listening.
+Stop any ad-hoc dev server before relying on the automatic main deployment:
+
+```sh
+screen -S researchcrafters-host-main -X quit
+lsof -tiTCP:3000 -sTCP:LISTEN
+```
+
+Optional GitHub secrets:
+
+- `GOCLAW_SKYNET_DEPLOY_REPO` — override the deployment worktree path.
+- `GOCLAW_SKYNET_WEB_PORT` — override the tunnel target port.
+
 ## Notes
 
 - Keep `RUNNER_DOCKER_ENABLED=false` until the Docker sandbox is implemented
