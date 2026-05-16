@@ -540,14 +540,18 @@ sibling agents are actively closing in this run:
 
 **Stubbed**
 
-- `getAuthoredRefusal` returns placeholder strings; the real per-package
-  copy lives in `@researchcrafters/ui/copy`.
+- ~~`getAuthoredRefusal` returns placeholder strings; the real per-package
+  copy lives in `@researchcrafters/ui/copy`.~~ Landed 2026-05-16:
+  `getAuthoredRefusal` now ships authored platform defaults and resolves
+  per-package overrides declared under `package.safety.mentor_refusals`.
 - `SpendStore` and `RateLimiter` are interfaces only; production wiring
   lives with the web app.
 
 **Gaps**
 
-- Author per-package refusal copy in `@researchcrafters/ui/copy`.
+- ~~Author per-package refusal copy in `@researchcrafters/ui/copy`.~~
+  Landed 2026-05-16: schema + resnet authoring + `getAuthoredRefusal`
+  resolver (see backlog/05).
 - Wire production `SpendStore` and `RateLimiter` from the web app.
 - Per-package mentor budget caps surfaced in DB.
 - Mentor message review queue UI + flagged-output triage flow.

@@ -27,5 +27,13 @@ export type {
   PriceTable,
   SpendStore,
 } from './cost-cap.js';
-export { getAuthoredRefusal } from './refusal.js';
-export type { RefusalReason } from './refusal.js';
+export {
+  getAuthoredRefusal,
+  platformDefaultRefusals,
+  MENTOR_REFUSAL_SCOPES,
+} from './refusal.js';
+export type {
+  AuthoredRefusal,
+  GetAuthoredRefusalInput,
+  MentorRefusalScope,
+} from './refusal.js';
