@@ -137,8 +137,15 @@ reflect that snapshot.
       `spec_invalid`. The primitive is intentionally not wired into
       `gradeAttempt`/`llmGrade` yet — citation-policy enforcement is the
       next item below.)_
-- [ ] Enforce citation policy: verified allowed citations only, or explicit
+- [x] Enforce citation policy: verified allowed citations only, or explicit
       placeholders where the stage allows placeholders.
+      _(Iteration: `packages/evaluator-sdk/src/writing-claims.ts` adds
+      `enforceCitationPolicy(claims, policy, { mode })` with `strict` and
+      `flag` modes; `gradeAttempt` accepts a `citationPolicy` block that
+      refuses with `EvaluatorRefusal('citation_policy_violation', …)` in
+      strict mode and appends a feedback summary in flag mode. Placeholder
+      tokens honored only when the stage policy opts in. QA report:
+      `qa/evaluator-citation-policy-enforcement-2026-05-16.md`.)_
 - [ ] Add evaluator regression fixtures for strong, weak, overclaiming,
       citation-missing, and prompt-injection writing submissions.
 - [ ] Emit writing-evaluator metadata for allowed evidence refs, rubric

@@ -9,6 +9,13 @@ import type {
 } from './types.js';
 import { idempotencyKey, type GradeStore } from './idempotency.js';
 import type { IntermediateStore } from './intermediate.js';
+import {
+  enforceCitationPolicy,
+  type CitationEnforcementMode,
+  type CitationEnforcementResult,
+  type WritingClaimPolicy,
+  type WritingClaimSpec,
+} from './writing-claims.js';
 
 const EVALUATOR_VERSION = '0.1.0';
 
@@ -50,6 +57,21 @@ export interface GradeAttemptInput {
   now?: () => string;
   /** Generates a unique grade id; tests inject. */
   newId?: () => string;
+  /**
+   * Optional citation-policy enforcement for academic-writing stages. When
+   * supplied, the evaluator runs `enforceCitationPolicy` after preflight:
+   *   - `mode: 'strict'` and any failing claim → `EvaluatorRefusal` with
+   *     reason `citation_policy_violation`.
+   *   - `mode: 'flag'` (default) → the verdict is appended to feedback so
+   *     the learner sees which claims need work; scoring continues.
+   * Callers extract or author the claim list (see `extractCitationRefs`
+   * for bracket-style claim text).
+   */
+  citationPolicy?: {
+    policy: WritingClaimPolicy;
+    claims: ReadonlyArray<WritingClaimSpec>;
+    mode?: CitationEnforcementMode;
+  };
 }
 
 /**
@@ -94,7 +116,8 @@ export class EvaluatorRefusal extends Error {
     public readonly reason:
       | 'execution_failed'
       | 'evidence_missing'
-      | 'rubric_mismatch',
+      | 'rubric_mismatch'
+      | 'citation_policy_violation',
     message: string,
   ) {
     super(message);
@@ -166,6 +189,25 @@ export async function gradeAttempt(input: GradeAttemptInput): Promise<Grade> {
     }
   }
 
+  // Citation-policy enforcement runs after preflight passes but before any
+  // dimension scoring so a strict-mode violation refuses fast and a flag-mode
+  // verdict is available to enrich feedback.
+  let citationResult: CitationEnforcementResult | undefined;
+  if (input.citationPolicy) {
+    const mode = input.citationPolicy.mode ?? 'flag';
+    citationResult = enforceCitationPolicy(
+      input.citationPolicy.claims,
+      input.citationPolicy.policy,
+      { mode },
+    );
+    if (citationResult.verdict === 'failed') {
+      throw new EvaluatorRefusal(
+        'citation_policy_violation',
+        citationResult.refusalMessage ?? citationResult.summary,
+      );
+    }
+  }
+
   const passThreshold =
     cached?.passThreshold ??
     input.stage.stage_policy.pass_threshold ??
@@ -229,7 +271,7 @@ export async function gradeAttempt(input: GradeAttemptInput): Promise<Grade> {
     rubricScore,
     passThreshold,
     dimensions,
-    feedback: buildFeedback(status, dimensions),
+    feedback: buildFeedback(status, dimensions, citationResult),
     history: [],
     createdAt: now(),
   };
@@ -251,9 +293,14 @@ function refusalFeedback(status: ExecutionStatus): string {
 function buildFeedback(
   status: GradeStatus,
   dims: ReadonlyArray<RubricDimensionScore>,
+  citation?: CitationEnforcementResult,
 ): string {
   const lines = dims.map(
     (d) => `- ${d.label}: ${(d.score * 100).toFixed(0)}%`,
   );
-  return `Status: ${status}\n${lines.join('\n')}`;
+  const base = `Status: ${status}\n${lines.join('\n')}`;
+  if (citation && citation.batch.total > 0) {
+    return `${base}\n\n${citation.summary}`;
+  }
+  return base;
 }
