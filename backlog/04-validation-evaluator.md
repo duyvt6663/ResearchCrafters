@@ -136,11 +136,31 @@ reflect that snapshot.
 
 ## Human Override
 
-- [ ] Add a reviewer-only endpoint to override a grade.
+- [x] Add a reviewer-only endpoint to override a grade.
+      _(Iteration: `apps/web/app/api/grades/[id]/override/route.ts` accepts
+      `POST /api/grades/[id]/override` with a zod-validated
+      `{ note, override: { status?, rubricScore?, feedback? } }` body. The
+      caller's session userId is checked against `REVIEWER_USER_IDS`
+      (`apps/web/lib/reviewer-access.ts`); non-reviewers get a `reviewer_only`
+      403 with no row lookup so existence does not leak. The route delegates
+      to `applyReviewerOverride` (`apps/web/lib/grading/grade-override.ts`),
+      which wraps the SDK's `applyOverride` in a Prisma-backed `GradeStore`
+      that appends the entry inside a transaction and mirrors `status` →
+      `passed` / `rubricScore` → `score` on the `Grade` row.)_
 - [x] Require an override reason and reviewer identity.
 - [x] Append overrides to the `grades` row history rather than overwriting.
-- [ ] Surface overrides to the learner with the reviewer note.
-- [ ] Emit a telemetry event for every override.
+- [x] Surface overrides to the learner with the reviewer note.
+      _(Iteration: `apps/web/app/api/grades/[id]/route.ts` reads
+      `Grade.history` and emits a typed `overrides` array on the learner
+      grade payload — each entry carries `reviewerId`, `note`, `appliedAt`,
+      and the override `patch`. Malformed entries are filtered; DB errors
+      degrade to `overrides: []` so the rubric panel still renders.)_
+- [x] Emit a telemetry event for every override.
+      _(Iteration: after a successful override the route fires
+      `grade_overridden` via `@/lib/telemetry` with `gradeId`, `reviewerId`,
+      `previousScore`, and `nextScore`. `previousScore` is captured before
+      the patch lands so the audit-grade event row records the actual swing;
+      `previousScore: null` is preserved when the grade had no prior score.)_
 
 ## LLM Grading Guardrails
 

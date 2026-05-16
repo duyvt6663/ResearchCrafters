@@ -84,6 +84,9 @@ importers:
       '@researchcrafters/erp-schema':
         specifier: workspace:*
         version: link:../../packages/erp-schema
+      '@researchcrafters/evaluator-sdk':
+        specifier: workspace:*
+        version: link:../../packages/evaluator-sdk
       '@researchcrafters/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry

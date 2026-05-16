@@ -22,6 +22,7 @@
     "@aws-sdk/s3-request-presigner": "^3.717.0",
     "@researchcrafters/ui": "workspace:*",
     "@researchcrafters/db": "workspace:*",
+    "@researchcrafters/evaluator-sdk": "workspace:*",
     "@researchcrafters/ai": "workspace:*",
     "@researchcrafters/erp-schema": "workspace:*",
     "@researchcrafters/content-sdk": "workspace:*",

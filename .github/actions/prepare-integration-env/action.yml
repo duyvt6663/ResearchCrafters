@@ -97,6 +97,7 @@ runs:
       run: |
         pnpm --filter @researchcrafters/erp-schema build
         pnpm --filter @researchcrafters/ai build
+        pnpm --filter @researchcrafters/evaluator-sdk build
         pnpm --filter @researchcrafters/content-sdk build
         pnpm --filter @researchcrafters/cli build
         pnpm --filter @researchcrafters/db build
