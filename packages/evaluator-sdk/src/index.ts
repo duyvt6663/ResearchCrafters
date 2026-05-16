@@ -40,3 +40,18 @@ export type {
   NumericTolerance,
   NumericValue,
 } from './numeric.js';
+export {
+  checkShapeTable,
+  checkComplexityBound,
+  checkComplexityBatch,
+} from './implementation-checks.js';
+export type {
+  ShapeTableSpec,
+  ShapeTableEntryStatus,
+  ShapeTableEntryResult,
+  ShapeTableResult,
+  ComplexityBoundSpec,
+  ComplexityBoundFailureReason,
+  ComplexityBoundResult,
+  ComplexityBoundBatch,
+} from './implementation-checks.js';
