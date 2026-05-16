@@ -1,11 +1,12 @@
 id: rubric-branch-reasoning
 title: "Branch-reasoning rubric"
 description: |
-  Used by `S002` and `S008`. Grades the quality of the learner's reasoning
-  about a branch decision, *not* whether they picked the canonical branch.
-  Picking branch B (deeper-no-residual) with strong reasoning is graded
-  against the same bar as picking branch A.
+  Used by `S001M`, `S002`, and `S008`. Grades the quality of the learner's
+  reasoning about a derivation or branch decision, *not* whether they picked
+  the canonical branch. Picking branch B (deeper-no-residual) with strong
+  reasoning is graded against the same bar as picking branch A.
 applies_to:
+  - S001M
   - S002
   - S008
 grader: hybrid

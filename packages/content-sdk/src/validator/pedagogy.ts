@@ -16,6 +16,14 @@ export async function validatePedagogy(
   options: ValidatePedagogyOptions = {},
 ): Promise<ValidationReport> {
   const report = emptyReport();
+  const mathInputModes = new Set([
+    'symbolic_steps',
+    'numeric_answer',
+    'shape_table',
+    'proof_outline',
+    'counterexample',
+    'mixed_math',
+  ]);
 
   for (const stage of loaded.stages) {
     const s = stage.data;
@@ -117,6 +125,117 @@ export async function validatePedagogy(
       );
     }
 
+    // Interactive-math module contract. Math stages must be paper-specific,
+    // structured enough for deterministic / per-step feedback, and grounded
+    // in authored artifacts or evidence. Plain free-text math prompts regress
+    // to generic homework and cannot support the staged workbench.
+    if (s.type === 'math') {
+      if (s.artifact_refs.length === 0) {
+        pushIssue(
+          report,
+          makeIssue(
+            'pedagogy',
+            'error',
+            'stage.math.artifact_refs.missing',
+            `Math stage ${s.id} declares no artifact_refs; interactive math must point at the paper equation, claim, or implementation artifact it trains.`,
+            { path: stage.ref, ref: s.id },
+          ),
+        );
+      }
+
+      const hasAllowedEvidence =
+        (s.evidence_refs?.length ?? 0) > 0 ||
+        (s.source_refs?.length ?? 0) > 0;
+      if (!hasAllowedEvidence) {
+        pushIssue(
+          report,
+          makeIssue(
+            'pedagogy',
+            'error',
+            'stage.math.evidence_constraints.missing',
+            `Math stage ${s.id} declares no evidence_refs or source_refs; the evaluator cannot ground reasoning in allowed evidence.`,
+            { path: stage.ref, ref: s.id },
+          ),
+        );
+      }
+
+      if (!s.stage_subtype) {
+        pushIssue(
+          report,
+          makeIssue(
+            'pedagogy',
+            'warning',
+            'stage.math.stage_subtype.missing',
+            `Math stage ${s.id} has no stage_subtype; authors should identify the interactive math pattern being trained.`,
+            { path: stage.ref, ref: s.id },
+          ),
+        );
+      }
+
+      const inputMode = s.stage_policy.inputs.mode;
+      const inputs = s.stage_policy.inputs as typeof s.stage_policy.inputs & {
+        answer_schema?: { steps?: ReadonlyArray<{ hint_md?: string; feedback_md?: string }> };
+        accepted_equivalent_forms?: Record<string, string[]>;
+        numeric_tolerances?: Record<string, unknown>;
+        shape_variables?: Record<string, string>;
+        per_step_hints?: Record<string, string>;
+        per_step_feedback?: Record<string, string>;
+      };
+      const hasAnswerSchema =
+        Array.isArray(inputs.answer_schema?.steps) &&
+        inputs.answer_schema.steps.length > 0;
+      if (!mathInputModes.has(inputMode) && !hasAnswerSchema) {
+        pushIssue(
+          report,
+          makeIssue(
+            'pedagogy',
+            'error',
+            'stage.math.structured_input.missing',
+            `Math stage ${s.id} uses inputs.mode=${inputMode}; use a structured math mode or declare inputs.answer_schema.steps for per-step grading.`,
+            { path: stage.ref, ref: s.id },
+          ),
+        );
+      }
+
+      const rubricRef = s.stage_policy.validation.rubric;
+      const hasDeterministicContract =
+        Object.keys(inputs.accepted_equivalent_forms ?? {}).length > 0 ||
+        Object.keys(inputs.numeric_tolerances ?? {}).length > 0 ||
+        Object.keys(inputs.shape_variables ?? {}).length > 0 ||
+        hasAnswerSchema;
+      if (!rubricRef && !hasDeterministicContract) {
+        pushIssue(
+          report,
+          makeIssue(
+            'pedagogy',
+            'error',
+            'stage.math.grading_contract.missing',
+            `Math stage ${s.id} needs a rubric reference or deterministic math contract (answer_schema, accepted_equivalent_forms, numeric_tolerances, or shape_variables).`,
+            { path: stage.ref, ref: s.id },
+          ),
+        );
+      }
+
+      const stepHints =
+        Object.keys(inputs.per_step_hints ?? {}).length > 0 ||
+        (inputs.answer_schema?.steps ?? []).some((step) => Boolean(step.hint_md));
+      const stepFeedback =
+        Object.keys(inputs.per_step_feedback ?? {}).length > 0 ||
+        (inputs.answer_schema?.steps ?? []).some((step) => Boolean(step.feedback_md));
+      if (hasAnswerSchema && (!stepHints || !stepFeedback)) {
+        pushIssue(
+          report,
+          makeIssue(
+            'pedagogy',
+            'warning',
+            'stage.math.per_step_guidance.missing',
+            `Math stage ${s.id} declares answer_schema.steps but lacks per-step hints or feedback.`,
+            { path: stage.ref, ref: s.id },
+          ),
+        );
+      }
+    }
+
     // Writing-module pedagogy contract. Backlog item: writing stages must
     // declare evidence constraints, a citation policy, rubric dimensions, and
     // a revision path. Without these the academic-writing evaluator has no
@@ -128,7 +247,9 @@ export async function validatePedagogy(
       //    no allowed-evidence anchor for the evaluator's grounding pass.
       const hasEvidence =
         (s.evidence_refs?.length ?? 0) > 0 ||
-        (s.source_refs?.length ?? 0) > 0;
+        (s.source_refs?.length ?? 0) > 0 ||
+        (s.writing_constraints?.required_evidence_refs?.length ?? 0) > 0 ||
+        (s.citation_policy?.verified_citation_ids?.length ?? 0) > 0;
       if (!hasEvidence) {
         pushIssue(
           report,
@@ -150,7 +271,7 @@ export async function validatePedagogy(
       const promptLc = (s.task.prompt_md ?? '').toLowerCase();
       const declaresCitationPolicy = /\b(cite|citation|reference|evidence)\b/.test(
         promptLc,
-      );
+      ) || s.citation_policy !== undefined;
       if (!declaresCitationPolicy) {
         pushIssue(
           report,
@@ -219,7 +340,10 @@ export async function validatePedagogy(
       const hasMisconceptions =
         (s.stage_policy.feedback.common_misconceptions?.length ?? 0) > 0;
       const hasHints = Boolean(s.stage_policy.hints?.progressive);
-      if (!hasCanonical && !hasMisconceptions && !hasHints) {
+      const hasRevisionMetadata =
+        s.revision !== undefined ||
+        (s.writing_constraints?.module_parts ?? []).includes('claim_surgery');
+      if (!hasCanonical && !hasMisconceptions && !hasHints && !hasRevisionMetadata) {
         pushIssue(
           report,
           makeIssue(

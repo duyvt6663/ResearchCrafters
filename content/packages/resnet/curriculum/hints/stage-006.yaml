@@ -2,15 +2,16 @@ id: hints-stage-006
 stage_id: S006
 levels:
   - level: 1
-    title: "Anchor mechanism, scope, evidence"
+    title: "Separate overclaim from mechanism"
     body_md: |
-      Strong claim sentences answer three questions in order: what is the
-      mechanism, under what conditions does it work, and what evidence
-      supports it? Sketch each before writing the sentence.
+      Start by crossing out the unsupported parts of the draft: "solves
+      vanishing gradients" and "always". Keep the mechanism you can defend:
+      residual blocks make an identity-like mapping easy to represent.
   - level: 2
-    title: "Cite an evidence path"
+    title: "Build the evidence ladder"
     body_md: |
-      Use a concrete path inside the package, e.g.
+      Use a concrete path inside the package, then add the warrant and
+      limitation. For this stage the central evidence path is
       `artifact/evidence/tables/training-curves.md#plain-vs-residual`,
       not a vague "as shown in the experiments".
   - level: 3

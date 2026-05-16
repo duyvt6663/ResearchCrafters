@@ -2,25 +2,20 @@ id: hints-stage-007r
 stage_id: S007R
 levels:
   - level: 1
-    title: "Find the valid point first"
+    title: "Concede the valid point"
     body_md: |
-      Before defending your critique, steelman the reviewer's position.
-      The reviewer is correct that real researchers do use proxy experiments
-      and that null results shift priors. Acknowledge this concisely before
-      you defend the objection — it makes the rebuttal stronger, not weaker.
+      The reviewer is not entirely wrong: shortcut paths can improve gradient
+      flow. Concede that in one sentence before narrowing the claim to what
+      the evidence actually supports.
   - level: 2
-    title: "Anchor to a concrete confounder"
+    title: "Name the narrower mechanism"
     body_md: |
-      The objection is not that the experiment is a proxy in general; it
-      is that this proxy varies more than one thing at once. Name at least
-      one concrete difference between BatchNorm and LayerNorm that is
-      unrelated to gradient scale (hint: running statistics, batch
-      dependence). That is what makes the proxy conflated.
+      Use the residual derivation: identity mappings become easy to recover,
+      and the training curves show degradation is reduced. That is narrower
+      than saying the architecture solves all vanishing-gradient behavior.
   - level: 3
-    title: "State the condition for informativeness"
+    title: "Ask for the isolating experiment"
     body_md: |
-      Turn the critique into a constructive suggestion: what single change
-      would make the proposed experiment informative? A clean test controls
-      one variable at a time. The "zero-init the last conv of every plain
-      block" design from the previous hints is a good model — it targets
-      identity-recovery directly without changing normalisation.
+      End constructively: to isolate the vanishing-gradient mechanism, the
+      experiment would need gradient-flow measurements or controls while
+      holding depth, normalization, initialization, and optimizer fixed.

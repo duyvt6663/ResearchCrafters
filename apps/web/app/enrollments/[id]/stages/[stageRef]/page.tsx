@@ -108,7 +108,7 @@ export default async function StagePage({
             stageRef={stage.ref}
             skeleton={stage.skeleton}
             rubric={stage.rubric ?? []}
-            evidence={[]}
+            evidence={stage.evidence ?? []}
           />
         );
       }
@@ -215,7 +215,7 @@ export default async function StagePage({
           Evidence
         </h3>
         <div className="mt-2">
-          <EvidencePanel stageRef={stage.ref} />
+          <EvidencePanel items={stage.evidence ?? []} stageRef={stage.ref} />
         </div>
       </div>
       <div className="px-4 py-3">

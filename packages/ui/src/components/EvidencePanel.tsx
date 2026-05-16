@@ -20,6 +20,8 @@ export interface EvidenceItem {
   href?: string;
   /** Short attribution / source line. */
   source?: string;
+  /** Whether the ref belongs to the stage's verified allow-list. */
+  verified?: boolean;
 }
 
 export interface EvidencePanelProps {
@@ -92,6 +94,16 @@ export function EvidencePanel({
                   {item.source ? (
                     <div className="text-(--text-rc-xs) text-(--color-rc-text-muted) truncate">
                       {item.source}
+                    </div>
+                  ) : null}
+                  {item.verified !== undefined ? (
+                    <div
+                      className="mt-1 font-(--font-rc-mono) text-[10px] uppercase tracking-[0.08em] text-(--color-rc-text-subtle)"
+                      data-rc-evidence-verification={
+                        item.verified ? "verified" : "unverified"
+                      }
+                    >
+                      {item.verified ? "Verified" : "Unverified"}
                     </div>
                   ) : null}
                 </div>

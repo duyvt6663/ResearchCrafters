@@ -5,8 +5,8 @@ import type { EvidenceItem } from "../src/components/EvidencePanel.js";
 import type { RubricDimension } from "../src/components/RubricPanel.js";
 
 const EVIDENCE: EvidenceItem[] = [
-  { id: "e1", title: "He et al. 2015 — ResNet", kind: "doc" },
-  { id: "e2", title: "Training curves", kind: "artifact" },
+  { id: "e1", title: "He et al. 2015 — ResNet", kind: "doc", verified: true },
+  { id: "e2", title: "Training curves", kind: "artifact", verified: true },
 ];
 
 const RUBRIC: RubricDimension[] = [
@@ -44,6 +44,7 @@ describe("WritingWorkbench", () => {
     // Each evidence item exposes an "Insert ref" button.
     expect(html).toContain("Insert ref");
     expect(html).toContain("He et al. 2015");
+    expect(html).toContain('data-rc-evidence-verification="verified"');
     // The callback prop is wired but SSR can't fire it; we verify the
     // shape by calling it directly with a fixture item.
     inserted = null;
@@ -65,5 +66,32 @@ describe("WritingWorkbench", () => {
     expect(html).toContain("Mentor review");
     // The allowed-context chip from the mentor panel surfaces our value.
     expect(html).toContain("draft");
+  });
+
+  it("passes workbench evidence into the claim skeleton insert column", () => {
+    const html = renderToStaticMarkup(
+      <WritingWorkbench
+        evidence={EVIDENCE}
+        draft={{ value: "", onChange: () => {} }}
+        rubric={RUBRIC}
+        skeleton={{
+          evidenceTargetDimensionId: "evidence",
+          dimensions: [
+            {
+              id: "claim",
+              label: "Claim",
+              prompt: "Repair the claim.",
+            },
+            {
+              id: "evidence",
+              label: "Evidence",
+              prompt: "Attach evidence.",
+            },
+          ],
+        }}
+      />,
+    );
+    expect(html).toContain("Evidence · insert ref into the Evidence card");
+    expect(html).toContain('data-rc-skeleton-evidence-insert="e1"');
   });
 });

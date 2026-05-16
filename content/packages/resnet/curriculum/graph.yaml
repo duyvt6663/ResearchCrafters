@@ -98,6 +98,7 @@ nodes:
       - artifact/logic/experiments.md
       - artifact/logic/claims.md#vanishing-gradients-not-the-cause
       - artifact/logic/claims.md#identity-is-the-trick
+      - artifact/evidence/tables/training-curves.md#plain-vs-residual
     unlocks: [N008]
 
   - id: N008

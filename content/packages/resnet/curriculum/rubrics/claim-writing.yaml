@@ -1,10 +1,12 @@
 id: rubric-claim-writing
 title: "Claim-writing rubric"
 description: |
-  Used by `S006`. Grades a research-quality claim about residual learning.
-  Heavily rewards mechanism specificity, scope, and evidence linking.
+  Used by `S006` and `S007R`. Grades a research-quality claim or rebuttal
+  about residual learning. Heavily rewards mechanism specificity, scope,
+  evidence linking, and overclaim control.
 applies_to:
   - S006
+  - S007R
 grader: hybrid
 llm_grading_allowed: true
 total_points: 100

@@ -25,6 +25,11 @@ task:
       otherwise.
     - The post-addition activation is ReLU applied *after* the addition.
 
+    Bring forward your `S001M` result: the equation $H(x)=F(x)+x$ is only
+    legal when the shortcut tensor and residual-branch tensor have the same
+    shape at the addition site. If stride or channel count changes, the
+    shortcut must project `x` before the add.
+
     The tests under `workspace/tests/test_residual_block.py` enforce shape
     correctness and the identity-shortcut invariant.
 inputs:

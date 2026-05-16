@@ -489,6 +489,24 @@ async function main(): Promise<void> {
         s.data.id,
         {
           ...policy,
+          artifact_refs: s.data.artifact_refs,
+          source_refs: s.data.source_refs ?? [],
+          evidence_refs: s.data.evidence_refs ?? [],
+          ...(s.data.stage_subtype !== undefined
+            ? { stage_subtype: s.data.stage_subtype }
+            : {}),
+          ...(s.data.writing_constraints !== undefined
+            ? { writing_constraints: s.data.writing_constraints }
+            : {}),
+          ...(s.data.citation_policy !== undefined
+            ? { citation_policy: s.data.citation_policy }
+            : {}),
+          ...(s.data.reviewer_prompt !== undefined
+            ? { reviewer_prompt: s.data.reviewer_prompt }
+            : {}),
+          ...(s.data.revision !== undefined
+            ? { revision: s.data.revision }
+            : {}),
           prompt: s.data.task.prompt_md.trim(),
           task: { prompt: s.data.task.prompt_md.trim() },
         },

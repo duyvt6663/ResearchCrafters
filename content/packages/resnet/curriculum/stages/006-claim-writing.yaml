@@ -2,6 +2,7 @@ id: S006
 node_id: N006
 title: "Write a precise claim about residual learning."
 type: writing
+stage_subtype: claim_surgery
 difficulty: medium
 estimated_time_minutes: 20
 artifact_refs:
@@ -15,20 +16,55 @@ evidence_refs:
   - artifact/evidence/tables/training-curves.md#plain-vs-residual
 task:
   prompt_md: |
-    Write a single research-quality claim about residual learning, in 2 to
-    4 sentences. The claim must:
+    Repair this overclaim into a defensible research claim:
 
-    1. State *what* residual learning does (mechanism).
-    2. State *under what conditions* the claim holds (depth, optimizer,
-       BatchNorm, dataset).
-    3. Cite the supporting evidence by reference path (for example
-       `artifact/evidence/tables/training-curves.md#plain-vs-residual`).
-    4. Avoid claims your evidence does not support — for example, do not
-       claim that residual learning "solves vanishing gradients" or "always
-       outperforms plain at every depth."
+    > "Residual learning solves vanishing gradients and always makes deeper
+    > networks better."
 
-    Submit only the claim text. Do not summarize the paper or restate
-    background.
+    Work through the evidence ladder before writing the final claim:
+
+    1. Identify the mechanism the paper actually supports.
+    2. Attach the allowed evidence ref that supports the claim:
+       `artifact/evidence/tables/training-curves.md#plain-vs-residual`.
+    3. State the warrant that links the evidence to the mechanism.
+    4. Add a caveat about what the evidence does not prove.
+    5. Write a final scoped claim in 2 to 4 sentences.
+
+    Do not use external citations. Do not claim that residual learning
+    "solves vanishing gradients", "always" wins, or is "state of the art"
+    unless the allowed evidence directly supports that wording.
+writing_constraints:
+  module_parts:
+    - claim_surgery
+    - evidence_ladder
+  word_budget:
+    min_words: 40
+    max_words: 160
+  required_evidence_refs:
+    - artifact/evidence/tables/training-curves.md#plain-vs-residual
+  forbidden_claims:
+    - "solves vanishing gradients"
+    - "always"
+    - "state of the art"
+  allowed_citation_set:
+    - artifact/evidence/tables/training-curves.md#plain-vs-residual
+    - artifact/logic/claims.md#residual-helps
+    - artifact/logic/claims.md#identity-is-the-trick
+  required_caveat: "State that the evidence supports a scoped optimization claim, not a universal depth or vanishing-gradient claim."
+  target_venue_style: "ML conference results claim"
+citation_policy:
+  verified_citation_ids:
+    - artifact/evidence/tables/training-curves.md#plain-vs-residual
+    - artifact/logic/claims.md#residual-helps
+    - artifact/logic/claims.md#identity-is-the-trick
+  placeholder_policy: forbidden
+  external_search_disabled: true
+revision:
+  original_draft: "Residual learning solves vanishing gradients and always makes deeper networks better."
+  required_fields:
+    - edited_draft
+    - revision_note
+    - final_answer
 inputs:
   mode: free_text
   expected_length:
@@ -46,21 +82,21 @@ inputs:
       max: 160
     evidenceTargetDimensionId: evidence
     dimensions:
+      - id: original
+        label: "Overclaim"
+        prompt: "Paste or paraphrase the overclaim you are repairing."
+        accentVar: "--color-rc-danger"
       - id: mechanism
         label: "Mechanism"
-        prompt: "State what residual learning does. One or two sentences."
+        prompt: "State what residual learning does without saying it solves vanishing gradients."
         accentVar: "--color-rc-info"
-      - id: conditions
-        label: "Conditions"
-        prompt: "Under what conditions does the claim hold? Name the depth, optimizer, BatchNorm setting, and dataset."
-        accentVar: "--color-rc-warning"
       - id: evidence
-        label: "Evidence"
-        prompt: "Cite the supporting evidence. Use the Insert-ref buttons on the right."
+        label: "Evidence ladder"
+        prompt: "Attach the allowed evidence ref, then write claim, warrant, limitation, and caveat."
         accentVar: "--color-rc-icon-accent"
       - id: scope
-        label: "Scope"
-        prompt: "Where does this NOT apply? Be honest about the limits of the claim."
+        label: "Final scoped claim"
+        prompt: "Write the final 2 to 4 sentence claim with the caveat included."
         accentVar: "--color-rc-accent"
 validation:
   kind: rubric
