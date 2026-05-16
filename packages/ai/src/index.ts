@@ -7,6 +7,16 @@ export {
 } from './context-builder.js';
 export type { BuildMentorContextInput, VisibilityState } from './context-builder.js';
 export {
+  InMemoryMentorContextCache,
+  mentorContextCacheKey,
+  fnv1aDigest,
+} from './context-cache.js';
+export type {
+  MentorContextCache,
+  MentorContextCacheKeyInput,
+  InMemoryMentorContextCacheOptions,
+} from './context-cache.js';
+export {
   buildMentorPrompt,
   buildSystemPrompt,
   buildUserPrompt,
