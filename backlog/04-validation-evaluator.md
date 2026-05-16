@@ -137,10 +137,29 @@ reflect that snapshot.
       `spec_invalid`. The primitive is intentionally not wired into
       `gradeAttempt`/`llmGrade` yet — citation-policy enforcement is the
       next item below.)_
-- [ ] Enforce citation policy: verified allowed citations only, or explicit
+- [x] Enforce citation policy: verified allowed citations only, or explicit
       placeholders where the stage allows placeholders.
-- [ ] Add evaluator regression fixtures for strong, weak, overclaiming,
+      _(Iteration: `packages/evaluator-sdk/src/writing-claims.ts` adds
+      `enforceCitationPolicy(claims, policy, { mode })` with `strict` and
+      `flag` modes; `gradeAttempt` accepts a `citationPolicy` block that
+      refuses with `EvaluatorRefusal('citation_policy_violation', …)` in
+      strict mode and appends a feedback summary in flag mode. Placeholder
+      tokens honored only when the stage policy opts in. QA report:
+      `qa/evaluator-citation-policy-enforcement-2026-05-16.md`.)_
+- [x] Add evaluator regression fixtures for strong, weak, overclaiming,
       citation-missing, and prompt-injection writing submissions.
+      _(Iteration: `packages/evaluator-sdk/test/fixtures/writing-submissions.ts`
+      defines five labeled `WritingSubmissionFixture` entries
+      (`strong`, `weak`, `overclaiming`, `citation_missing`,
+      `prompt_injection`) sharing one allowed-evidence set, plus a
+      strict/placeholder policy pair. The regression suite
+      `test/writing-submissions-regression.test.ts` pins per-fixture
+      strict and flag verdicts, drives `gradeAttempt` for refusal vs.
+      pass-through, demonstrates a rubric-layer score demotion for the
+      overclaiming case the deterministic primitive cannot catch, and
+      exercises the LLM-grader untrusted delimiter framing + redaction
+      pass for the prompt-injection submission. QA report:
+      `qa/evaluator-writing-regression-fixtures-2026-05-16.md`.)_
 - [ ] Emit writing-evaluator metadata for allowed evidence refs, rubric
       version, citation policy, and redaction status.
 
