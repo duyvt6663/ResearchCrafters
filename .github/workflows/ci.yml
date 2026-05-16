@@ -98,3 +98,40 @@ jobs:
           if [ "$failed" -ne 0 ]; then
             exit 1
           fi
+
+      # Mentor leak-test gate: runs the adversarial battery from packages/ai
+      # against each package's stages via the SDK harness. PRs without an
+      # ANTHROPIC_API_KEY (the common case, including forks) get the
+      # clean-refusal mock gateway, which still proves the wiring, exercises
+      # composeAttackBattery, and fails if a redaction target ever leaks. PRs
+      # with the secret swap in the real Anthropic gateway via --gateway.
+      - name: Leak-test ERP packages
+        shell: bash
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          gateway="clean-refusal"
+          if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+            gateway="anthropic"
+          fi
+          echo "Using leak-test gateway: $gateway"
+          failed=0
+          dirs=(content/packages/*/)
+          if [ ${#dirs[@]} -eq 0 ]; then
+            echo "No packages found under content/packages/"
+            exit 0
+          fi
+          for dir in "${dirs[@]}"; do
+            dir="${dir%/}"
+            echo "::group::leak-test $dir"
+            if ! pnpm --filter @researchcrafters/cli exec node ./bin/researchcrafters.js leak-test "$(realpath "$dir")" --gateway "$gateway"; then
+              echo "::error::leak-test failed for $dir"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          if [ "$failed" -ne 0 ]; then
+            exit 1
+          fi

@@ -7,6 +7,10 @@ import { submitCommand } from './commands/submit.js';
 import { statusCommand } from './commands/status.js';
 import { logsCommand } from './commands/logs.js';
 import { validateCommand } from './commands/validate.js';
+import {
+  leakTestCommand,
+  type LeakTestGatewayChoice,
+} from './commands/leak-test.js';
 import { previewCommand } from './commands/preview.js';
 import { buildCommand } from './commands/build.js';
 import { completionCommand } from './commands/completion.js';
@@ -77,6 +81,42 @@ export function createProgram(): Command {
     .action(async (pkgPath: string, opts: { json?: boolean }) => {
       await validateCommand(pkgPath, opts.json ? { json: true } : {});
     });
+
+  program
+    .command('leak-test <packagePath>')
+    .description(
+      'Run the mentor leak-test battery against each stage in a package',
+    )
+    .option('--json', 'Emit machine-readable JSON instead of colored text')
+    .option(
+      '--gateway <choice>',
+      'Gateway to attack: clean-refusal (default), sdk-default, anthropic',
+      'clean-refusal',
+    )
+    .action(
+      async (
+        pkgPath: string,
+        opts: { json?: boolean; gateway?: string },
+      ) => {
+        const choice = (opts.gateway ?? 'clean-refusal') as LeakTestGatewayChoice;
+        if (
+          choice !== 'clean-refusal' &&
+          choice !== 'sdk-default' &&
+          choice !== 'anthropic'
+        ) {
+          throw new CliError(
+            'unknown',
+            `Unknown --gateway: ${choice}. Use clean-refusal, sdk-default, or anthropic.`,
+            'Pass --gateway=clean-refusal | sdk-default | anthropic.',
+            2,
+          );
+        }
+        await leakTestCommand(pkgPath, {
+          gateway: choice,
+          ...(opts.json ? { json: true } : {}),
+        });
+      },
+    );
 
   program
     .command('preview <packagePath>')
