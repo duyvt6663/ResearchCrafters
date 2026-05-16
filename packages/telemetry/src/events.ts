@@ -140,6 +140,15 @@ export interface MentorFeedbackRequestedEvent {
   threadId?: string;
 }
 
+export interface MentorRateLimitedEvent {
+  name: 'mentor_rate_limited';
+  enrollmentId: string;
+  stageRef: string;
+  userId: string;
+  scope: 'per_user' | 'per_user_package';
+  retryAfterSeconds: number;
+}
+
 export interface StageCompletedEvent {
   name: 'stage_completed';
   enrollmentId: string;
@@ -193,6 +202,7 @@ export type TelemetryEvent =
   | EvaluatorRedactionTriggeredEvent
   | MentorHintRequestedEvent
   | MentorFeedbackRequestedEvent
+  | MentorRateLimitedEvent
   | StageCompletedEvent
   | ShareCardCreatedEvent
   | ShareCardUnsharedEvent

@@ -49,6 +49,13 @@ vi.mock("@/lib/telemetry", () => ({
 
 vi.mock("@/lib/mentor-runtime", () => ({
   runMentorRequest: mocks.runMentorRequest,
+  defaultMentorRateLimiter: () => ({ check: async () => ({ allowed: true }) }),
+  defaultMentorSpendStore: () => ({
+    getUserDailySpendUsd: async () => 0,
+    getPackageSpendUsd: async () => 0,
+    getStageSpendUsd: async () => 0,
+    recordSpend: async () => undefined,
+  }),
 }));
 
 vi.mock("@researchcrafters/db", () => ({
@@ -229,6 +236,45 @@ describe("POST /api/mentor/messages", () => {
       content: "Your draft is on the right track.",
     });
     expect(typeof body.message.createdAt).toBe("string");
+  });
+
+  it("returns 429 with authored copy and Retry-After when the runtime rate-limits", async () => {
+    seedHappyPath();
+    mocks.runMentorRequest.mockResolvedValue({
+      kind: "rate_limited",
+      scope: "per_user_package",
+      retryAfterSeconds: 17,
+    });
+
+    const res = await POST(makeRequest(VALID_BODY));
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe("17");
+    const body = await res.json();
+    expect(body.error).toBe("rate_limited");
+    expect(body.scope).toBe("per_user_package");
+    expect(body.retryAfterSeconds).toBe(17);
+    expect(body.refusal).toEqual({
+      title: "Mentor declined",
+      body: "Authored refusal text.",
+      hint: "Re-read the rubric.",
+    });
+    expect(mocks.mentorRefusal).toHaveBeenCalledWith(
+      expect.objectContaining({ scope: "rate_limit" }),
+    );
+  });
+
+  it("passes userId, rateLimiter, and spendStore into the runtime", async () => {
+    seedHappyPath();
+    mocks.runMentorRequest.mockResolvedValue({
+      kind: "ok",
+      messageId: "mm-1",
+      assistantText: "ok",
+    });
+    await POST(makeRequest(VALID_BODY));
+    const call = mocks.runMentorRequest.mock.calls[0]?.[0] ?? {};
+    expect(call.userId).toBe("u-paid");
+    expect(typeof call.rateLimiter?.check).toBe("function");
+    expect(typeof call.spendStore?.recordSpend).toBe("function");
   });
 
   it("returns 500 when stage_policy is missing from the mirrored row", async () => {

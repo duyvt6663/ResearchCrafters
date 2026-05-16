@@ -101,8 +101,18 @@ reflect that snapshot.
 
 - [ ] Author the per-package refusal copy in `@researchcrafters/ui/copy`;
       `getAuthoredRefusal` currently returns placeholder strings.
-- [ ] Wire production `SpendStore` and `RateLimiter` implementations from the web
+- [x] Wire production `SpendStore` and `RateLimiter` implementations from the web
       app rather than relying on the interfaces shipped in `packages/ai`.
+      _(landed: `apps/web/lib/mentor/spend-store.ts` ships
+      `InMemoryMentorSpendStore` implementing `SpendStore` from
+      `@researchcrafters/ai`, and `apps/web/lib/mentor/rate-limiter.ts`
+      defines `MentorRateLimiter` + `InMemoryMentorRateLimiter`. The mentor
+      runtime calls the limiter before the gateway and returns a
+      `rate_limited` outcome that `/api/mentor/messages` maps to HTTP 429
+      with `Retry-After` and authored `mentorRefusal({ scope: "rate_limit" })`
+      copy; the runtime also records the priced token cost on the spend
+      store after each successful response. Redis-backed multi-instance
+      implementations remain an open follow-up.)_
 - [ ] Surface per-package mentor budget caps in the database schema.
 - [ ] Build the mentor message review queue UI and flagged-output triage flow.
 - [x] Persist `mentor_messages` rows with full token telemetry from the web

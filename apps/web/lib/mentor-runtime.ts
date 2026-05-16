@@ -29,6 +29,7 @@ import {
   AnthropicGateway,
   buildMentorContext,
   buildMentorPrompt,
+  estimateRequestCostUsd,
   MockLLMGateway,
   redact,
   runLeakTests,
@@ -37,6 +38,8 @@ import type {
   LLMGateway,
   MentorContext,
   ModelTier,
+  PriceTable,
+  SpendStore,
 } from "@researchcrafters/ai";
 import type { StagePolicy } from "@researchcrafters/erp-schema";
 import { mentorRefusal } from "@researchcrafters/ui/copy";
@@ -44,6 +47,12 @@ import {
   prisma as defaultPrisma,
   withQueryTimeout as defaultWithQueryTimeout,
 } from "@researchcrafters/db";
+import {
+  defaultMentorRateLimiter,
+  type MentorRateLimitDecision,
+  type MentorRateLimiter,
+} from "./mentor/rate-limiter.js";
+import { defaultMentorSpendStore } from "./mentor/spend-store.js";
 
 // Limited Prisma surface the runtime needs. Tests pass a stub matching this
 // shape rather than the full PrismaClient — keeps the mock surface tiny.
@@ -85,8 +94,31 @@ export interface MentorRuntimeInput {
   mode: MentorMode;
   message: string;
   visibility?: MentorRuntimeVisibility;
+  /**
+   * Authenticated caller's user id. Required for rate-limit and spend-tracking;
+   * when omitted both are skipped so legacy callers and offline scripts still
+   * exercise the gateway+leak-test path.
+   */
+  userId?: string;
   /** Override the gateway. Tests inject a `MockLLMGateway`. */
   gateway?: LLMGateway;
+  /**
+   * Mentor rate limiter. The route wires the process-wide
+   * `defaultMentorRateLimiter()`; tests inject a stub or omit entirely
+   * (combined with omitting `userId`) to skip the limiter call.
+   */
+  rateLimiter?: MentorRateLimiter;
+  /**
+   * Mentor spend store. The route wires the process-wide
+   * `defaultMentorSpendStore()`; tests inject a stub or omit entirely
+   * (combined with omitting `userId`) to skip spend recording.
+   */
+  spendStore?: SpendStore;
+  /**
+   * USD price table keyed by `modelId`. Used to attribute spend per request.
+   * Falls back to `defaultMentorPriceTable()` when omitted.
+   */
+  priceTable?: PriceTable;
   /** Override the persistence client. Tests pass a stub. */
   prisma?: MentorRuntimePrisma;
   /** Override the timeout wrapper. Tests pass an identity wrapper. */
@@ -102,7 +134,8 @@ export interface MentorRuntimeInput {
 export type TelemetryEventName =
   | "mentor_hint_requested"
   | "mentor_feedback_requested"
-  | "evaluator_redaction_triggered";
+  | "evaluator_redaction_triggered"
+  | "mentor_rate_limited";
 export type TelemetryPayload = Record<string, string | number | boolean | null>;
 
 export type MentorRuntimeOutcome =
@@ -118,10 +151,17 @@ export type MentorRuntimeOutcome =
       provider: string;
       promptTokens: number;
       completionTokens: number;
+      /** USD attributed to this request via the price table (0 when skipped). */
+      spentUsd: number;
     }
   | {
       kind: "policy_misconfig";
       reason: string;
+    }
+  | {
+      kind: "rate_limited";
+      scope: "per_user" | "per_user_package";
+      retryAfterSeconds: number;
     };
 
 const DEFAULT_VISIBILITY: MentorRuntimeVisibility = {
@@ -132,6 +172,25 @@ const DEFAULT_VISIBILITY: MentorRuntimeVisibility = {
 
 const DEFAULT_HINT_MODEL_ID = "claude-3-5-haiku-latest";
 const DEFAULT_FEEDBACK_MODEL_ID = "claude-3-5-sonnet-latest";
+
+/**
+ * Default mentor price table (USD per 1M tokens). Authored from Anthropic's
+ * public pricing for the two model ids the runtime ships today. Ops can
+ * override at the call site by passing `priceTable` into the runtime when
+ * prices shift.
+ */
+export function defaultMentorPriceTable(): PriceTable {
+  return {
+    [DEFAULT_HINT_MODEL_ID]: {
+      inputPerMillionUsd: 0.8,
+      outputPerMillionUsd: 4.0,
+    },
+    [DEFAULT_FEEDBACK_MODEL_ID]: {
+      inputPerMillionUsd: 3.0,
+      outputPerMillionUsd: 15.0,
+    },
+  };
+}
 
 function modelTierFor(mode: MentorMode): ModelTier {
   // Hints route to the cheaper tier; feedback / draft review / branch
@@ -214,6 +273,31 @@ export async function runMentorRequest(
       detail: misconfig,
     });
     return { kind: "policy_misconfig", reason: misconfig };
+  }
+
+  // Rate-limit gate. Skipped when the caller did not supply a `userId`
+  // (offline scripts, replay tooling). Authenticated route requests always
+  // route through here because the route passes `session.userId` and the
+  // process-wide `defaultMentorRateLimiter()`.
+  if (input.userId !== undefined && input.rateLimiter !== undefined) {
+    const decision: MentorRateLimitDecision = await input.rateLimiter.check({
+      userId: input.userId,
+      packageId: input.enrollment.packageVersionId,
+    });
+    if (!decision.allowed) {
+      await track("mentor_rate_limited", {
+        enrollmentId: input.enrollment.id,
+        stageRef: input.stage.ref,
+        userId: input.userId,
+        scope: decision.scope,
+        retryAfterSeconds: decision.retryAfterSeconds,
+      });
+      return {
+        kind: "rate_limited",
+        scope: decision.scope,
+        retryAfterSeconds: decision.retryAfterSeconds,
+      };
+    }
   }
 
   // Build mentor context strictly under stage policy. Loaders are deliberately
@@ -368,6 +452,28 @@ export async function runMentorRequest(
     }),
   );
 
+  // Near-real-time spend tracking. Skipped when the caller did not supply
+  // `userId` and a `spendStore`. When wired, the runtime converts the
+  // provider's actual token counts into USD via the price table and
+  // records the result so per-user / per-package / per-stage budget caps
+  // see fresh totals on the next request.
+  let spentUsd = 0;
+  if (input.userId !== undefined && input.spendStore !== undefined) {
+    const prices = input.priceTable ?? defaultMentorPriceTable();
+    spentUsd = estimateRequestCostUsd(
+      modelId,
+      gatewayResponse.promptTokens,
+      gatewayResponse.completionTokens,
+      prices,
+    );
+    await input.spendStore.recordSpend({
+      userId: input.userId,
+      packageId: input.enrollment.packageVersionId,
+      stageId: input.stage.ref,
+      usd: spentUsd,
+    });
+  }
+
   return {
     kind: "ok",
     threadId: thread.id,
@@ -380,5 +486,8 @@ export async function runMentorRequest(
     provider: gatewayResponse.provider,
     promptTokens: gatewayResponse.promptTokens,
     completionTokens: gatewayResponse.completionTokens,
+    spentUsd,
   };
 }
+
+export { defaultMentorRateLimiter, defaultMentorSpendStore };

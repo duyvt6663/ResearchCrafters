@@ -9,7 +9,11 @@ import {
   mentorMessageRequestSchema,
   mentorMessageResponseSchema,
 } from "@/lib/api-contract";
-import { runMentorRequest } from "@/lib/mentor-runtime";
+import {
+  defaultMentorRateLimiter,
+  defaultMentorSpendStore,
+  runMentorRequest,
+} from "@/lib/mentor-runtime";
 import { setActiveSpanAttributes, withSpan } from "@/lib/tracing";
 
 export const runtime = "nodejs";
@@ -150,6 +154,9 @@ export async function POST(req: Request): Promise<NextResponse> {
       stage: { ref: stage.ref, stagePolicy },
       mode: body.mode,
       message: body.message,
+      userId: session.userId,
+      rateLimiter: defaultMentorRateLimiter(),
+      spendStore: defaultMentorSpendStore(),
       track,
     });
 
@@ -160,6 +167,28 @@ export async function POST(req: Request): Promise<NextResponse> {
           reason: outcome.reason,
         },
         { status: 500 },
+      );
+    }
+
+    if (outcome.kind === "rate_limited") {
+      // Authored copy — the model never composes the rate-limit refusal.
+      // `Retry-After` carries the seconds-until-refresh hint the limiter
+      // computed from the offending sliding window.
+      setActiveSpanAttributes({
+        "rc.mentor.rate_limited_scope": outcome.scope,
+      });
+      const refusal = mentorRefusal({ scope: "rate_limit" });
+      return NextResponse.json(
+        {
+          error: "rate_limited",
+          scope: outcome.scope,
+          retryAfterSeconds: outcome.retryAfterSeconds,
+          refusal,
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": String(outcome.retryAfterSeconds) },
+        },
       );
     }
 
