@@ -22,6 +22,7 @@ export type {
   EvaluatorRedactionTriggeredEvent,
   MentorHintRequestedEvent,
   MentorFeedbackRequestedEvent,
+  MentorFirstTokenLatencyEvent,
   StageCompletedEvent,
   ShareCardCreatedEvent,
   PaywallViewedEvent,
