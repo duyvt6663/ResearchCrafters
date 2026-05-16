@@ -4,6 +4,8 @@ export {
   InMemoryGradeStore,
 } from './idempotency.js';
 export type { GradeStore } from './idempotency.js';
+export { InMemoryIntermediateStore } from './intermediate.js';
+export type { IntermediateResult, IntermediateStore } from './intermediate.js';
 export {
   gradeAttempt,
   EvaluatorRefusal,

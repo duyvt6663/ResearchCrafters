@@ -8,6 +8,7 @@ import type {
   SubmissionInput,
 } from './types.js';
 import { idempotencyKey, type GradeStore } from './idempotency.js';
+import type { IntermediateStore } from './intermediate.js';
 
 const EVALUATOR_VERSION = '0.1.0';
 
@@ -19,6 +20,13 @@ export interface GradeAttemptInput {
   runArtifacts: RunArtifacts;
   store: GradeStore;
   /**
+   * Optional store for deterministic intermediate results. When supplied, the
+   * evaluator persists a checkpoint after preflight + deterministic dimension
+   * scoring; if a later step fails and the caller retries, those upstream
+   * checks are skipped and the cached deterministic state is reused.
+   */
+  intermediateStore?: IntermediateStore;
+  /**
    * Optional override of the evaluator version label. Tests can pin it;
    * production reads from package.json or build metadata.
    */
@@ -27,6 +35,10 @@ export interface GradeAttemptInput {
    * Optional dimension scorer. If absent, the default rule scores each
    * dimension by checking whether matching test results passed and whether
    * required evidence refs are present.
+   *
+   * Custom scorers are assumed to be non-deterministic from the cache's point
+   * of view (e.g. they may call an LLM), so their output is never reused from
+   * an intermediate snapshot; only the preflight signal is.
    */
   scoreDimensions?: (args: {
     stage: Stage;
@@ -93,68 +105,117 @@ export class EvaluatorRefusal extends Error {
 /**
  * Grade an attempt. Refuses to grade unless execution_status=ok for executable
  * stages, refuses if required evidence is missing, and reuses any existing
- * grade for the same idempotency key.
+ * grade for the same idempotency key. When an `intermediateStore` is provided,
+ * deterministic upstream work (preflight + default dimension scoring) is
+ * checkpointed so a partial failure can resume without re-running it.
  */
 export async function gradeAttempt(input: GradeAttemptInput): Promise<Grade> {
   const evaluatorVersion = input.evaluatorVersion ?? EVALUATOR_VERSION;
   const now = input.now ?? (() => new Date().toISOString());
-  const newId = input.newId ?? (() => globalThis.crypto?.randomUUID?.() ?? `grade-${Math.random().toString(36).slice(2)}`);
+  const newId =
+    input.newId ??
+    (() => globalThis.crypto?.randomUUID?.() ?? `grade-${Math.random().toString(36).slice(2)}`);
 
-  const key = idempotencyKey({
+  const idKey = idempotencyKey({
     submissionId: input.submission.id,
     rubricVersion: input.rubricVersion,
     evaluatorVersion,
   });
 
   // Idempotency: reuse existing grade if any.
-  const existing = await input.store.findByKey(key);
+  const existing = await input.store.findByKey(idKey);
   if (existing) return existing;
 
-  // Refuse to grade executable stages without successful execution.
-  if (
-    isExecutableStage(input.stage) &&
-    input.runArtifacts.executionStatus !== 'ok'
-  ) {
-    const failed: Grade = {
-      id: newId(),
-      submissionId: input.submission.id,
-      stageId: input.stage.id,
-      rubricVersion: input.rubricVersion,
-      evaluatorVersion,
-      status: 'execution_failed',
-      rubricScore: 0,
-      passThreshold: input.stage.stage_policy.pass_threshold ?? input.rubric.pass_threshold,
-      dimensions: [],
-      feedback: refusalFeedback(input.runArtifacts.executionStatus),
-      history: [],
-      createdAt: now(),
-    };
-    return input.store.insert(failed);
-  }
+  const cached = input.intermediateStore
+    ? await input.intermediateStore.find(idKey)
+    : null;
 
-  // Refuse to grade evidence-citing rubrics without evidence refs. We treat
-  // any rubric whose hidden_correct field is present as evidence-required.
-  if (
-    input.rubric.hidden_correct !== undefined &&
-    (input.submission.evidenceRefs === undefined || input.submission.evidenceRefs.length === 0)
-  ) {
-    throw new EvaluatorRefusal(
-      'evidence_missing',
-      'Required evidence references are missing for this submission.',
-    );
-  }
+  // Preflight: skip if a prior attempt already passed it for this key.
+  if (!cached?.preflightPassed) {
+    if (
+      isExecutableStage(input.stage) &&
+      input.runArtifacts.executionStatus !== 'ok'
+    ) {
+      const failed: Grade = {
+        id: newId(),
+        submissionId: input.submission.id,
+        stageId: input.stage.id,
+        rubricVersion: input.rubricVersion,
+        evaluatorVersion,
+        status: 'execution_failed',
+        rubricScore: 0,
+        passThreshold:
+          input.stage.stage_policy.pass_threshold ?? input.rubric.pass_threshold,
+        dimensions: [],
+        feedback: refusalFeedback(input.runArtifacts.executionStatus),
+        history: [],
+        createdAt: now(),
+      };
+      return input.store.insert(failed);
+    }
 
-  const dimensions = input.scoreDimensions
-    ? input.scoreDimensions({
-        stage: input.stage,
-        rubric: input.rubric,
-        submission: input.submission,
-        runArtifacts: input.runArtifacts,
-      })
-    : defaultDimensionScorer({ rubric: input.rubric, runArtifacts: input.runArtifacts });
+    if (
+      input.rubric.hidden_correct !== undefined &&
+      (input.submission.evidenceRefs === undefined ||
+        input.submission.evidenceRefs.length === 0)
+    ) {
+      throw new EvaluatorRefusal(
+        'evidence_missing',
+        'Required evidence references are missing for this submission.',
+      );
+    }
+  }
 
   const passThreshold =
-    input.stage.stage_policy.pass_threshold ?? input.rubric.pass_threshold;
+    cached?.passThreshold ??
+    input.stage.stage_policy.pass_threshold ??
+    input.rubric.pass_threshold;
+
+  // Dimensions: reuse cached deterministic dimensions when no custom scorer
+  // is supplied; custom scorers are treated as non-deterministic and always
+  // re-run.
+  let dimensions: ReadonlyArray<RubricDimensionScore>;
+  let dimensionsAreDeterministic: boolean;
+  if (input.scoreDimensions) {
+    dimensions = input.scoreDimensions({
+      stage: input.stage,
+      rubric: input.rubric,
+      submission: input.submission,
+      runArtifacts: input.runArtifacts,
+    });
+    dimensionsAreDeterministic = false;
+  } else if (cached?.deterministicDimensions) {
+    dimensions = cached.deterministicDimensions;
+    dimensionsAreDeterministic = true;
+  } else {
+    dimensions = defaultDimensionScorer({
+      rubric: input.rubric,
+      runArtifacts: input.runArtifacts,
+    });
+    dimensionsAreDeterministic = true;
+  }
+
+  // Checkpoint deterministic state. Only re-write when we have strictly more
+  // deterministic data than the cached snapshot: preflight alone first,
+  // dimensions second.
+  if (input.intermediateStore) {
+    const cachedHasDims = cached?.deterministicDimensions !== undefined;
+    const wantsDimSnapshot = dimensionsAreDeterministic && !cachedHasDims;
+    if (!cached?.preflightPassed || wantsDimSnapshot) {
+      const carriedDims = dimensionsAreDeterministic
+        ? dimensions
+        : cached?.deterministicDimensions;
+      await input.intermediateStore.save({
+        key: idKey,
+        executionStatus: input.runArtifacts.executionStatus,
+        preflightPassed: true,
+        passThreshold,
+        ...(carriedDims !== undefined ? { deterministicDimensions: carriedDims } : {}),
+        savedAt: now(),
+      });
+    }
+  }
+
   const rubricScore = aggregateScore(dimensions);
   const status = deriveStatus(rubricScore, passThreshold);
 

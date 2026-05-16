@@ -83,7 +83,7 @@ reflect that snapshot.
 - [x] Make grading idempotent: deduplicate by `(submission_id, rubric_version,
       evaluator_version)`; reuse the existing grade on retry instead of
       regenerating.
-- [ ] Persist deterministic intermediate results so a partial failure can resume
+- [x] Persist deterministic intermediate results so a partial failure can resume
       without re-running upstream checks.
 
 ## Math Evaluation
