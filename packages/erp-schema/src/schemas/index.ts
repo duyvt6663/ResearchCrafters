@@ -28,11 +28,21 @@ export {
   stageInputFieldSchema,
   stageInputsPaletteSchema,
   stageInputsSkeletonSchema,
+  mathAnswerSchema,
+  mathAnswerStepSchema,
+  numericToleranceSchema,
+  writingConstraintsSchema,
+  citationPolicySchema,
+  reviewerPromptSchema,
+  revisionMetadataSchema,
   mentorVisibilityStateEnum,
   runnerModeEnum,
   validationKindEnum,
   inputModeEnum,
   inputFieldKindEnum,
+  mathStageSubtypeEnum,
+  writingStageSubtypeEnum,
+  stageSubtypeEnum,
 } from './stage.js';
 export { branchTypeEnum, supportLevelEnum } from './branch.js';
 export { rubricDimensionSchema } from './rubric.js';

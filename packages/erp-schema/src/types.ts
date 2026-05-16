@@ -21,11 +21,21 @@ import type {
   mentorVisibilitySchema,
   mentorLeakTestSchema,
   stageInputFieldSchema,
+  mathAnswerSchema,
+  mathAnswerStepSchema,
+  numericToleranceSchema,
+  writingConstraintsSchema,
+  citationPolicySchema,
+  reviewerPromptSchema,
+  revisionMetadataSchema,
   mentorVisibilityStateEnum,
   runnerModeEnum,
   validationKindEnum,
   inputModeEnum,
   inputFieldKindEnum,
+  mathStageSubtypeEnum,
+  writingStageSubtypeEnum,
+  stageSubtypeEnum,
 } from './schemas/stage.js';
 import type {
   branchSchema,
@@ -61,11 +71,21 @@ export type StagePolicy = z.infer<typeof stagePolicySchema>;
 export type MentorVisibility = z.infer<typeof mentorVisibilitySchema>;
 export type MentorLeakTest = z.infer<typeof mentorLeakTestSchema>;
 export type StageInputField = z.infer<typeof stageInputFieldSchema>;
+export type MathAnswer = z.infer<typeof mathAnswerSchema>;
+export type MathAnswerStep = z.infer<typeof mathAnswerStepSchema>;
+export type NumericToleranceSpec = z.infer<typeof numericToleranceSchema>;
+export type WritingConstraints = z.infer<typeof writingConstraintsSchema>;
+export type CitationPolicy = z.infer<typeof citationPolicySchema>;
+export type ReviewerPrompt = z.infer<typeof reviewerPromptSchema>;
+export type RevisionMetadata = z.infer<typeof revisionMetadataSchema>;
 export type MentorVisibilityState = z.infer<typeof mentorVisibilityStateEnum>;
 export type RunnerMode = z.infer<typeof runnerModeEnum>;
 export type ValidationKind = z.infer<typeof validationKindEnum>;
 export type InputMode = z.infer<typeof inputModeEnum>;
 export type InputFieldKind = z.infer<typeof inputFieldKindEnum>;
+export type MathStageSubtype = z.infer<typeof mathStageSubtypeEnum>;
+export type WritingStageSubtype = z.infer<typeof writingStageSubtypeEnum>;
+export type StageSubtype = z.infer<typeof stageSubtypeEnum>;
 
 export type Branch = z.infer<typeof branchSchema>;
 export type BranchType = z.infer<typeof branchTypeEnum>;

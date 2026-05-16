@@ -8,6 +8,7 @@
 
 import { prisma, withQueryTimeout } from "@researchcrafters/db";
 import type {
+  EvidenceItem,
   PaletteSpec,
   SkeletonSpec,
 } from "@researchcrafters/ui/components";
@@ -43,6 +44,7 @@ export type StageRecord = {
   };
   rubric?: ReadonlyArray<{ id: string; label: string; weight: number }>;
   artifact?: { kind: "log" | "table" | "plot"; caption: string };
+  evidence?: ReadonlyArray<EvidenceItem>;
   /**
    * Symbol-palette config (math stages) — surfaced from
    * `stagePolicy.inputs.palette` when authored.
@@ -78,6 +80,52 @@ export type DecisionGraph = {
 function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((v): v is string => typeof v === "string");
+}
+
+function evidenceKindForRef(ref: string): EvidenceItem["kind"] {
+  if (/^https?:\/\//i.test(ref)) return "link";
+  if (ref.includes("/evidence/") || ref.includes("/workspace/fixtures/")) {
+    return "artifact";
+  }
+  return "doc";
+}
+
+function evidenceTitleForRef(ref: string): string {
+  const [pathPart, fragment] = ref.split("#");
+  const file = pathPart?.split("/").pop() ?? ref;
+  const base = file.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ");
+  const title = base.length > 0 ? base : ref;
+  return fragment ? `${title} #${fragment}` : title;
+}
+
+function evidenceItemsFromPolicy(policy: {
+  artifact_refs?: unknown;
+  evidence_refs?: unknown;
+  source_refs?: unknown;
+  writing_constraints?: { required_evidence_refs?: unknown };
+  citation_policy?: { verified_citation_ids?: unknown };
+}): EvidenceItem[] {
+  const refs = [
+    ...asStringArray(policy.evidence_refs),
+    ...asStringArray(policy.writing_constraints?.required_evidence_refs),
+    ...asStringArray(policy.citation_policy?.verified_citation_ids),
+    ...asStringArray(policy.source_refs),
+    ...asStringArray(policy.artifact_refs),
+  ];
+  const seen = new Set<string>();
+  const out: EvidenceItem[] = [];
+  for (const ref of refs) {
+    if (seen.has(ref)) continue;
+    seen.add(ref);
+    out.push({
+      id: ref,
+      title: evidenceTitleForRef(ref),
+      kind: evidenceKindForRef(ref),
+      source: ref,
+      verified: true,
+    });
+  }
+  return out;
 }
 
 function inferMode(stageType: string, validationKind: string): StageInputsMode {
@@ -138,6 +186,13 @@ function modeFromPolicy(policy: unknown): StageInputsMode | null {
       // and to "writing" otherwise; the caller layers branch detection on
       // top so we err on the writing side here.
       return null;
+    case "symbolic_steps":
+    case "numeric_answer":
+    case "shape_table":
+    case "proof_outline":
+    case "counterexample":
+    case "mixed_math":
+      return "math";
     default:
       return null;
   }
@@ -308,6 +363,11 @@ export async function getStageForEnrollment(
     prompt?: unknown;
     rubric?: unknown;
     inputs?: { palette?: unknown; skeleton?: unknown };
+    artifact_refs?: unknown;
+    evidence_refs?: unknown;
+    source_refs?: unknown;
+    writing_constraints?: { required_evidence_refs?: unknown };
+    citation_policy?: { verified_citation_ids?: unknown };
   };
   const prompt = typeof policy.prompt === "string" ? policy.prompt : stage.title;
   const rubric = Array.isArray(policy.rubric)
@@ -333,6 +393,7 @@ export async function getStageForEnrollment(
     policy.inputs && typeof policy.inputs === "object"
       ? ((policy.inputs as { skeleton?: unknown }).skeleton as SkeletonSpec | undefined)
       : undefined;
+  const evidence = evidenceItemsFromPolicy(policy);
 
   // Build the record without ever assigning `undefined` so the strict
   // exactOptionalPropertyTypes check in tsconfig stays happy.
@@ -350,6 +411,7 @@ export async function getStageForEnrollment(
   if (palette !== undefined) record.palette = palette;
   if (skeleton !== undefined) record.skeleton = skeleton;
   if (rubric !== undefined) record.rubric = rubric;
+  if (evidence.length > 0) record.evidence = evidence;
   return record;
 }
 

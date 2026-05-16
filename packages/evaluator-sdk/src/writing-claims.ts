@@ -28,6 +28,7 @@ export type WritingClaimFailureReason =
   | 'no_citation'
   | 'disallowed_citation'
   | 'placeholder_disallowed'
+  | 'forbidden_claim'
   | 'spec_invalid';
 
 export interface WritingClaimSpec {
@@ -86,6 +87,17 @@ export interface WritingClaimBatch {
   passed: number;
   failed: number;
   flagged: number;
+}
+
+export interface ForbiddenClaimPolicy {
+  forbiddenClaims: ReadonlyArray<string>;
+}
+
+export interface ForbiddenClaimResult {
+  passed: boolean;
+  flagged: boolean;
+  matches: ReadonlyArray<string>;
+  note: string;
 }
 
 function uniq(refs: ReadonlyArray<string>): string[] {
@@ -331,4 +343,34 @@ export function extractCitationRefs(text: string): string[] {
     }
   }
   return out;
+}
+
+/**
+ * Flag over-broad or explicitly forbidden claim language before a rubric/LLM
+ * grader sees the draft. Matching is case-insensitive substring matching on
+ * author-supplied phrases such as "always", "state of the art", or
+ * "solves vanishing gradients".
+ */
+export function flagForbiddenClaims(
+  text: string,
+  policy: ForbiddenClaimPolicy,
+): ForbiddenClaimResult {
+  const haystack = text.toLowerCase();
+  const matches = policy.forbiddenClaims.filter((claim) =>
+    haystack.includes(claim.toLowerCase()),
+  );
+  if (matches.length === 0) {
+    return {
+      passed: true,
+      flagged: false,
+      matches: [],
+      note: 'No forbidden claim language detected.',
+    };
+  }
+  return {
+    passed: false,
+    flagged: true,
+    matches,
+    note: `Forbidden claim language detected: ${matches.join(', ')}.`,
+  };
 }

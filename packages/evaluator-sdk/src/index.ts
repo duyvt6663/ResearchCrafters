@@ -77,11 +77,20 @@ export type {
   ComplexityBoundResult,
   ComplexityBoundBatch,
 } from './implementation-checks.js';
+export { checkDerivationSteps } from './derivation.js';
+export type {
+  DerivationCheckResult,
+  DerivationStepResult,
+  DerivationStepSpec,
+  DerivationStepStatus,
+  DerivationStepSubmission,
+} from './derivation.js';
 export {
   checkWritingClaim,
   checkWritingClaimBatch,
   enforceCitationPolicy,
   extractCitationRefs,
+  flagForbiddenClaims,
 } from './writing-claims.js';
 export type {
   WritingClaimSpec,
@@ -89,6 +98,8 @@ export type {
   WritingClaimResult,
   WritingClaimBatch,
   WritingClaimFailureReason,
+  ForbiddenClaimPolicy,
+  ForbiddenClaimResult,
   CitationEnforcementMode,
   CitationEnforcementVerdict,
   CitationEnforcementResult,

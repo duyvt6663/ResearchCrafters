@@ -31,6 +31,40 @@ export const inputModeEnum = z.enum([
   'code',
   'experiment',
   'mixed',
+  'symbolic_steps',
+  'numeric_answer',
+  'shape_table',
+  'proof_outline',
+  'counterexample',
+  'mixed_math',
+]);
+
+const MATH_STAGE_SUBTYPES = [
+  'derivation_scaffold',
+  'shape_check',
+  'objective_debug',
+  'complexity_budget',
+  'toy_numeric',
+  'counterexample',
+  'proof_critique',
+] as const;
+
+const WRITING_STAGE_SUBTYPES = [
+  'claim_surgery',
+  'evidence_ladder',
+  'abstract_compression',
+  'reviewer_rebuttal',
+  'related_work_positioning',
+  'method_from_code',
+  'figure_caption_results',
+  'limitations_threat_model',
+] as const;
+
+export const mathStageSubtypeEnum = z.enum(MATH_STAGE_SUBTYPES);
+export const writingStageSubtypeEnum = z.enum(WRITING_STAGE_SUBTYPES);
+export const stageSubtypeEnum = z.union([
+  mathStageSubtypeEnum,
+  writingStageSubtypeEnum,
 ]);
 
 /**
@@ -88,6 +122,111 @@ export const stageInputsSkeletonSchema = z.object({
     .optional(),
   evidenceTargetDimensionId: z.string().min(1).optional(),
 });
+
+const mathAnswerStepKindEnum = z.enum([
+  'given',
+  'symbolic_step',
+  'numeric_answer',
+  'shape_check',
+  'proof_critique',
+  'counterexample',
+  'explanation',
+]);
+
+export const mathAnswerStepSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1).optional(),
+    kind: mathAnswerStepKindEnum,
+    prompt_md: z.string().min(1).optional(),
+    given_latex: z.string().min(1).optional(),
+    blank_latex: z.string().min(1).optional(),
+    accepted_equivalent_forms: z.array(z.string().min(1)).min(1).optional(),
+    allowed_assumptions: z.array(z.string().min(1)).optional(),
+    expected_shape: z.array(z.string().min(1)).optional(),
+    unit: z.string().min(1).optional(),
+    hint_md: z.string().min(1).optional(),
+    feedback_md: z.string().min(1).optional(),
+    artifact_refs: z.array(z.string().min(1)).optional(),
+    evidence_refs: z.array(z.string().min(1)).optional(),
+  })
+  .passthrough();
+
+export const mathAnswerSchema = z
+  .object({
+    kind: z.enum([
+      'symbolic_steps',
+      'numeric_answer',
+      'shape_table',
+      'proof_outline',
+      'counterexample',
+      'mixed_math',
+    ]),
+    steps: z.array(mathAnswerStepSchema).min(1),
+    final_explanation: z.boolean().optional(),
+  })
+  .passthrough();
+
+export const numericToleranceSchema = z
+  .object({
+    absolute: z.number().nonnegative().optional(),
+    relative: z.number().nonnegative().optional(),
+    unit: z.string().min(1).optional(),
+  })
+  .refine((v) => v.absolute !== undefined || v.relative !== undefined, {
+    message: 'numeric tolerance requires absolute or relative',
+  });
+
+export const writingConstraintsSchema = z
+  .object({
+    word_budget: z
+      .object({
+        min_words: z.number().int().nonnegative().optional(),
+        max_words: z.number().int().positive().optional(),
+      })
+      .optional(),
+    required_evidence_refs: z.array(z.string().min(1)).optional(),
+    forbidden_claims: z.array(z.string().min(1)).optional(),
+    allowed_citation_set: z.array(z.string().min(1)).optional(),
+    required_caveat: z.string().min(1).optional(),
+    target_venue_style: z.string().min(1).optional(),
+    module_parts: z
+      .array(z.enum(['claim_surgery', 'evidence_ladder']))
+      .optional(),
+  })
+  .passthrough();
+
+export const citationPolicySchema = z
+  .object({
+    verified_citation_ids: z.array(z.string().min(1)).optional(),
+    placeholder_policy: z
+      .enum(['forbidden', 'allowed_in_draft', 'allowed'])
+      .optional(),
+    external_search_disabled: z.boolean().optional(),
+  })
+  .passthrough();
+
+export const reviewerPromptSchema = z
+  .object({
+    persona: z.string().min(1).optional(),
+    criticism: z.string().min(1),
+    allowed_evidence_refs: z.array(z.string().min(1)).optional(),
+  })
+  .passthrough();
+
+export const revisionMetadataSchema = z
+  .object({
+    original_draft: z.string().min(1).optional(),
+    edited_draft: z.string().min(1).optional(),
+    revision_note: z.string().min(1).optional(),
+    final_answer: z.string().min(1).optional(),
+    required_fields: z
+      .array(
+        z.enum(['original_draft', 'edited_draft', 'revision_note', 'final_answer']),
+      )
+      .optional(),
+  })
+  .passthrough();
 
 export const inputFieldKindEnum = z.enum([
   'string',
@@ -205,6 +344,21 @@ export const stagePolicySchema = z.object({
      * See `stageInputsSkeletonSchema` for the shape.
      */
     skeleton: stageInputsSkeletonSchema.optional(),
+    /**
+     * Interactive math authoring contract. This is intentionally declarative:
+     * deterministic graders can consume accepted forms / tolerances, while the
+     * UI can render stable step ids and local hints without seeing the
+     * canonical feedback block.
+     */
+    answer_schema: mathAnswerSchema.optional(),
+    per_step_hints: z.record(z.string(), z.string()).optional(),
+    per_step_feedback: z.record(z.string(), z.string()).optional(),
+    allowed_symbols: z.array(z.string().min(1)).optional(),
+    shape_variables: z.record(z.string(), z.string()).optional(),
+    numeric_tolerances: z.record(z.string(), numericToleranceSchema).optional(),
+    accepted_equivalent_forms: z
+      .record(z.string(), z.array(z.string().min(1)).min(1))
+      .optional(),
   }),
   pass_threshold: z.number().min(0).max(1).optional(),
   hints: z
@@ -325,6 +479,11 @@ export const stageSchema = z
        * with a specific evidence artifact (training curve, table, etc.).
        */
       evidence_refs: z.array(z.string().min(1)).optional(),
+      stage_subtype: stageSubtypeEnum.optional(),
+      writing_constraints: writingConstraintsSchema.optional(),
+      citation_policy: citationPolicySchema.optional(),
+      reviewer_prompt: reviewerPromptSchema.optional(),
+      revision: revisionMetadataSchema.optional(),
       stage_policy: stagePolicySchema,
     }),
   )
@@ -350,5 +509,37 @@ export const stageSchema = z
         path: ['stage_policy', 'runner', 'mode'],
         message: `runner.mode must not be 'none' when inputs.mode is '${inputMode}'`,
       });
+    }
+
+    const stageSubtype = stage.stage_subtype;
+    if (stageSubtype !== undefined) {
+      const subtype = stageSubtype as string;
+      if (
+        stage.type === 'math' &&
+        !(MATH_STAGE_SUBTYPES as readonly string[]).includes(subtype)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['stage_subtype'],
+          message: `stage_subtype '${subtype}' is not valid for math stages`,
+        });
+      }
+      if (
+        stage.type === 'writing' &&
+        !(WRITING_STAGE_SUBTYPES as readonly string[]).includes(subtype)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['stage_subtype'],
+          message: `stage_subtype '${subtype}' is not valid for writing stages`,
+        });
+      }
+      if (stage.type !== 'math' && stage.type !== 'writing') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['stage_subtype'],
+          message: 'stage_subtype is only supported on math and writing stages',
+        });
+      }
     }
   });

@@ -4,11 +4,17 @@ import {
   checkWritingClaimBatch,
   enforceCitationPolicy,
   extractCitationRefs,
+  flagForbiddenClaims,
 } from '../src/index.js';
 import type {
   WritingClaimPolicy,
   WritingClaimSpec,
 } from '../src/index.js';
+import {
+  RESNET_ALLOWED_EVIDENCE,
+  RESNET_FORBIDDEN_CLAIMS,
+  RESNET_WRITING_EXAMPLES,
+} from './fixtures/resnet-writing-examples.js';
 
 const policy: WritingClaimPolicy = {
   allowedEvidenceRefs: [
@@ -288,5 +294,58 @@ describe('extractCitationRefs', () => {
 
   it('returns an empty list for empty input', () => {
     expect(extractCitationRefs('')).toEqual([]);
+  });
+});
+
+describe('ResNet writing regression fixtures', () => {
+  const resnetPolicy: WritingClaimPolicy = {
+    allowedEvidenceRefs: [...RESNET_ALLOWED_EVIDENCE],
+  };
+
+  function claimFromFixture(key: keyof typeof RESNET_WRITING_EXAMPLES): WritingClaimSpec {
+    const fixture = RESNET_WRITING_EXAMPLES[key];
+    return {
+      id: fixture.id,
+      text: fixture.text,
+      citedRefs: extractCitationRefs(fixture.text),
+    };
+  }
+
+  it('accepts the strong fixture against citation and forbidden-claim checks', () => {
+    const citation = enforceCitationPolicy([claimFromFixture('strong')], resnetPolicy);
+    const forbidden = flagForbiddenClaims(
+      RESNET_WRITING_EXAMPLES.strong.text,
+      { forbiddenClaims: [...RESNET_FORBIDDEN_CLAIMS] },
+    );
+    expect(citation.verdict).toBe('passed');
+    expect(forbidden.passed).toBe(true);
+  });
+
+  it('flags an overclaiming fixture even when citation is present', () => {
+    const citation = enforceCitationPolicy(
+      [claimFromFixture('overclaiming')],
+      resnetPolicy,
+    );
+    const forbidden = flagForbiddenClaims(
+      RESNET_WRITING_EXAMPLES.overclaiming.text,
+      { forbiddenClaims: [...RESNET_FORBIDDEN_CLAIMS] },
+    );
+    expect(citation.verdict).toBe('passed');
+    expect(forbidden.passed).toBe(false);
+    expect(forbidden.matches).toEqual([
+      'always',
+      'solves vanishing gradients',
+      'state of the art',
+    ]);
+  });
+
+  it('rejects the citation-missing fixture under strict citation policy', () => {
+    const citation = enforceCitationPolicy(
+      [claimFromFixture('citationMissing')],
+      resnetPolicy,
+    );
+    expect(citation.verdict).toBe('failed');
+    expect(citation.refusalReason).toBe('citation_policy_violation');
+    expect(citation.summary).toContain('no_citation');
   });
 });

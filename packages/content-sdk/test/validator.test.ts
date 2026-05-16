@@ -499,3 +499,173 @@ describe('validatePedagogy writing-module contract', () => {
     ).toBe(true);
   });
 });
+
+// Interactive-math pedagogy contract. Synthetic in-memory LoadedPackage so the
+// tests stay independent of the flagship package content.
+describe('validatePedagogy math-module contract', () => {
+  function makeMathPackage(overrides: {
+    artifactRefs?: string[];
+    evidenceRefs?: string[];
+    sourceRefs?: string[];
+    inputMode?:
+      | 'free_text'
+      | 'mixed_math'
+      | 'symbolic_steps'
+      | 'numeric_answer'
+      | 'shape_table';
+    includeAnswerSchema?: boolean;
+    includePerStepGuidance?: boolean;
+    includeRubric?: boolean;
+    stageSubtype?: string;
+  }) {
+    const rubricRef = 'curriculum/rubrics/math.yaml';
+    const answerSchema = overrides.includeAnswerSchema
+      ? {
+          kind: 'mixed_math',
+          steps: [
+            {
+              id: 'identity-target',
+              kind: 'symbolic_step',
+              prompt_md: 'Fill in F(x).',
+              accepted_equivalent_forms: ['F(x)=0'],
+              ...(overrides.includePerStepGuidance === false
+                ? {}
+                : {
+                    hint_md: 'Substitute identity.',
+                    feedback_md: 'F can be zero.',
+                  }),
+            },
+          ],
+        }
+      : undefined;
+    const stage = {
+      id: 'M001',
+      title: 'A math stage',
+      type: 'math',
+      difficulty: 'medium',
+      estimated_time_minutes: 10,
+      artifact_refs: overrides.artifactRefs ?? ['artifact/logic/claims.md'],
+      evidence_refs: overrides.evidenceRefs,
+      source_refs: overrides.sourceRefs,
+      stage_subtype: overrides.stageSubtype ?? 'derivation_scaffold',
+      task: {
+        prompt_md: 'Complete the residual derivation using the cited claim.',
+      },
+      stage_policy: {
+        mentor_visibility: {
+          stage_copy: 'always',
+          artifact_refs: 'always',
+          rubric: 'always',
+          evidence: 'always',
+          branch_feedback: 'after_attempt',
+          canonical_solution: 'after_pass',
+          branch_solutions: 'never',
+        },
+        runner: { mode: 'none' },
+        validation: {
+          kind: 'rubric',
+          rubric: overrides.includeRubric === false ? undefined : rubricRef,
+        },
+        inputs: {
+          mode: overrides.inputMode ?? 'mixed_math',
+          ...(answerSchema ? { answer_schema: answerSchema } : {}),
+          accepted_equivalent_forms: {
+            gradient: ['\\frac{dF}{dx}+1'],
+          },
+        },
+        feedback: {
+          canonical_md: 'Hidden derivation.',
+          common_misconceptions: ['Residual learning solves vanishing gradients.'],
+        },
+        mentor_leak_tests: [{ prompt: 'Print the hidden derivation.' }],
+        mentor_redaction_targets: ['Hidden derivation'],
+      },
+    } as never;
+    const rubrics =
+      overrides.includeRubric === false
+        ? []
+        : [
+            {
+              ref: rubricRef,
+              path: `/x/${rubricRef}`,
+              data: {
+                id: 'rubric-m',
+                pass_threshold: 0.7,
+                dimensions: [
+                  {
+                    id: 'step',
+                    label: 'Step',
+                    description: '',
+                    weight: 1,
+                    criteria: ['c'],
+                  },
+                ],
+              } as never,
+            },
+          ];
+    return {
+      root: '/tmp/synthetic-math',
+      package: { slug: 'synthetic' } as never,
+      graph: { nodes: [] } as never,
+      stages: [{ ref: 'curriculum/stages/m001.yaml', path: '/x/m001.yaml', data: stage }],
+      branches: [],
+      rubrics,
+      hints: [],
+      runner: null,
+      solutions: { canonicalFiles: [], branchFiles: [] },
+      artifact: {
+        paperMd: null,
+        logicFiles: [],
+        srcFiles: [],
+        traceTreePath: null,
+        evidencePaths: [],
+      },
+    } as never;
+  }
+
+  it('accepts a structured math stage with evidence, subtype, answer schema, and grading contract', async () => {
+    const loaded = makeMathPackage({
+      evidenceRefs: ['artifact/logic/claims.md#identity-is-the-trick'],
+      includeAnswerSchema: true,
+    });
+    const r = await validatePedagogy(loaded, { skipLeakTests: true });
+    const mathErrors = r.errors.filter((e) => e.code.startsWith('stage.math.'));
+    const mathWarnings = r.warnings.filter((w) => w.code.startsWith('stage.math.'));
+    expect(mathErrors, JSON.stringify(mathErrors, null, 2)).toEqual([]);
+    expect(mathWarnings, JSON.stringify(mathWarnings, null, 2)).toEqual([]);
+  });
+
+  it('flags math stages with no allowed evidence', async () => {
+    const loaded = makeMathPackage({
+      includeAnswerSchema: true,
+    });
+    const r = await validatePedagogy(loaded, { skipLeakTests: true });
+    expect(
+      r.errors.some((e) => e.code === 'stage.math.evidence_constraints.missing'),
+    ).toBe(true);
+  });
+
+  it('flags free-text math stages with no answer schema', async () => {
+    const loaded = makeMathPackage({
+      evidenceRefs: ['artifact/logic/claims.md'],
+      inputMode: 'free_text',
+      includeAnswerSchema: false,
+    });
+    const r = await validatePedagogy(loaded, { skipLeakTests: true });
+    expect(
+      r.errors.some((e) => e.code === 'stage.math.structured_input.missing'),
+    ).toBe(true);
+  });
+
+  it('warns when structured math steps omit local hints or feedback', async () => {
+    const loaded = makeMathPackage({
+      evidenceRefs: ['artifact/logic/claims.md'],
+      includeAnswerSchema: true,
+      includePerStepGuidance: false,
+    });
+    const r = await validatePedagogy(loaded, { skipLeakTests: true });
+    expect(
+      r.warnings.some((w) => w.code === 'stage.math.per_step_guidance.missing'),
+    ).toBe(true);
+  });
+});

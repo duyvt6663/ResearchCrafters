@@ -2,6 +2,7 @@ id: S001M
 node_id: N001M
 title: "The math behind identity mapping."
 type: math
+stage_subtype: derivation_scaffold
 difficulty: easy
 estimated_time_minutes: 10
 artifact_refs:
@@ -11,31 +12,106 @@ artifact_refs:
 source_refs:
   - artifact/logic/claims.md#identity-is-the-trick
   - artifact/logic/solution/algorithm.md
+evidence_refs:
+  - artifact/logic/claims.md#identity-is-the-trick
+  - artifact/logic/solution/algorithm.md
 task:
   prompt_md: |
-    Before you commit to a fix, work through the math that motivates the
-    residual decision.
+    Complete the residual derivation before you implement the shortcut path.
 
-    Let $H(x)$ be the function a stack of layers ideally implements. A
-    residual block reformulates this as $H(x) = F(x) + x$, where $F(x)$ is
-    what the stack of layers actually learns and $+ x$ is an identity
-    shortcut.
+    The paper writes the desired block mapping as $H(x)$ and the learned
+    residual branch as $F(x)$, with $H(x)=F(x)+x$. Fill the scaffolded steps:
 
-    Answer in your own words:
+    1. If the target mapping is identity, $H(x)=x$, solve for the residual
+       branch target.
+    2. Differentiate $H(x)=F(x)+x$ with respect to $x$ and identify the
+       shortcut term that remains in the gradient.
+    3. Repair the wrong mechanism claim: "Residual learning solves vanishing
+       gradients." State the narrower mechanism the derivation actually
+       supports.
 
-    1. Suppose the optimal $H(x)$ for a particular block is exactly the
-       identity function. What does $F(x)$ need to be? Why is that easier
-       to optimise than learning identity from scratch through a non-linear
-       stack?
-    2. Show, with one or two lines of differentiation, why the gradient of
-       a residual block w.r.t. `x` always contains a `1 +` term. Explain
-       in one sentence why this matters when stacking many blocks.
-    3. The paper claims residual learning helps even when the optimal
-       mapping is *not* identity. Briefly: why?
-
-    A correct answer is short. Your write-up should be ≤ 8 sentences.
+    Use the result in `S003`: the shortcut path can only add back `x` when
+    its shape matches the residual branch output, so shape preservation is not
+    an implementation detail; it is required by the equation.
 inputs:
-  mode: free_text
+  mode: mixed_math
+  answer_schema:
+    kind: mixed_math
+    final_explanation: true
+    steps:
+      - id: identity-target
+        label: "Identity target"
+        kind: symbolic_step
+        prompt_md: "Given $H(x)=F(x)+x$ and $H(x)=x$, fill in the target for $F(x)$."
+        blank_latex: "F(x)=\\_"
+        accepted_equivalent_forms:
+          - "F(x)=0"
+          - "F=0"
+          - "0"
+        hint_md: "Substitute $H(x)=x$ into $H(x)=F(x)+x$, then subtract $x$ from both sides."
+        feedback_md: "The residual branch can represent identity by learning the zero residual."
+        artifact_refs:
+          - artifact/logic/claims.md#identity-is-the-trick
+        evidence_refs:
+          - artifact/logic/solution/algorithm.md
+      - id: gradient-shortcut
+        label: "Shortcut gradient"
+        kind: symbolic_step
+        prompt_md: "Differentiate $H(x)=F(x)+x$ with respect to $x$."
+        blank_latex: "\\frac{dH}{dx}=\\_"
+        accepted_equivalent_forms:
+          - "\\frac{dF}{dx}+1"
+          - "1+\\frac{dF}{dx}"
+          - "\\frac{dF(x)}{dx}+1"
+        hint_md: "Use linearity of differentiation and remember that $d(x)/dx=1$."
+        feedback_md: "The additive identity path contributes a direct unit-gradient term."
+        artifact_refs:
+          - artifact/logic/solution/algorithm.md
+        evidence_refs:
+          - artifact/logic/claims.md#identity-is-the-trick
+      - id: repair-overclaim
+        label: "Repair the mechanism claim"
+        kind: proof_critique
+        prompt_md: "Mark the claim 'residual learning solves vanishing gradients' as invalid or under-specified, then repair it using the derivation."
+        allowed_assumptions:
+          - "BatchNorm and initialization already help signal scale."
+          - "The derivation supports identity-recoverable optimization, not a complete causal proof about vanishing gradients."
+        hint_md: "The $+1$ term explains a shortcut path for signal, but the paper's degradation result is broader than a pure vanishing-gradient diagnosis."
+        feedback_md: "A careful repair says residual blocks make identity mappings easy to represent and optimize; they do not by themselves prove vanishing gradients are solved."
+        artifact_refs:
+          - artifact/logic/claims.md#vanishing-gradients-not-the-cause
+          - artifact/logic/claims.md#identity-is-the-trick
+        evidence_refs:
+          - artifact/logic/claims.md#identity-is-the-trick
+  allowed_symbols:
+    - "H"
+    - "F"
+    - "x"
+    - "+"
+    - "1"
+    - "0"
+    - "\\frac{d}{dx}"
+  shape_variables:
+    x: "Input tensor shape that the shortcut path must preserve unless projected."
+    "F(x)": "Residual branch output shape; must match the shortcut output before addition."
+    "H(x)": "Block output shape after residual addition."
+  accepted_equivalent_forms:
+    identity-target:
+      - "F(x)=0"
+      - "F=0"
+      - "0"
+    gradient-shortcut:
+      - "\\frac{dF}{dx}+1"
+      - "1+\\frac{dF}{dx}"
+      - "\\frac{dF(x)}{dx}+1"
+  per_step_hints:
+    identity-target: "Cancel the $x$ term on both sides."
+    gradient-shortcut: "Differentiate the residual branch and the identity shortcut separately."
+    repair-overclaim: "Replace the causal overclaim with the identity-recovery mechanism."
+  per_step_feedback:
+    identity-target: "Identity is recovered when the residual branch learns zero."
+    gradient-shortcut: "The direct shortcut contributes the unit-gradient term."
+    repair-overclaim: "The derivation supports easier identity optimization, not a blanket vanishing-gradient cure."
   # Symbol-palette config (promoted from experiment M1 — see
   # `archive/m1-symbol-palette/README.md`). When present,
   # the math stage view renders a click-to-assemble palette in place of the
@@ -175,7 +251,9 @@ stage_policy:
 mentor_redaction_targets:
   - "F(x) + x"
   - "F(x) = 0"
+  - "F(x)=0"
   - "dF/dx + 1"
+  - "dF/dx+1"
   - "identity-as-default"
 mentor_leak_tests:
   - attack_id: "direct-ask"

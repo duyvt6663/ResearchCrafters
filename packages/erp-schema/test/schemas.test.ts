@@ -680,6 +680,105 @@ describe('previously-dropped stage fields parse + round-trip', () => {
     }
   });
 
+  it('preserves interactive math module authoring fields', () => {
+    const r = stageSchema.safeParse(
+      topLevelStage({
+        type: 'math',
+        stage_subtype: 'derivation_scaffold',
+        evidence_refs: ['artifact/logic/claims.md#identity-is-the-trick'],
+        inputs: {
+          mode: 'mixed_math',
+          allowed_symbols: ['H', 'F', 'x', '+', '1'],
+          shape_variables: { x: 'same tensor shape as H(x)' },
+          numeric_tolerances: {
+            toy_identity_error: { absolute: 0, unit: 'dimensionless' },
+          },
+          accepted_equivalent_forms: {
+            gradient: ['\\frac{dF}{dx} + 1', '1 + \\frac{dF}{dx}'],
+          },
+          answer_schema: {
+            kind: 'mixed_math',
+            final_explanation: true,
+            steps: [
+              {
+                id: 'identity-target',
+                kind: 'symbolic_step',
+                prompt_md: 'Fill in the residual target.',
+                accepted_equivalent_forms: ['F(x)=0', 'F = 0'],
+                hint_md: 'Substitute H(x)=x into H(x)=F(x)+x.',
+                feedback_md: 'The residual branch can learn zero.',
+              },
+            ],
+          },
+        },
+      }),
+    );
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.stage_subtype).toBe('derivation_scaffold');
+      expect(r.data.stage_policy.inputs.mode).toBe('mixed_math');
+      expect(r.data.stage_policy.inputs.answer_schema?.steps[0]?.id).toBe(
+        'identity-target',
+      );
+      expect(r.data.stage_policy.inputs.accepted_equivalent_forms?.gradient).toEqual([
+        '\\frac{dF}{dx} + 1',
+        '1 + \\frac{dF}{dx}',
+      ]);
+      expect(r.data.stage_policy.inputs.numeric_tolerances?.toy_identity_error?.unit).toBe(
+        'dimensionless',
+      );
+    }
+  });
+
+  it('preserves academic-writing module constraints and reviewer prompts', () => {
+    const r = stageSchema.safeParse(
+      topLevelStage({
+        type: 'writing',
+        stage_subtype: 'reviewer_rebuttal',
+        writing_constraints: {
+          word_budget: { min_words: 60, max_words: 120 },
+          required_evidence_refs: ['artifact/evidence/tables/training-curves.md'],
+          forbidden_claims: ['solves vanishing gradients', 'always'],
+          allowed_citation_set: ['artifact/evidence/tables/training-curves.md'],
+          required_caveat: 'State what the evidence does not isolate.',
+          target_venue_style: 'conference rebuttal',
+        },
+        citation_policy: {
+          verified_citation_ids: ['artifact/evidence/tables/training-curves.md'],
+          placeholder_policy: 'forbidden',
+          external_search_disabled: true,
+        },
+        reviewer_prompt: {
+          persona: 'skeptical reviewer',
+          criticism: "Isn't this just vanishing gradients?",
+          allowed_evidence_refs: ['artifact/evidence/tables/training-curves.md'],
+        },
+        revision: {
+          original_draft: 'Residual learning solves vanishing gradients.',
+          required_fields: ['edited_draft', 'revision_note', 'final_answer'],
+        },
+      }),
+    );
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.stage_subtype).toBe('reviewer_rebuttal');
+      expect(r.data.writing_constraints?.word_budget?.max_words).toBe(120);
+      expect(r.data.citation_policy?.external_search_disabled).toBe(true);
+      expect(r.data.reviewer_prompt?.criticism).toContain('vanishing gradients');
+      expect(r.data.revision?.required_fields).toContain('final_answer');
+    }
+  });
+
+  it('rejects a writing subtype on a math stage', () => {
+    const r = stageSchema.safeParse(
+      topLevelStage({
+        type: 'math',
+        stage_subtype: 'claim_surgery',
+      }),
+    );
+    expect(r.success).toBe(false);
+  });
+
   it('preserves inline stage_policy.runner.fixtures[]', () => {
     const r = stageSchema.safeParse(
       topLevelStage({

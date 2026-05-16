@@ -135,7 +135,10 @@ export function WritingWorkbench({
       >
         {skeleton ? (
           <ClaimSkeleton
-            spec={skeleton}
+            spec={{
+              ...skeleton,
+              evidence: skeleton.evidence ?? evidence,
+            }}
             value={draft.value}
             onChange={draft.onChange}
           />

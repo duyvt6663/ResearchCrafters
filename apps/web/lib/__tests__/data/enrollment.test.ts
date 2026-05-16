@@ -180,6 +180,43 @@ describe("getStageForEnrollment", () => {
     expect(stage.inputs.mode).toBe("code");
   });
 
+  it("maps structured math input modes and exposes verified stage evidence", async () => {
+    enrollmentFindUnique.mockResolvedValue({
+      packageVersionId: PV_ID,
+      completedStageRefs: [],
+      activeStageRef: "S001M",
+      packageVersion: { releaseFreeStageIds: ["S001", "S001M"] },
+    });
+    stageFindUnique.mockResolvedValue({
+      id: "stg-001m-id",
+      stageId: "S001M",
+      title: "The math behind identity mapping.",
+      type: "math",
+      validationKind: "rubric",
+      runnerMode: "none",
+      estimatedTimeMinutes: 10,
+      free: true,
+      stagePolicy: {
+        prompt: "Fill in the residual derivation.",
+        inputs: { mode: "mixed_math" },
+        evidence_refs: ["artifact/logic/claims.md#identity-is-the-trick"],
+        citation_policy: {
+          verified_citation_ids: ["artifact/evidence/tables/training-curves.md#plain-vs-residual"],
+        },
+      },
+    });
+
+    const stage = await getStageForEnrollment(ENR_ID, "S001M");
+    expect(stage).not.toBeNull();
+    if (!stage) return;
+    expect(stage.inputs.mode).toBe("math");
+    expect(stage.evidence?.map((e) => e.id)).toEqual([
+      "artifact/logic/claims.md#identity-is-the-trick",
+      "artifact/evidence/tables/training-curves.md#plain-vs-residual",
+    ]);
+    expect(stage.evidence?.[0]?.verified).toBe(true);
+  });
+
   it("attaches branches for a decision stage", async () => {
     enrollmentFindUnique.mockResolvedValue({
       packageVersionId: PV_ID,
