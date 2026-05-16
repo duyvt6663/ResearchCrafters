@@ -20,12 +20,11 @@ import type { Rubric, Stage } from '@researchcrafters/erp-schema';
 import {
   buildGraderUserPrompt,
   enforceCitationPolicy,
-  EvaluatorRefusal,
   gradeAttempt,
   InMemoryGradeStore,
   llmGrade,
 } from '../src/index.js';
-import type { RunArtifacts, SubmissionInput } from '../src/index.js';
+import type { RunArtifacts } from '../src/index.js';
 
 import {
   HIDDEN_CANONICAL,
@@ -86,7 +85,6 @@ function makeWritingRubric(): Rubric {
   };
 }
 
-const submission: SubmissionInput = { id: 'sub-writing-fixture' };
 const runArtifacts: RunArtifacts = { executionStatus: 'ok' };
 
 describe('writing evaluator regression fixtures', () => {
