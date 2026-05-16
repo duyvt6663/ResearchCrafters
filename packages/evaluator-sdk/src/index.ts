@@ -25,3 +25,18 @@ export {
   parseRunnerArtifacts,
   RunnerArtifactParseError,
 } from './parsers/runner-artifacts.js';
+export {
+  checkNumeric,
+  checkNumericBatch,
+  inferShape,
+  metricsToObservations,
+} from './numeric.js';
+export type {
+  NumericCheckSpec,
+  NumericCheckResult,
+  NumericCheckBatch,
+  NumericCheckFailureReason,
+  NumericObservation,
+  NumericTolerance,
+  NumericValue,
+} from './numeric.js';
