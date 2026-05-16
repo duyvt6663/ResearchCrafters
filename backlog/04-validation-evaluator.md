@@ -118,7 +118,7 @@ reflect that snapshot.
 - [ ] Add per-step partial credit for derivation modules.
 - [x] Add rubric fallback for proof outlines, counterexamples, and conceptual
       explanations.
-- [ ] Add adversarial grader tests for math stages that try to extract
+- [x] Add adversarial grader tests for math stages that try to extract
       canonical derivations.
 
 ## Academic Writing Evaluation
