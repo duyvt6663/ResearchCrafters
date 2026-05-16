@@ -60,7 +60,7 @@ reflect that snapshot.
 - [ ] Ensure math modules include at least one checkable reasoning artifact:
       derivation step, shape table, numeric answer, counterexample, or proof
       critique.
-- [ ] Ensure writing modules include evidence constraints, citation policy,
+- [x] Ensure writing modules include evidence constraints, citation policy,
       rubric dimensions, and revision behavior.
 - [ ] Ensure first 2 stages can be completed quickly.
 
