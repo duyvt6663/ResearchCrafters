@@ -30,14 +30,18 @@ reflect that snapshot.
 - [x] Verify heuristics link to code refs.
 - [x] Verify curriculum stages link to valid artifact refs.
 - [x] Verify branches link to evidence or declare expert reconstruction.
-- [ ] Verify `trace/exploration_tree.yaml` nodes reference valid logic, code,
+- [x] Verify `trace/exploration_tree.yaml` nodes reference valid logic, code,
       evidence ids, branch ids, parent ids, and edge endpoints; flag dangling or
-      duplicate node ids. _(current validator covers node id uniqueness and
-      `refs`; trace schema, `parents`, `edges`, and `branch_id` checks remain.
-      Schema-completeness agent may pick this up alongside the other
-      drop-fixes.)_
-- [ ] Verify trace nodes that map to curriculum branches use the same id
+      duplicate node ids. _(`validateAraCrossLink` two-pass walk validates ids,
+      refs, parents, string children, branch_id against curriculum branches,
+      and top-level edge endpoints; flags self-references and self-loops.)_
+- [x] Verify trace nodes that map to curriculum branches use the same id
       convention so trace and curriculum stay aligned.
+      _(`validateAraCrossLink` third pass enforces a 1:1 mapping between
+      `kind: branch` trace nodes and curriculum branch ids: emits
+      `trace.branch_id.duplicate` (error) when two trace branch nodes claim
+      the same `branch_id`, and `trace.branch.unmapped` (warning) when a
+      curriculum branch has no corresponding trace branch node.)_
 - [x] Enforce `support_level=explicit` requires non-empty `source_refs`.
 - [ ] Enforce claim wording does not exceed cited evidence where possible.
 
@@ -78,7 +82,7 @@ reflect that snapshot.
 - [ ] Ensure math modules include at least one checkable reasoning artifact:
       derivation step, shape table, numeric answer, counterexample, or proof
       critique.
-- [ ] Ensure writing modules include evidence constraints, citation policy,
+- [x] Ensure writing modules include evidence constraints, citation policy,
       rubric dimensions, and revision behavior.
 - [ ] Ensure first 2 stages can be completed quickly.
 
@@ -97,12 +101,18 @@ reflect that snapshot.
 - [x] Make grading idempotent: deduplicate by `(submission_id, rubric_version,
       evaluator_version)`; reuse the existing grade on retry instead of
       regenerating.
-- [ ] Persist deterministic intermediate results so a partial failure can resume
+- [x] Persist deterministic intermediate results so a partial failure can resume
       without re-running upstream checks.
 
 ## Math Evaluation
 
-- [ ] Add deterministic numeric checks with tolerance and unit/shape metadata.
+- [x] Add deterministic numeric checks with tolerance and unit/shape metadata.
+      _(Iteration: `packages/evaluator-sdk/src/numeric.ts` exposes
+      `checkNumeric`/`checkNumericBatch` with absolute+relative tolerance
+      (numpy-isclose semantics), unit equality, scalar/vector/tensor shape
+      inference and shape-table gating, and a `metricsToObservations`
+      adapter for `RunArtifacts.metrics`. Public types and helpers are
+      re-exported from `packages/evaluator-sdk/src/index.ts`.)_
 - [ ] Add shape-table and memory/complexity checks for implementation-linked
       math stages.
 - [ ] Add per-step partial credit for derivation modules.

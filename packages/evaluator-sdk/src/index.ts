@@ -4,6 +4,8 @@ export {
   InMemoryGradeStore,
 } from './idempotency.js';
 export type { GradeStore } from './idempotency.js';
+export { InMemoryIntermediateStore } from './intermediate.js';
+export type { IntermediateResult, IntermediateStore } from './intermediate.js';
 export {
   gradeAttempt,
   EvaluatorRefusal,
@@ -23,3 +25,18 @@ export {
   parseRunnerArtifacts,
   RunnerArtifactParseError,
 } from './parsers/runner-artifacts.js';
+export {
+  checkNumeric,
+  checkNumericBatch,
+  inferShape,
+  metricsToObservations,
+} from './numeric.js';
+export type {
+  NumericCheckSpec,
+  NumericCheckResult,
+  NumericCheckBatch,
+  NumericCheckFailureReason,
+  NumericObservation,
+  NumericTolerance,
+  NumericValue,
+} from './numeric.js';

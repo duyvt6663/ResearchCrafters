@@ -6,8 +6,17 @@ import { emptyReport, finalize, makeIssue, pushIssue } from './issues.js';
 
 interface TraceNode {
   id?: unknown;
+  kind?: unknown;
   refs?: unknown;
+  parents?: unknown;
   children?: unknown;
+  branch_id?: unknown;
+}
+
+interface TraceEdge {
+  from?: unknown;
+  to?: unknown;
+  kind?: unknown;
 }
 
 function stripFragment(ref: string): string {
@@ -42,6 +51,270 @@ function flattenTraceNodes(
     }
   }
   return acc;
+}
+
+function validateTraceNode(
+  n: TraceNode,
+  ids: Set<string>,
+  knownArtifactPaths: Set<string>,
+  branchById: Map<string, unknown>,
+  tracePath: string,
+  report: ValidationReport,
+): void {
+  const nodeId = n.id as string;
+
+  if (Array.isArray(n.refs)) {
+    for (const r of n.refs) {
+      if (typeof r !== 'string') continue;
+      const noFrag = stripFragment(r);
+      if (noFrag.startsWith('artifact/') && !knownArtifactPaths.has(noFrag)) {
+        pushIssue(
+          report,
+          makeIssue(
+            'ara-cross-link',
+            'warning',
+            'trace.ref.unresolved',
+            `Trace node ${nodeId} ref does not resolve: ${r}`,
+            { path: tracePath, ref: nodeId },
+          ),
+        );
+      }
+    }
+  } else if (n.refs !== undefined && n.refs !== null) {
+    pushIssue(
+      report,
+      makeIssue(
+        'ara-cross-link',
+        'error',
+        'trace.node.refs_invalid',
+        `Trace node ${nodeId} has non-array refs.`,
+        { path: tracePath, ref: nodeId },
+      ),
+    );
+  }
+
+  if (n.parents !== undefined && n.parents !== null) {
+    if (!Array.isArray(n.parents)) {
+      pushIssue(
+        report,
+        makeIssue(
+          'ara-cross-link',
+          'error',
+          'trace.node.parents_invalid',
+          `Trace node ${nodeId} has non-array parents.`,
+          { path: tracePath, ref: nodeId },
+        ),
+      );
+    } else {
+      for (const p of n.parents) {
+        if (typeof p !== 'string' || p.length === 0) {
+          pushIssue(
+            report,
+            makeIssue(
+              'ara-cross-link',
+              'error',
+              'trace.parent.invalid',
+              `Trace node ${nodeId} has invalid parent entry.`,
+              { path: tracePath, ref: nodeId },
+            ),
+          );
+          continue;
+        }
+        if (!ids.has(p)) {
+          pushIssue(
+            report,
+            makeIssue(
+              'ara-cross-link',
+              'error',
+              'trace.parent.missing',
+              `Trace node ${nodeId} parent references unknown node: ${p}`,
+              { path: tracePath, ref: nodeId },
+            ),
+          );
+        }
+        if (p === nodeId) {
+          pushIssue(
+            report,
+            makeIssue(
+              'ara-cross-link',
+              'error',
+              'trace.parent.self_reference',
+              `Trace node ${nodeId} lists itself as its own parent.`,
+              { path: tracePath, ref: nodeId },
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  if (Array.isArray(n.children)) {
+    for (const c of n.children) {
+      if (typeof c === 'string') {
+        if (!ids.has(c)) {
+          pushIssue(
+            report,
+            makeIssue(
+              'ara-cross-link',
+              'error',
+              'trace.child.missing',
+              `Trace node ${nodeId} child references unknown node: ${c}`,
+              { path: tracePath, ref: nodeId },
+            ),
+          );
+        }
+        if (c === nodeId) {
+          pushIssue(
+            report,
+            makeIssue(
+              'ara-cross-link',
+              'error',
+              'trace.child.self_reference',
+              `Trace node ${nodeId} lists itself as its own child.`,
+              { path: tracePath, ref: nodeId },
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  if (n.kind === 'branch') {
+    if (typeof n.branch_id !== 'string' || n.branch_id.length === 0) {
+      pushIssue(
+        report,
+        makeIssue(
+          'ara-cross-link',
+          'error',
+          'trace.branch_id.missing',
+          `Trace branch node ${nodeId} is missing branch_id.`,
+          { path: tracePath, ref: nodeId },
+        ),
+      );
+    } else if (!branchById.has(n.branch_id)) {
+      pushIssue(
+        report,
+        makeIssue(
+          'ara-cross-link',
+          'error',
+          'trace.branch_id.unresolved',
+          `Trace branch node ${nodeId} branch_id does not match any curriculum branch: ${n.branch_id}`,
+          { path: tracePath, ref: nodeId },
+        ),
+      );
+    }
+  } else if (typeof n.branch_id === 'string' && n.branch_id.length > 0) {
+    if (!branchById.has(n.branch_id)) {
+      pushIssue(
+        report,
+        makeIssue(
+          'ara-cross-link',
+          'warning',
+          'trace.branch_id.unresolved',
+          `Trace node ${nodeId} branch_id does not match any curriculum branch: ${n.branch_id}`,
+          { path: tracePath, ref: nodeId },
+        ),
+      );
+    }
+  }
+}
+
+function validateTraceEdges(
+  edgesRaw: unknown,
+  ids: Set<string>,
+  tracePath: string,
+  report: ValidationReport,
+): void {
+  if (!Array.isArray(edgesRaw)) {
+    pushIssue(
+      report,
+      makeIssue(
+        'ara-cross-link',
+        'error',
+        'trace.edges_invalid',
+        'Trace exploration_tree edges field is not an array.',
+        { path: tracePath },
+      ),
+    );
+    return;
+  }
+  for (let i = 0; i < edgesRaw.length; i++) {
+    const e = edgesRaw[i] as TraceEdge | null;
+    const label = `edge[${i}]`;
+    if (!e || typeof e !== 'object') {
+      pushIssue(
+        report,
+        makeIssue(
+          'ara-cross-link',
+          'error',
+          'trace.edge.invalid',
+          `Trace exploration_tree ${label} is not an object.`,
+          { path: tracePath },
+        ),
+      );
+      continue;
+    }
+    const from = e.from;
+    const to = e.to;
+    if (typeof from !== 'string' || from.length === 0) {
+      pushIssue(
+        report,
+        makeIssue(
+          'ara-cross-link',
+          'error',
+          'trace.edge.endpoint_invalid',
+          `Trace ${label} has invalid "from" endpoint.`,
+          { path: tracePath },
+        ),
+      );
+    } else if (!ids.has(from)) {
+      pushIssue(
+        report,
+        makeIssue(
+          'ara-cross-link',
+          'error',
+          'trace.edge.endpoint_missing',
+          `Trace ${label} "from" references unknown node: ${from}`,
+          { path: tracePath, ref: from },
+        ),
+      );
+    }
+    if (typeof to !== 'string' || to.length === 0) {
+      pushIssue(
+        report,
+        makeIssue(
+          'ara-cross-link',
+          'error',
+          'trace.edge.endpoint_invalid',
+          `Trace ${label} has invalid "to" endpoint.`,
+          { path: tracePath },
+        ),
+      );
+    } else if (!ids.has(to)) {
+      pushIssue(
+        report,
+        makeIssue(
+          'ara-cross-link',
+          'error',
+          'trace.edge.endpoint_missing',
+          `Trace ${label} "to" references unknown node: ${to}`,
+          { path: tracePath, ref: to },
+        ),
+      );
+    }
+    if (typeof from === 'string' && typeof to === 'string' && from === to) {
+      pushIssue(
+        report,
+        makeIssue(
+          'ara-cross-link',
+          'warning',
+          'trace.edge.self_loop',
+          `Trace ${label} is a self-loop on node ${from}.`,
+          { path: tracePath, ref: from },
+        ),
+      );
+    }
+  }
 }
 
 export async function validateAraCrossLink(loaded: LoadedPackage): Promise<ValidationReport> {
@@ -242,7 +515,8 @@ export async function validateAraCrossLink(loaded: LoadedPackage): Promise<Valid
     }
   }
 
-  // 4. Trace exploration_tree: unique node ids; refs resolve.
+  // 4. Trace exploration_tree: id uniqueness, per-node refs/parents/children/
+  //    branch_id, top-level edges, and 1:1 trace↔curriculum branch mapping.
   if (loaded.artifact.traceTreePath) {
     const traceAbs = path.join(root, loaded.artifact.traceTreePath);
     if (await pathExists(traceAbs)) {
@@ -251,6 +525,7 @@ export async function validateAraCrossLink(loaded: LoadedPackage): Promise<Valid
         const raw = yaml.load(text);
         const nodes = flattenTraceNodes(raw);
         const ids = new Set<string>();
+        // First pass: collect ids and flag duplicates / missing ids.
         for (const n of nodes) {
           if (typeof n.id !== 'string' || n.id.length === 0) {
             pushIssue(
@@ -278,26 +553,70 @@ export async function validateAraCrossLink(loaded: LoadedPackage): Promise<Valid
             );
           }
           ids.add(n.id);
-          if (Array.isArray(n.refs)) {
-            for (const r of n.refs) {
-              if (typeof r !== 'string') continue;
-              const noFrag = stripFragment(r);
-              if (
-                noFrag.startsWith('artifact/') &&
-                !knownArtifactPaths.has(noFrag)
-              ) {
-                pushIssue(
-                  report,
-                  makeIssue(
-                    'ara-cross-link',
-                    'warning',
-                    'trace.ref.unresolved',
-                    `Trace node ${n.id} ref does not resolve: ${r}`,
-                    { path: loaded.artifact.traceTreePath, ref: n.id },
-                  ),
-                );
-              }
-            }
+        }
+        // Second pass: validate per-node fields against the id index.
+        for (const n of nodes) {
+          if (typeof n.id !== 'string' || n.id.length === 0) continue;
+          validateTraceNode(
+            n,
+            ids,
+            knownArtifactPaths,
+            branchById,
+            loaded.artifact.traceTreePath,
+            report,
+          );
+        }
+        // Validate top-level edges if present.
+        if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+          const edgesRaw = (raw as { edges?: unknown }).edges;
+          if (edgesRaw !== undefined && edgesRaw !== null) {
+            validateTraceEdges(
+              edgesRaw,
+              ids,
+              loaded.artifact.traceTreePath,
+              report,
+            );
+          }
+        }
+        // Third pass: trace branch nodes and curriculum branches must form a
+        // 1:1 mapping on branch_id so the two artifacts stay aligned on the
+        // same id convention.
+        const branchIdToTraceNode = new Map<string, string>();
+        for (const n of nodes) {
+          if (n.kind !== 'branch') continue;
+          if (typeof n.id !== 'string' || n.id.length === 0) continue;
+          if (typeof n.branch_id !== 'string' || n.branch_id.length === 0) {
+            continue;
+          }
+          if (!branchById.has(n.branch_id)) continue;
+          const prior = branchIdToTraceNode.get(n.branch_id);
+          if (prior !== undefined) {
+            pushIssue(
+              report,
+              makeIssue(
+                'ara-cross-link',
+                'error',
+                'trace.branch_id.duplicate',
+                `Trace nodes ${prior} and ${n.id} both claim branch_id ${n.branch_id}; each curriculum branch must map to exactly one trace branch node.`,
+                { path: loaded.artifact.traceTreePath, ref: n.branch_id },
+              ),
+            );
+          } else {
+            branchIdToTraceNode.set(n.branch_id, n.id);
+          }
+        }
+        for (const branchId of branchById.keys()) {
+          if (!branchIdToTraceNode.has(branchId)) {
+            pushIssue(
+              report,
+              makeIssue(
+                'ara-cross-link',
+                'warning',
+                'trace.branch.unmapped',
+                `Curriculum branch ${branchId} has no corresponding trace branch node (kind: branch with matching branch_id).`,
+                { path: loaded.artifact.traceTreePath, ref: branchId },
+              ),
+            );
           }
         }
       } catch (err) {
@@ -352,7 +671,6 @@ export async function validateAraCrossLink(loaded: LoadedPackage): Promise<Valid
   }
 
   // Touch unused indexes to make later expansion convenient.
-  void branchById;
   void stageById;
 
   return finalize(report);
