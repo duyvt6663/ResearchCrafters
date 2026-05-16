@@ -173,6 +173,107 @@ describe('gradeAttempt', () => {
     ).rejects.toBeInstanceOf(EvaluatorRefusal);
   });
 
+  it('refuses with citation_policy_violation in strict mode when a claim is uncited', async () => {
+    const store = new InMemoryGradeStore();
+    await expect(
+      gradeAttempt({
+        stage: makeStage('none'),
+        rubric: makeRubric(),
+        rubricVersion: 'v1',
+        submission,
+        runArtifacts: { executionStatus: 'ok' },
+        store,
+        citationPolicy: {
+          policy: { allowedEvidenceRefs: ['E1'] },
+          claims: [
+            { id: 'c1', text: 'cited', citedRefs: ['E1'] },
+            { id: 'c2', text: 'uncited claim' },
+          ],
+          mode: 'strict',
+        },
+      }),
+    ).rejects.toMatchObject({
+      name: 'EvaluatorRefusal',
+      reason: 'citation_policy_violation',
+    });
+  });
+
+  it('refuses strict mode when a claim cites a ref outside the allow-list', async () => {
+    const store = new InMemoryGradeStore();
+    await expect(
+      gradeAttempt({
+        stage: makeStage('none'),
+        rubric: makeRubric(),
+        rubricVersion: 'v1',
+        submission,
+        runArtifacts: { executionStatus: 'ok' },
+        store,
+        citationPolicy: {
+          policy: { allowedEvidenceRefs: ['E1'] },
+          claims: [
+            { id: 'c1', text: 'forged ref', citedRefs: ['paper://outside.pdf'] },
+          ],
+          mode: 'strict',
+        },
+      }),
+    ).rejects.toBeInstanceOf(EvaluatorRefusal);
+  });
+
+  it('grades in flag mode and appends the citation summary to feedback', async () => {
+    const store = new InMemoryGradeStore();
+    const grade = await gradeAttempt({
+      stage: makeStage('test'),
+      rubric: makeRubric(),
+      rubricVersion: 'v1',
+      submission,
+      runArtifacts: {
+        executionStatus: 'ok',
+        testResults: [{ name: 't1', passed: true }],
+      },
+      store,
+      citationPolicy: {
+        policy: { allowedEvidenceRefs: ['E1'] },
+        claims: [
+          { id: 'c1', text: 'cited', citedRefs: ['E1'] },
+          { id: 'c2', text: 'uncited' },
+        ],
+        mode: 'flag',
+      },
+    });
+    expect(grade.status).toBe('passed');
+    expect(grade.feedback).toContain('Citation policy issues');
+    expect(grade.feedback).toContain('no_citation');
+  });
+
+  it('honors a placeholder-allowed stage in strict mode without refusing', async () => {
+    const store = new InMemoryGradeStore();
+    const grade = await gradeAttempt({
+      stage: makeStage('test'),
+      rubric: makeRubric(),
+      rubricVersion: 'v1',
+      submission,
+      runArtifacts: {
+        executionStatus: 'ok',
+        testResults: [{ name: 't1', passed: true }],
+      },
+      store,
+      citationPolicy: {
+        policy: {
+          allowedEvidenceRefs: ['E1'],
+          placeholderTokens: ['<TBD>'],
+          placeholderAllowed: true,
+        },
+        claims: [
+          { id: 'c1', text: 'draft', citedRefs: ['<TBD>'] },
+          { id: 'c2', text: 'cited', citedRefs: ['E1'] },
+        ],
+        mode: 'strict',
+      },
+    });
+    expect(grade.status).toBe('passed');
+    expect(grade.feedback).toContain('placeholder');
+  });
+
   it('appends overrides without overwriting prior history', async () => {
     const store = new InMemoryGradeStore();
     const grade = await gradeAttempt({
