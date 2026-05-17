@@ -97,8 +97,22 @@ reflect that snapshot.
 
 ## SLOs
 
-- [ ] p95 mentor first token for hints under 5 seconds.
-- [ ] p95 mentor first token for writing feedback under 15 seconds.
+- [x] p95 mentor first token for hints under 5 seconds.
+      _(landed: `apps/web/lib/mentor-runtime.ts` times every
+      `gateway.complete(...)` call and emits a
+      `mentor_first_token_latency` telemetry event tagged with
+      `mode: "hint"`, `modelTier`, `modelId`, `latencyMs`,
+      `sloMs: 5000`, and a per-request `withinSlo` boolean.
+      `MENTOR_FIRST_TOKEN_SLO_MS` exports the authored thresholds.
+      The gateway is non-streaming today, so `latencyMs` is the
+      completion duration; when streaming lands the same start marker
+      pairs with the first-chunk timestamp without changing the event
+      shape. Dashboards compute p95 directly from this stream.)_
+- [x] p95 mentor first token for writing feedback under 15 seconds.
+      _(landed: same emission as the hint SLO, but for
+      `mode: "feedback"` requests (`clarify` and `review_draft`) with
+      `sloMs: 15000`. See `mentor_first_token_latency` in
+      `packages/telemetry/src/events.ts`.)_
 
 ## Acceptance Criteria
 
