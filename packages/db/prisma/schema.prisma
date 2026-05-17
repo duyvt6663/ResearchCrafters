@@ -251,14 +251,6 @@ model PackageVersion {
   manifest             Json
   releaseFreeStageIds  String[] @default([])
   requiresGpu          Boolean  @default(false)
-  // Per-package mentor budget caps in USD. `null` means inherit the
-  // platform default resolved by `defaultMentorBudgetCaps()`; setting any
-  // field pins that scope to a package-specific value enforced by
-  // `checkBudget` / `recordMentorRequestSpend` (see
-  // `packages/ai/src/cost-cap.ts`).
-  mentorBudgetUserDailyUsd Float?
-  mentorBudgetPackageUsd   Float?
-  mentorBudgetStageUsd     Float?
   createdAt            DateTime @default(now())
 
   package         Package                 @relation(fields: [packageId], references: [id], onDelete: Cascade)
