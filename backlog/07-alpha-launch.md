@@ -10,7 +10,7 @@ reflect that snapshot.
 - [ ] Define target alpha persona.
 - [ ] Recruit 20-50 serious AI engineers.
 - [ ] Include at least 5 senior engineers or researchers for quality feedback.
-- [ ] Exclude users who only want passive summaries from the first cohort.
+- [x] Exclude users who only want passive summaries from the first cohort. See `docs/ALPHA_PERSONA.md` § Hard exclusions for the first cohort.
 - [ ] Create intake form with background, goals, and target papers.
 
 ## Pre-Launch Assets
