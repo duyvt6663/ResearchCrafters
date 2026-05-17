@@ -66,7 +66,7 @@ reflect that snapshot.
 - [ ] Keep existing enrollments pinned.
 - [x] Implement `package_version_patches` with `patch_seq`.
 - [ ] Allow only cosmetic overlays for patches.
-- [ ] Record active `patch_seq` on stage attempts.
+- [x] Record active `patch_seq` on stage attempts.
 - [ ] Require new package version for graph/stage/rubric/runner/solution changes.
 - [ ] Make migration opt-in.
 - [ ] Preserve prior enrollment, attempts, mentor threads, and share cards on migration.
