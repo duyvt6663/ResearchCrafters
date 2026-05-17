@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   buildShareCardPayload,
+  normalizeLearnerInsight,
   safeCohortPercentage,
   SHARE_CARD_BRANCH_MIN_N,
+  SHARE_CARD_INSIGHT_MAX_LENGTH,
   SHARE_CARD_NODE_MIN_N,
 } from "../share-cards";
 
@@ -260,5 +262,76 @@ describe("buildShareCardPayload — cohort leak prevention", () => {
       cohortPercentage: Number.NaN,
     });
     expect(payload.cohortPercentage).toBeNull();
+  });
+});
+
+describe("normalizeLearnerInsight — evidence-grounded suppression + trim", () => {
+  it("returns undefined for null, undefined, or non-string input", () => {
+    expect(normalizeLearnerInsight(null)).toBeUndefined();
+    expect(normalizeLearnerInsight(undefined)).toBeUndefined();
+    // Defensive: callers can pass through unknown JSON; we still suppress.
+    expect(normalizeLearnerInsight(42 as unknown as string)).toBeUndefined();
+  });
+
+  it("suppresses empty and whitespace-only insights", () => {
+    expect(normalizeLearnerInsight("")).toBeUndefined();
+    expect(normalizeLearnerInsight("   ")).toBeUndefined();
+    expect(normalizeLearnerInsight("\n\t  \n")).toBeUndefined();
+  });
+
+  it("trims surrounding whitespace and keeps meaningful content", () => {
+    expect(normalizeLearnerInsight("  Residuals shift identity.  ")).toBe(
+      "Residuals shift identity.",
+    );
+  });
+
+  it(`clamps insights longer than ${SHARE_CARD_INSIGHT_MAX_LENGTH} chars`, () => {
+    const big = "a".repeat(SHARE_CARD_INSIGHT_MAX_LENGTH + 250);
+    const out = normalizeLearnerInsight(big);
+    expect(out).toBeDefined();
+    expect((out as string).length).toBe(SHARE_CARD_INSIGHT_MAX_LENGTH);
+  });
+});
+
+describe("buildShareCardPayload — learnerInsight handling", () => {
+  const baseEnrollment = {
+    packageSlug: "resnet",
+    packageVersionId: "pv-1",
+    completedStageRefs: ["S001"] as const,
+  };
+  const basePkg = {
+    stages: [{ ref: "S001" }],
+    sampleDecision: null,
+  };
+
+  it("omits learnerInsight from the payload when no insight is supplied", () => {
+    const payload = buildShareCardPayload({
+      enrollment: baseEnrollment,
+      pkg: basePkg,
+    });
+    expect(payload.learnerInsight).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(payload, "learnerInsight")).toBe(
+      false,
+    );
+  });
+
+  it("omits learnerInsight when the caller passes a blank insight", () => {
+    const payload = buildShareCardPayload({
+      enrollment: baseEnrollment,
+      pkg: basePkg,
+      insight: "   \n\t  ",
+    });
+    expect(payload.learnerInsight).toBeUndefined();
+  });
+
+  it("includes a trimmed insight when one is available", () => {
+    const payload = buildShareCardPayload({
+      enrollment: baseEnrollment,
+      pkg: basePkg,
+      insight: "  Residual reformulation moves identity into init.  ",
+    });
+    expect(payload.learnerInsight).toBe(
+      "Residual reformulation moves identity into init.",
+    );
   });
 });
