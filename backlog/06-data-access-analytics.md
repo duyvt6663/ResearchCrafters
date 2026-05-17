@@ -62,7 +62,7 @@ reflect that snapshot.
 ## Version and Patch Policy
 
 - [x] Pin enrollment to `package_version_id`.
-- [ ] New enrollments use latest live package version.
+- [x] New enrollments use latest live package version.
 - [ ] Keep existing enrollments pinned.
 - [x] Implement `package_version_patches` with `patch_seq`.
 - [x] Allow only cosmetic overlays for patches.

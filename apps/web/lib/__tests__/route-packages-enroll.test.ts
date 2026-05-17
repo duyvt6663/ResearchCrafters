@@ -9,6 +9,11 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
  *   - `smokeCommand` is read from `manifest.smokeCommand` /
  *     `manifest.smoke_command`; absent otherwise.
  *   - storage failures fall back to no starter URL (anon / dev mode).
+ *
+ * Also pins the Version and Patch Policy contract
+ * (backlog/06-data-access-analytics.md): new enrollments must resolve the
+ * latest live package version — status filter "live" (skips alpha/beta/
+ * archived) ordered by createdAt desc so the newest live row wins.
  */
 
 const mocks = vi.hoisted(() => ({
@@ -206,5 +211,64 @@ describe("POST /api/packages/[slug]/enroll", () => {
     const res = await POST(req, ctx);
     const body = await res.json();
     expect(body.smokeCommand).toBe("make smoke");
+  });
+
+  it("queries package versions with status:'live' ordered by newest first", async () => {
+    // Pins backlog/06 Version and Patch Policy: new enrollments must select
+    // the latest live package version. The filter must exclude alpha/beta/
+    // archived, and the order must surface the newest live row.
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-1" });
+    mocks.packageVersionFindFirst.mockResolvedValue({
+      id: "pv-resnet-v3-live",
+      manifest: {},
+    });
+    mocks.enrollmentFindFirst.mockResolvedValue({ id: "enr-existing" });
+    mocks.headObject.mockResolvedValue({ exists: false });
+
+    const { req, ctx } = makeRequest();
+    const res = await POST(req, ctx);
+    expect(res.status).toBe(200);
+
+    expect(mocks.packageVersionFindFirst).toHaveBeenCalledTimes(1);
+    const call = mocks.packageVersionFindFirst.mock.calls[0]?.[0];
+    expect(call).toBeDefined();
+    expect(call.where).toEqual({
+      package: { slug: "resnet" },
+      status: "live",
+    });
+    expect(call.orderBy).toEqual({ createdAt: "desc" });
+
+    const body = await res.json();
+    expect(body.packageVersionId).toBe("pv-resnet-v3-live");
+    expect(body.enrollment.packageVersionId).toBe("pv-resnet-v3-live");
+  });
+
+  it("creates new enrollments pinned to the resolved latest-live version id", async () => {
+    // Pins the second half of the contract: once the latest live version is
+    // resolved, the freshly created Enrollment row is pinned to that exact
+    // packageVersionId. (Existing enrollments staying pinned to their own
+    // version is enforced structurally by Enrollment.packageVersionId being
+    // immutable in the schema.)
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-new" });
+    mocks.packageVersionFindFirst.mockResolvedValue({
+      id: "pv-resnet-latest-live",
+      manifest: {},
+    });
+    mocks.enrollmentFindFirst.mockResolvedValue(null);
+    mocks.enrollmentCreate.mockResolvedValue({ id: "enr-fresh" });
+    mocks.headObject.mockResolvedValue({ exists: false });
+
+    const { req, ctx } = makeRequest();
+    const res = await POST(req, ctx);
+    expect(res.status).toBe(200);
+
+    expect(mocks.enrollmentCreate).toHaveBeenCalledTimes(1);
+    const createArgs = mocks.enrollmentCreate.mock.calls[0]?.[0];
+    expect(createArgs?.data).toMatchObject({
+      userId: "u-new",
+      packageVersionId: "pv-resnet-latest-live",
+      activeStageRef: "S1",
+      status: "active",
+    });
   });
 });
