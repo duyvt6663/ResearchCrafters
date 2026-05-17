@@ -19,6 +19,8 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 const mocks = vi.hoisted(() => ({
   runFindUnique: vi.fn(),
   runUpdate: vi.fn(),
+  stageAttemptUpdate: vi.fn(),
+  nodeTraversalFindFirst: vi.fn(),
   withQueryTimeout: vi.fn(),
   track: vi.fn(),
 }));
@@ -28,6 +30,12 @@ vi.mock("@researchcrafters/db", () => ({
     run: {
       findUnique: mocks.runFindUnique,
       update: mocks.runUpdate,
+    },
+    stageAttempt: {
+      update: mocks.stageAttemptUpdate,
+    },
+    nodeTraversal: {
+      findFirst: mocks.nodeTraversalFindFirst,
     },
   },
   withQueryTimeout: mocks.withQueryTimeout,
@@ -44,11 +52,15 @@ const ORIG_SECRET = process.env["RUNNER_CALLBACK_SECRET"];
 beforeEach(() => {
   mocks.runFindUnique.mockReset();
   mocks.runUpdate.mockReset();
+  mocks.stageAttemptUpdate.mockReset();
+  mocks.nodeTraversalFindFirst.mockReset();
   mocks.withQueryTimeout.mockReset();
   mocks.track.mockReset();
   // Default: identity wrapper around the Prisma promise.
   mocks.withQueryTimeout.mockImplementation(async (p) => p);
-  // Default: a queued run row exists for the id under test.
+  // Default: a queued run row exists for the id under test, with the
+  // submission/stageAttempt projection the route selects so the unlock
+  // emit path has the (enrollment, stage, branch) tuple it needs.
   mocks.runFindUnique.mockResolvedValue({
     id: "run-1",
     status: "queued",
@@ -56,8 +68,18 @@ beforeEach(() => {
     finishedAt: null,
     metricsJson: null,
     logObjectKey: null,
+    submission: {
+      stageAttemptId: "sa-1",
+      stageAttempt: {
+        enrollmentId: "enr-1",
+        stageRef: "stage-1",
+        branchId: "branch-1",
+      },
+    },
   });
   mocks.runUpdate.mockResolvedValue({ id: "run-1" });
+  mocks.stageAttemptUpdate.mockResolvedValue({ id: "sa-1" });
+  mocks.nodeTraversalFindFirst.mockResolvedValue({ decisionNodeId: "dn-1" });
   process.env["RUNNER_CALLBACK_SECRET"] = "test-shared-secret";
 });
 
@@ -170,6 +192,66 @@ describe("POST /api/runs/[id]/callback", () => {
       "runner_job_completed",
       expect.objectContaining({ runId: "run-1" }),
     );
+  });
+
+  it("emits branch_feedback_unlocked once the runner finishes ok with a grade", async () => {
+    const { req, ctx } = makeRequest(
+      { status: "ok", gradeId: "grade-1" },
+      { "x-runner-secret": "test-shared-secret" },
+    );
+    const res = await POST(req, ctx);
+    expect(res.status).toBe(200);
+    expect(mocks.nodeTraversalFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { enrollmentId: "enr-1", branchId: "branch-1" },
+      }),
+    );
+    expect(mocks.track).toHaveBeenCalledWith(
+      "branch_feedback_unlocked",
+      expect.objectContaining({
+        enrollmentId: "enr-1",
+        stageRef: "stage-1",
+        decisionNodeId: "dn-1",
+        branchId: "branch-1",
+      }),
+    );
+  });
+
+  it("does NOT emit branch_feedback_unlocked when the runner did not finish ok", async () => {
+    const { req, ctx } = makeRequest(
+      { status: "timeout", gradeId: "grade-1" },
+      { "x-runner-secret": "test-shared-secret" },
+    );
+    await POST(req, ctx);
+    const calls = mocks.track.mock.calls.map((c) => c[0]);
+    expect(calls).not.toContain("branch_feedback_unlocked");
+  });
+
+  it("does NOT emit branch_feedback_unlocked when no branch was selected", async () => {
+    mocks.runFindUnique.mockResolvedValueOnce({
+      id: "run-1",
+      status: "queued",
+      startedAt: null,
+      finishedAt: null,
+      metricsJson: null,
+      logObjectKey: null,
+      submission: {
+        stageAttemptId: "sa-1",
+        stageAttempt: {
+          enrollmentId: "enr-1",
+          stageRef: "stage-1",
+          branchId: null,
+        },
+      },
+    });
+    const { req, ctx } = makeRequest(
+      { status: "ok", gradeId: "grade-1" },
+      { "x-runner-secret": "test-shared-secret" },
+    );
+    await POST(req, ctx);
+    expect(mocks.nodeTraversalFindFirst).not.toHaveBeenCalled();
+    const calls = mocks.track.mock.calls.map((c) => c[0]);
+    expect(calls).not.toContain("branch_feedback_unlocked");
   });
 
   it("does NOT stamp finishedAt for non-terminal `running` status", async () => {

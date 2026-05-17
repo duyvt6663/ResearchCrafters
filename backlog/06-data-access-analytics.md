@@ -103,12 +103,29 @@ reflect that snapshot.
 
 ## Telemetry
 
-- [ ] Emit `package_viewed`.
-- [ ] Emit `enrollment_started`.
-- [ ] Emit `stage_loaded`.
-- [ ] Emit `stage_attempt_submitted`.
-- [ ] Emit `branch_selected`.
-- [ ] Emit `branch_feedback_unlocked`.
+- [x] Emit `package_viewed`.
+      _(Fired from `apps/web/app/page.tsx` (catalog surface) and
+      `apps/web/app/packages/[slug]/page.tsx` (overview surface) via
+      `track("package_viewed", ...)`.)_
+- [x] Emit `enrollment_started`.
+      _(Fired from `apps/web/app/api/packages/[slug]/enroll/route.ts` on
+      successful enrollment creation.)_
+- [x] Emit `stage_loaded`.
+      _(Fired from `apps/web/app/enrollments/[id]/stages/[stageRef]/page.tsx`
+      when the learner opens a stage.)_
+- [x] Emit `stage_attempt_submitted`.
+      _(Fired from `apps/web/app/api/stage-attempts/route.ts` and
+      `apps/web/app/api/submissions/route.ts` when a stage attempt is
+      created.)_
+- [x] Emit `branch_selected`.
+      _(Fired from `apps/web/app/api/node-traversals/route.ts` when a
+      learner records a branch decision.)_
+- [x] Emit `branch_feedback_unlocked`.
+      _(Audit-grade. Fired from
+      `apps/web/app/api/runs/[id]/callback/route.ts` once the runner
+      reports `status==="ok"` with a `gradeId` and the stage attempt has
+      a `branchId`; the decision node is resolved from the latest
+      `NodeTraversal` for that (enrollment, branch).)_
 - [ ] Emit `branch_feedback_viewed`.
 - [ ] Emit `runner_job_started`.
 - [ ] Emit `runner_job_completed`.
