@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@researchcrafters/db";
+import { generatePublicSlug } from "@researchcrafters/worker";
 import { getEnrollment } from "@/lib/data/enrollment";
 import { getPackageBySlug } from "@/lib/data/packages";
+import { createShareCard } from "@/lib/data/share-cards";
 import { getSessionFromRequest } from "@/lib/auth";
 import { denialHttpStatus, permissions } from "@/lib/permissions";
 import { track } from "@/lib/telemetry";
@@ -14,7 +17,7 @@ export const runtime = "nodejs";
 
 type Body = {
   enrollmentId: string;
-  insight: string;
+  insight?: string;
   hardestDecision?: string;
   selectedBranchType?: AuthoredBranchType;
 };
@@ -36,12 +39,15 @@ export async function POST(req: Request): Promise<NextResponse> {
         { status: 400 },
       );
     }
-    if (
-      typeof body?.enrollmentId !== "string" ||
-      typeof body?.insight !== "string"
-    ) {
+    if (typeof body?.enrollmentId !== "string") {
       return NextResponse.json(
         { error: "bad_request", reason: "missing_required_fields" },
+        { status: 400 },
+      );
+    }
+    if (body.insight !== undefined && typeof body.insight !== "string") {
+      return NextResponse.json(
+        { error: "bad_request", reason: "invalid_insight" },
         { status: 400 },
       );
     }
@@ -91,7 +97,10 @@ export async function POST(req: Request): Promise<NextResponse> {
               : null,
           }
         : null,
-      insight: body.insight,
+      // backlog/06 §Share Cards: include learner-written insight when
+      // available — `buildShareCardPayload` trims, caps, and suppresses
+      // blank values so the payload key is only present when meaningful.
+      insight: body.insight ?? null,
       hardestDecision: body.hardestDecision ?? null,
       selectedBranchType: body.selectedBranchType ?? null,
       // Cohort percentage requires persisted `node_traversals` + minimum-N
@@ -99,24 +108,37 @@ export async function POST(req: Request): Promise<NextResponse> {
       cohortPercentage: null,
     });
 
-    const id = `sc-${Date.now()}`;
-    setActiveSpanAttributes({ "rc.share_card.id": id });
+    if (!session.userId) {
+      return NextResponse.json(
+        { error: "unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const publicSlug = generatePublicSlug();
+    const record = await createShareCard({
+      userId: session.userId,
+      enrollmentId: enr.id,
+      packageVersionId: enr.packageVersionId,
+      payload: payload as unknown as Prisma.InputJsonValue,
+      publicSlug,
+    });
+
+    setActiveSpanAttributes({ "rc.share_card.id": record.id });
     await track("share_card_created", {
-      shareCardId: id,
+      shareCardId: record.id,
       enrollmentId: enr.id,
       packageVersionId: enr.packageVersionId,
     });
 
-    // DB stub. Durable share-card rows are tracked under backlog/06; this
-    // route still returns the freshly-derived snapshot so the share page +
-    // preview component can render the real payload shape.
     return NextResponse.json({
       shareCard: {
-        id,
+        id: record.id,
         enrollmentId: enr.id,
         packageVersionId: enr.packageVersionId,
-        publicUrl: `https://researchcrafters.example/share/${id}`,
-        imageUrl: `https://researchcrafters.example/share/${id}.png`,
+        publicSlug,
+        publicUrl: `https://researchcrafters.example/share/${publicSlug}`,
+        imageUrl: `https://researchcrafters.example/share/${publicSlug}.png`,
         payload,
       },
     });

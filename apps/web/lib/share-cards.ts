@@ -37,6 +37,17 @@ export interface ShareCardPackageInput {
 export const SHARE_CARD_NODE_MIN_N = 20;
 export const SHARE_CARD_BRANCH_MIN_N = 5;
 
+/**
+ * Cap for the learner-written insight persisted on the immutable share-card
+ * payload. The share surface (`app/s/[slug]/page.tsx`) already slices to 280
+ * chars for OG metadata; we keep a slightly larger ceiling here so the body
+ * survives full-tile rendering but a runaway client can't bloat the snapshot
+ * row. Per backlog/06 §Share Cards: "Include learner-written evidence-grounded
+ * insight when available." — the trim+cap keeps it bounded so the snapshot
+ * stays a short evidence-grounded note rather than arbitrary user content.
+ */
+export const SHARE_CARD_INSIGHT_MAX_LENGTH = 600;
+
 export interface CohortSample {
   /** Number of traversals through the decision node in this cohort/window. */
   nodeN: number;
@@ -66,7 +77,14 @@ export function safeCohortPercentage(sample: CohortSample): number | null {
 export interface BuildShareCardPayloadInput {
   enrollment: ShareCardEnrollmentInput;
   pkg: ShareCardPackageInput | null;
-  insight: string;
+  /**
+   * Learner-written reflection. Optional — when omitted, blank, or
+   * whitespace-only, the resulting payload simply has no `learnerInsight`
+   * key so the share surface (`ShareCardPreview`, `/s/[slug]`) falls back
+   * to its empty-state copy. Present values are trimmed and capped at
+   * {@link SHARE_CARD_INSIGHT_MAX_LENGTH}.
+   */
+  insight?: string | null;
   hardestDecision?: string | null;
   selectedBranchType?: AuthoredBranchType | null;
   /**
@@ -98,17 +116,34 @@ export function buildShareCardPayload(
     input.selectedBranchType ?? null,
   );
   const cohortPercentage = deriveCohortPercentage(input);
+  const learnerInsight = normalizeLearnerInsight(input.insight);
   const payload: ShareCardPayload = {
     packageSlug: input.enrollment.packageSlug,
     packageVersionId: input.enrollment.packageVersionId,
     completionStatus,
     scoreSummary: { passed, total },
     cohortPercentage,
-    learnerInsight: input.insight,
   };
+  if (learnerInsight !== undefined) payload.learnerInsight = learnerInsight;
   if (hardestDecision) payload.hardestDecision = hardestDecision;
   if (selectedBranchType) payload.selectedBranchType = selectedBranchType;
   return payload;
+}
+
+/**
+ * Drops blank/whitespace insights and clamps any present value to the
+ * documented max length. Returning `undefined` is the contract the payload
+ * shape uses to mean "no learner-written insight available."
+ */
+export function normalizeLearnerInsight(
+  raw: string | null | undefined,
+): string | undefined {
+  if (raw == null) return undefined;
+  if (typeof raw !== "string") return undefined;
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return undefined;
+  if (trimmed.length <= SHARE_CARD_INSIGHT_MAX_LENGTH) return trimmed;
+  return trimmed.slice(0, SHARE_CARD_INSIGHT_MAX_LENGTH);
 }
 
 function deriveCohortPercentage(

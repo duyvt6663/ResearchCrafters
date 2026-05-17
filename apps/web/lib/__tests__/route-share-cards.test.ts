@@ -96,12 +96,65 @@ describe("POST /api/share-cards", () => {
     );
   });
 
-  it("returns 400 when insight is missing", async () => {
-    const res = await POST(makeRequest({ enrollmentId: "enr-1" }));
+  it("returns 200 and omits learnerInsight when the caller does not provide one", async () => {
+    // backlog/06 §Share Cards — insight is now optional ("when available");
+    // the payload simply has no `learnerInsight` key for these runs.
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-no-insight",
+      packageVersionId: "pv-1",
+      activeStageRef: "S001",
+      packageSlug: "resnet",
+      completedStageRefs: [],
+    });
+    mocks.getPackageBySlug.mockResolvedValue({
+      slug: "resnet",
+      stages: [{ ref: "S001" }],
+      sampleDecision: null,
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+
+    const res = await POST(makeRequest({ enrollmentId: "enr-no-insight" }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.shareCard.payload.learnerInsight).toBeUndefined();
+  });
+
+  it("returns 400 invalid_insight when the field is present but not a string", async () => {
+    const res = await POST(
+      makeRequest({ enrollmentId: "enr-1", insight: 42 as never }),
+    );
     expect(res.status).toBe(400);
     expect(((await res.json()) as { reason: string }).reason).toBe(
-      "missing_required_fields",
+      "invalid_insight",
     );
+    expect(mocks.getEnrollment).not.toHaveBeenCalled();
+  });
+
+  it("suppresses blank/whitespace-only insights from the persisted payload", async () => {
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-blank",
+      packageVersionId: "pv-1",
+      activeStageRef: "S001",
+      packageSlug: "resnet",
+      completedStageRefs: [],
+    });
+    mocks.getPackageBySlug.mockResolvedValue({
+      slug: "resnet",
+      stages: [{ ref: "S001" }],
+      sampleDecision: null,
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+
+    const res = await POST(
+      makeRequest({ enrollmentId: "enr-blank", insight: "   \n\t  " }),
+    );
+    expect(res.status).toBe(200);
+    const persistArgs = mocks.createShareCard.mock.calls[0]?.[0];
+    expect(persistArgs.payload.learnerInsight).toBeUndefined();
+    const body = await res.json();
+    expect(body.shareCard.payload.learnerInsight).toBeUndefined();
   });
 
   it("returns 404 when the enrollment doesn't exist", async () => {
@@ -244,6 +297,87 @@ describe("POST /api/share-cards", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.shareCard.payload.selectedBranchType).toBe("alternative");
+  });
+
+  it("persists an immutable share-card snapshot row + generates a public slug", async () => {
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-9",
+      packageVersionId: "pv-2",
+      activeStageRef: "S003",
+      packageSlug: "resnet",
+      completedStageRefs: ["S001"],
+    });
+    mocks.getPackageBySlug.mockResolvedValue({
+      slug: "resnet",
+      stages: [{ ref: "S001" }, { ref: "S002" }, { ref: "S003" }],
+      sampleDecision: { prompt: "Pick a strategy" },
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+    mocks.generatePublicSlug.mockReturnValue("pub-abc123");
+    mocks.createShareCard.mockResolvedValue({ id: "sc-persisted" });
+
+    const res = await POST(
+      makeRequest({
+        enrollmentId: "enr-9",
+        insight: "Snapshot must persist exactly what the learner saw.",
+        hardestDecision: "S002",
+        selectedBranchType: "suboptimal",
+      }),
+    );
+    expect(res.status).toBe(200);
+
+    expect(mocks.generatePublicSlug).toHaveBeenCalledTimes(1);
+    expect(mocks.createShareCard).toHaveBeenCalledTimes(1);
+    const persistArgs = mocks.createShareCard.mock.calls[0]?.[0];
+    expect(persistArgs).toMatchObject({
+      userId: "u-paid",
+      enrollmentId: "enr-9",
+      packageVersionId: "pv-2",
+      publicSlug: "pub-abc123",
+    });
+    // The payload row carries every field the share surface depends on so
+    // future reads stay stable even if upstream packages / enrollments
+    // mutate (backlog/06 §Share Cards).
+    expect(persistArgs.payload).toMatchObject({
+      packageSlug: "resnet",
+      packageVersionId: "pv-2",
+      completionStatus: "in_progress",
+      scoreSummary: { passed: 1, total: 3 },
+      hardestDecision: "S002",
+      selectedBranchType: "suboptimal",
+      cohortPercentage: null,
+    });
+    expect(persistArgs.payload.learnerInsight).toContain("Snapshot must");
+
+    const body = await res.json();
+    expect(body.shareCard.id).toBe("sc-persisted");
+    expect(body.shareCard.publicSlug).toBe("pub-abc123");
+    expect(body.shareCard.publicUrl).toContain("pub-abc123");
+  });
+
+  it("returns 401 when permissions allow but the session has no userId (defensive)", async () => {
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-anon",
+      packageVersionId: "pv-1",
+      activeStageRef: "S001",
+      packageSlug: "resnet",
+      completedStageRefs: [],
+    });
+    mocks.getPackageBySlug.mockResolvedValue({
+      slug: "resnet",
+      stages: [{ ref: "S001" }],
+      sampleDecision: null,
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: null });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+
+    const res = await POST(
+      makeRequest({ enrollmentId: "enr-anon", insight: "anon" }),
+    );
+    expect(res.status).toBe(401);
+    expect(mocks.createShareCard).not.toHaveBeenCalled();
+    expect(mocks.generatePublicSlug).not.toHaveBeenCalled();
   });
 
   it("rejects unknown branch types with 400 invalid_branch_type", async () => {
