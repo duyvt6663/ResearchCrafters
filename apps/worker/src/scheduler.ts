@@ -16,6 +16,7 @@
 // underlying repeatable-job descriptor would carry a different opaque id and
 // the `Repeatable` Redis hash would accumulate orphans across boots.
 
+import { PUBLIC_COHORTS, type Cohort } from '@researchcrafters/telemetry';
 import {
   BRANCH_STATS_ROLLUP_QUEUE,
   type QueueName,
@@ -34,18 +35,16 @@ export interface SchedulerConnection {
 }
 
 /**
- * Cohorts we publish branch-stats for on a schedule. `alpha_beta` is excluded
- * from public percentages by policy (see backlog/06 §Branch Stats and Privacy);
- * we still don't roll it up on the recurring schedule because nothing public
- * consumes it yet — it can be backfilled via the admin trigger when needed.
+ * Cohorts we publish branch-stats for on a schedule. Derived from
+ * `PUBLIC_COHORTS` so the single source of truth for which cohorts may
+ * surface in public, learner-facing UI also drives what the recurring rollup
+ * computes — `alpha_beta` stays off the schedule because it is marked
+ * `includeInPublicPercentages: false`. Backfill it via the admin trigger when
+ * needed for internal analysis.
  */
-export const SCHEDULED_BRANCH_STATS_COHORTS = [
-  'all_attempts',
-  'completers',
-  'entitled_paid',
-] as const;
+export const SCHEDULED_BRANCH_STATS_COHORTS: readonly Cohort[] = PUBLIC_COHORTS;
 
-export type ScheduledCohort = (typeof SCHEDULED_BRANCH_STATS_COHORTS)[number];
+export type ScheduledCohort = Cohort;
 
 /**
  * Cron pattern: every 15 minutes, on the quarter hour. BullMQ accepts standard

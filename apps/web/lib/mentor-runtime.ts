@@ -110,8 +110,24 @@ export interface MentorRuntimeInput {
 export type TelemetryEventName =
   | "mentor_hint_requested"
   | "mentor_feedback_requested"
-  | "evaluator_redaction_triggered";
+  | "evaluator_redaction_triggered"
+  | "mentor_first_token_latency";
 export type TelemetryPayload = Record<string, string | number | boolean | null>;
+
+/**
+ * SLO thresholds (ms) for the `mentor_first_token_latency` event. Authored
+ * in `backlog/05-mentor-safety.md` §SLOs:
+ *   - hint: p95 first token < 5000ms
+ *   - feedback: p95 first token < 15000ms
+ *
+ * The gateway is currently non-streaming, so `latencyMs` is the duration
+ * of `gateway.complete(...)`. When streaming lands the emission point
+ * moves to the first chunk; the SLO targets stay the same.
+ */
+export const MENTOR_FIRST_TOKEN_SLO_MS: Readonly<Record<ModelTier, number>> = {
+  hint: 5000,
+  feedback: 15000,
+};
 
 export type MentorRuntimeOutcome =
   | {
@@ -314,12 +330,35 @@ export async function runMentorRequest(
     learnerInput: input.message,
   });
 
+  const firstTokenStartedAt =
+    typeof performance !== "undefined" && typeof performance.now === "function"
+      ? performance.now()
+      : Date.now();
   const gatewayResponse = await gateway.complete({
     modelTier: tier,
     modelId,
     systemPrompt,
     userPrompt,
     maxOutputTokens: 1024,
+  });
+  const firstTokenEndedAt =
+    typeof performance !== "undefined" && typeof performance.now === "function"
+      ? performance.now()
+      : Date.now();
+  const firstTokenLatencyMs = Math.max(
+    0,
+    firstTokenEndedAt - firstTokenStartedAt,
+  );
+  const firstTokenSloMs = MENTOR_FIRST_TOKEN_SLO_MS[tier];
+  await track("mentor_first_token_latency", {
+    enrollmentId: input.enrollment.id,
+    stageRef: input.stage.ref,
+    mode: tier,
+    modelTier: tier,
+    modelId,
+    latencyMs: firstTokenLatencyMs,
+    sloMs: firstTokenSloMs,
+    withinSlo: firstTokenLatencyMs <= firstTokenSloMs,
   });
 
   // Leak-test the assembled system prompt against the same gateway. If the

@@ -8,6 +8,7 @@ import { NextResponse } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth";
 import { getProducerQueue } from "@researchcrafters/worker/admin";
 import { BRANCH_STATS_ROLLUP_QUEUE } from "@researchcrafters/worker";
+import { COHORTS, isCohort } from "@researchcrafters/telemetry";
 
 export const runtime = "nodejs";
 
@@ -17,13 +18,6 @@ type Body = {
   windowStart?: unknown;
   windowEnd?: unknown;
 };
-
-const VALID_COHORTS = new Set([
-  "all_attempts",
-  "completers",
-  "entitled_paid",
-  "alpha_beta",
-]);
 
 function adminEmails(): Set<string> {
   const raw = process.env["ADMIN_EMAILS"] ?? "";
@@ -78,9 +72,9 @@ export async function POST(req: Request): Promise<NextResponse> {
       { status: 400 },
     );
   }
-  if (!VALID_COHORTS.has(cohort)) {
+  if (!isCohort(cohort)) {
     return NextResponse.json(
-      { error: "invalid_cohort", validCohorts: [...VALID_COHORTS] },
+      { error: "invalid_cohort", validCohorts: [...COHORTS] },
       { status: 400 },
     );
   }

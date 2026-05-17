@@ -251,6 +251,14 @@ model PackageVersion {
   manifest             Json
   releaseFreeStageIds  String[] @default([])
   requiresGpu          Boolean  @default(false)
+  // Per-package mentor budget caps in USD. `null` means inherit the
+  // platform default resolved by `defaultMentorBudgetCaps()`; setting any
+  // field pins that scope to a package-specific value enforced by
+  // `checkBudget` / `recordMentorRequestSpend` (see
+  // `packages/ai/src/cost-cap.ts`).
+  mentorBudgetUserDailyUsd Float?
+  mentorBudgetPackageUsd   Float?
+  mentorBudgetStageUsd     Float?
   createdAt            DateTime @default(now())
 
   package         Package                 @relation(fields: [packageId], references: [id], onDelete: Cascade)
@@ -429,6 +437,11 @@ model StageAttempt {
   executionStatus String?
   // Convenience pointer to the canonical Grade row (Grade.id).
   gradeId         String?
+  // The active PackageVersionPatch.patchSeq at attempt-creation time. 0
+  // means no cosmetic patch was applied (base package version). Frozen on
+  // the row so analytics and replays can attribute attempts to a specific
+  // patch generation even after later patches land.
+  patchSeq        Int      @default(0)
   createdAt       DateTime @default(now())
 
   enrollment   Enrollment   @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
@@ -561,7 +574,10 @@ model BranchStat {
   // YAML branch id (Branch.branchId), not the cuid, so rollups stay stable
   // across schema reshuffles.
   branchId         String
-  // Allowed values: 'all_attempts' | 'completers' | 'entitled_paid' | 'alpha_beta'
+  // Allowed values are defined by `Cohort` in @researchcrafters/telemetry
+  // (see packages/telemetry/src/cohorts.ts). `alpha_beta` is excluded from
+  // public percentages by default; the recurring rollup only writes the
+  // cohorts in `PUBLIC_COHORTS`.
   cohort           String
   windowStart      DateTime
   windowEnd        DateTime

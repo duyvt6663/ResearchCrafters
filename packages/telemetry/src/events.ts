@@ -1,8 +1,4 @@
-export type Cohort =
-  | 'all_attempts'
-  | 'completers'
-  | 'entitled_paid'
-  | 'alpha_beta';
+export type { Cohort } from './cohorts.js';
 
 export type BranchType =
   | 'canonical'
@@ -140,6 +136,33 @@ export interface MentorFeedbackRequestedEvent {
   threadId?: string;
 }
 
+/**
+ * Mentor first-token latency, captured per request so dashboards can
+ * compute the p95 against the authored SLO. The current `LLMGateway` is
+ * non-streaming, so `latencyMs` is measured as the duration of
+ * `gateway.complete(...)` (i.e. completion latency). When streaming is
+ * added, the same emission point swaps to the first-chunk timestamp
+ * without changing the event shape or the SLO targets.
+ *
+ * SLO thresholds (per `backlog/05-mentor-safety.md` §SLOs):
+ *   - hint: p95 < 5000ms
+ *   - feedback: p95 < 15000ms
+ *
+ * `withinSlo` is the per-request boolean so dashboards can also report a
+ * cheap "% within SLO" alongside the p95.
+ */
+export interface MentorFirstTokenLatencyEvent {
+  name: 'mentor_first_token_latency';
+  enrollmentId: string;
+  stageRef: string;
+  mode: MentorRequestKind;
+  modelTier: string;
+  modelId: string;
+  latencyMs: number;
+  sloMs: number;
+  withinSlo: boolean;
+}
+
 export interface StageCompletedEvent {
   name: 'stage_completed';
   enrollmentId: string;
@@ -193,6 +216,7 @@ export type TelemetryEvent =
   | EvaluatorRedactionTriggeredEvent
   | MentorHintRequestedEvent
   | MentorFeedbackRequestedEvent
+  | MentorFirstTokenLatencyEvent
   | StageCompletedEvent
   | ShareCardCreatedEvent
   | ShareCardUnsharedEvent

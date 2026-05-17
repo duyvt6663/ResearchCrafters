@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   getSessionFromRequest: vi.fn(),
   canAccess: vi.fn(),
   track: vi.fn(),
+  resolveActivePatchSeq: vi.fn(),
 }));
 
 vi.mock("@/lib/data/enrollment", () => ({
@@ -36,6 +37,10 @@ vi.mock("@/lib/telemetry", () => ({
   track: mocks.track,
 }));
 
+vi.mock("@researchcrafters/db", () => ({
+  resolveActivePatchSeq: mocks.resolveActivePatchSeq,
+}));
+
 import { POST } from "../../app/api/stage-attempts/route";
 
 beforeEach(() => {
@@ -44,6 +49,8 @@ beforeEach(() => {
   mocks.getSessionFromRequest.mockReset();
   mocks.canAccess.mockReset();
   mocks.track.mockReset();
+  mocks.resolveActivePatchSeq.mockReset();
+  mocks.resolveActivePatchSeq.mockResolvedValue(0);
 });
 
 function makeRequest(body: unknown, headers: Record<string, string> = {}): Request {
@@ -124,6 +131,66 @@ describe("POST /api/stage-attempts", () => {
     expect(mocks.track).toHaveBeenCalledWith(
       "stage_attempt_submitted",
       expect.objectContaining({ stageRef: "S001" }),
+    );
+  });
+
+  it("resolves the active patchSeq against the enrollment's package version when the caller doesn't pin one", async () => {
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-1",
+      packageVersionId: "pv-1",
+      activeStageRef: "S001",
+    });
+    mocks.getStage.mockResolvedValue({
+      ref: "S001",
+      isFreePreview: true,
+      isLocked: false,
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-1" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+    mocks.resolveActivePatchSeq.mockResolvedValue(4);
+
+    const res = await POST(
+      makeRequest({
+        enrollmentId: "enr-1",
+        stageRef: "S001",
+        answer: { text: "draft" },
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(mocks.resolveActivePatchSeq).toHaveBeenCalledWith("pv-1");
+    expect(mocks.track).toHaveBeenCalledWith(
+      "stage_attempt_submitted",
+      expect.objectContaining({ patchSeq: 4 }),
+    );
+  });
+
+  it("respects a caller-supplied patchSeq and skips the resolver", async () => {
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-1",
+      packageVersionId: "pv-1",
+      activeStageRef: "S001",
+    });
+    mocks.getStage.mockResolvedValue({
+      ref: "S001",
+      isFreePreview: true,
+      isLocked: false,
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-1" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+
+    const res = await POST(
+      makeRequest({
+        enrollmentId: "enr-1",
+        stageRef: "S001",
+        answer: { text: "draft" },
+        patchSeq: 9,
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(mocks.resolveActivePatchSeq).not.toHaveBeenCalled();
+    expect(mocks.track).toHaveBeenCalledWith(
+      "stage_attempt_submitted",
+      expect.objectContaining({ patchSeq: 9 }),
     );
   });
 

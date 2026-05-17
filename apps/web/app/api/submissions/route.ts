@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma, withQueryTimeout } from "@researchcrafters/db";
+import { prisma, resolveActivePatchSeq, withQueryTimeout } from "@researchcrafters/db";
 // Stage descriptor for the policy check is stubbed inline — the submission
 // route accepts (packageVersionId, stageRef) but the data helper still resolves
 // stages through an enrollment id. Wire to a real lookup once submissions are
@@ -104,6 +104,17 @@ export async function POST(req: Request): Promise<NextResponse> {
         }),
       );
       if (enrollment) {
+        // Freeze the active cosmetic patch generation on the row so
+        // analytics, replays, and grade audits can attribute the attempt
+        // to a specific patch_seq even after newer patches land.
+        // (backlog/06 §Version and Patch Policy line 69.)
+        let patchSeq = 0;
+        try {
+          patchSeq = await resolveActivePatchSeq(body.packageVersionId);
+        } catch {
+          // best-effort: a missing patches table or transient read error
+          // must not block submission init — fall back to base (0).
+        }
         const attempt = await withQueryTimeout(
           prisma.stageAttempt.create({
             data: {
@@ -111,6 +122,7 @@ export async function POST(req: Request): Promise<NextResponse> {
               stageRef: body.stageRef,
               answer: {},
               executionStatus: "queued",
+              patchSeq,
             },
             select: { id: true },
           }),

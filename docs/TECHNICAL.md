@@ -349,12 +349,21 @@ Version policy:
   but preserves the prior enrollment, attempts, branch selections, mentor threads, and
   share-card history under the old `package_version_id`.
 
-Branch-stat cohorts:
+Branch-stat cohorts (single source of truth: `packages/telemetry/src/cohorts.ts`,
+exported as `Cohort`, `COHORT_DEFINITIONS`, `PUBLIC_COHORTS`, `isCohort`,
+`isPublicCohort`):
 
-- `all_attempts`: all users who reached the decision node.
-- `completers`: users who completed the package.
-- `entitled_paid`: users with paid or team entitlement at the time of selection.
-- `alpha_beta`: users in pre-release cohorts, excluded from public percentages by default.
+- `all_attempts`: every user who reached the decision node, regardless of
+  completion or entitlement.
+- `completers`: users who completed the package (terminal stage passed) at any
+  point before the window end.
+- `entitled_paid`: users whose active entitlement at the time of the branch
+  selection was paid or team (excludes free-tier and complimentary access).
+- `alpha_beta`: users in pre-release access cohorts (alpha allowlist, internal
+  beta groups). Excluded from public percentages by default
+  (`includeInPublicPercentages: false`) and excluded from the recurring
+  rollup schedule; backfill via the admin trigger when needed for internal
+  analysis.
 
 Public branch percentages use minimum-N suppression. Hide cohort percentages unless the
 cohort has at least 20 selections for that node and time window.

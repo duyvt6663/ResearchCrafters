@@ -19,6 +19,7 @@ export type TelemetryEvent =
   | "evaluator_redaction_triggered"
   | "mentor_hint_requested"
   | "mentor_feedback_requested"
+  | "mentor_first_token_latency"
   | "stage_completed"
   | "share_card_created"
   | "share_card_unshared"
