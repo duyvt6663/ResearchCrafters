@@ -96,12 +96,65 @@ describe("POST /api/share-cards", () => {
     );
   });
 
-  it("returns 400 when insight is missing", async () => {
-    const res = await POST(makeRequest({ enrollmentId: "enr-1" }));
+  it("returns 200 and omits learnerInsight when the caller does not provide one", async () => {
+    // backlog/06 §Share Cards — insight is now optional ("when available");
+    // the payload simply has no `learnerInsight` key for these runs.
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-no-insight",
+      packageVersionId: "pv-1",
+      activeStageRef: "S001",
+      packageSlug: "resnet",
+      completedStageRefs: [],
+    });
+    mocks.getPackageBySlug.mockResolvedValue({
+      slug: "resnet",
+      stages: [{ ref: "S001" }],
+      sampleDecision: null,
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+
+    const res = await POST(makeRequest({ enrollmentId: "enr-no-insight" }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.shareCard.payload.learnerInsight).toBeUndefined();
+  });
+
+  it("returns 400 invalid_insight when the field is present but not a string", async () => {
+    const res = await POST(
+      makeRequest({ enrollmentId: "enr-1", insight: 42 as never }),
+    );
     expect(res.status).toBe(400);
     expect(((await res.json()) as { reason: string }).reason).toBe(
-      "missing_required_fields",
+      "invalid_insight",
     );
+    expect(mocks.getEnrollment).not.toHaveBeenCalled();
+  });
+
+  it("suppresses blank/whitespace-only insights from the persisted payload", async () => {
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-blank",
+      packageVersionId: "pv-1",
+      activeStageRef: "S001",
+      packageSlug: "resnet",
+      completedStageRefs: [],
+    });
+    mocks.getPackageBySlug.mockResolvedValue({
+      slug: "resnet",
+      stages: [{ ref: "S001" }],
+      sampleDecision: null,
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+
+    const res = await POST(
+      makeRequest({ enrollmentId: "enr-blank", insight: "   \n\t  " }),
+    );
+    expect(res.status).toBe(200);
+    const persistArgs = mocks.createShareCard.mock.calls[0]?.[0];
+    expect(persistArgs.payload.learnerInsight).toBeUndefined();
+    const body = await res.json();
+    expect(body.shareCard.payload.learnerInsight).toBeUndefined();
   });
 
   it("returns 404 when the enrollment doesn't exist", async () => {

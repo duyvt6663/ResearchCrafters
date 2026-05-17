@@ -17,7 +17,7 @@ export const runtime = "nodejs";
 
 type Body = {
   enrollmentId: string;
-  insight: string;
+  insight?: string;
   hardestDecision?: string;
   selectedBranchType?: AuthoredBranchType;
 };
@@ -39,12 +39,15 @@ export async function POST(req: Request): Promise<NextResponse> {
         { status: 400 },
       );
     }
-    if (
-      typeof body?.enrollmentId !== "string" ||
-      typeof body?.insight !== "string"
-    ) {
+    if (typeof body?.enrollmentId !== "string") {
       return NextResponse.json(
         { error: "bad_request", reason: "missing_required_fields" },
+        { status: 400 },
+      );
+    }
+    if (body.insight !== undefined && typeof body.insight !== "string") {
+      return NextResponse.json(
+        { error: "bad_request", reason: "invalid_insight" },
         { status: 400 },
       );
     }
@@ -94,7 +97,10 @@ export async function POST(req: Request): Promise<NextResponse> {
               : null,
           }
         : null,
-      insight: body.insight,
+      // backlog/06 §Share Cards: include learner-written insight when
+      // available — `buildShareCardPayload` trims, caps, and suppresses
+      // blank values so the payload key is only present when meaningful.
+      insight: body.insight ?? null,
       hardestDecision: body.hardestDecision ?? null,
       selectedBranchType: body.selectedBranchType ?? null,
       // Cohort percentage requires persisted `node_traversals` + minimum-N

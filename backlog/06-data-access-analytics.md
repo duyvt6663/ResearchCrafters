@@ -236,7 +236,18 @@ reflect that snapshot.
       itself lives on the StageAttempt; the snapshot pins the branch
       *type* the learner ultimately published.)_
 - [ ] Include cohort selection percentage only after minimum-N suppression passes.
-- [ ] Include learner-written evidence-grounded insight when available.
+- [x] Include learner-written evidence-grounded insight when available.
+      _(`POST /api/share-cards` now treats `insight` as optional;
+      `buildShareCardPayload` runs every caller value through
+      `normalizeLearnerInsight` (`apps/web/lib/share-cards.ts`) which
+      trims, suppresses blank/whitespace, and clamps at
+      `SHARE_CARD_INSIGHT_MAX_LENGTH=600`. The `learnerInsight` payload
+      key is only present when a meaningful insight is available, so the
+      immutable snapshot stays grounded in the surrounding evidence
+      (packageSlug + scoreSummary + hardestDecision + selectedBranchType).
+      Route also returns `400 invalid_insight` when the field is present
+      but non-string. QA:
+      `qa/share-card-learner-insight-when-available-2026-05-17.md`.)_
 
 ## Acceptance Criteria
 
