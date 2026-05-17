@@ -12,6 +12,7 @@ import {
 import {
   defaultMentorRateLimiter,
   defaultMentorSpendStore,
+  defaultMentorContextCache,
   runMentorRequest,
 } from "@/lib/mentor-runtime";
 import { setActiveSpanAttributes, withSpan } from "@/lib/tracing";
@@ -157,6 +158,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       userId: session.userId,
       rateLimiter: defaultMentorRateLimiter(),
       spendStore: defaultMentorSpendStore(),
+      contextCache: defaultMentorContextCache(),
       track,
     });
 

@@ -59,3 +59,16 @@ export type {
   VerificationToken,
   DeviceCodeFlow,
 } from "@prisma/client";
+
+// Shared Prisma-backed `GradeStore` for the evaluator-sdk. Lives in
+// `packages/db` so both the worker grader (`gradeAttempt`) and the web
+// reviewer override route can construct the same persistent store instead
+// of falling back to the in-memory variant.
+export {
+  makePrismaGradeStore,
+  GradeNotFoundError,
+} from "./grade-store.js";
+export type {
+  GradeStorePrisma,
+  MakePrismaGradeStoreOptions,
+} from "./grade-store.js";

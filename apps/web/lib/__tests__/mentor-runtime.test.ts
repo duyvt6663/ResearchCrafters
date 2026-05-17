@@ -17,6 +17,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { MockLLMGateway } from "@researchcrafters/ai";
 import type { SpendStore } from "@researchcrafters/ai";
+import { InMemoryMentorContextCache, MockLLMGateway } from "@researchcrafters/ai";
 import type { StagePolicy } from "@researchcrafters/erp-schema";
 import {
   runMentorRequest,
@@ -431,6 +432,40 @@ describe("runMentorRequest", () => {
     if (result.kind !== "ok") throw new Error("expected ok outcome");
     expect(recordSpend).not.toHaveBeenCalled();
     expect(result.spentUsd).toBe(0);
+  it("threads a shared context cache so repeat requests for the same stage are stage-static", async () => {
+    // The mentor runtime forwards its `contextCache` to `buildMentorContext`.
+    // We can prove the wiring works by reusing the same cache across two
+    // requests and inspecting it for an entry afterwards. The exact key is
+    // an implementation detail, so we only assert the cache was populated.
+    const cache = new InMemoryMentorContextCache();
+    const stub = makePrismaStub();
+    stub.threadFindFirst.mockResolvedValue({ id: "thread-cache" });
+    stub.messageCreate.mockResolvedValue({ id: "row" });
+
+    await runMentorRequest({
+      enrollment: { id: ENR_ID, packageVersionId: PV_ID },
+      stage: { ref: STAGE_REF, stagePolicy: policy() },
+      mode: "hint",
+      message: "first turn",
+      gateway: new MockLLMGateway(ECHO_HANDLER),
+      contextCache: cache,
+      prisma: stub.prisma,
+      withQueryTimeout: async (p) => p,
+    });
+    expect(cache.size()).toBe(1);
+
+    await runMentorRequest({
+      enrollment: { id: ENR_ID, packageVersionId: PV_ID },
+      stage: { ref: STAGE_REF, stagePolicy: policy() },
+      mode: "hint",
+      message: "second turn — same stage, should reuse",
+      gateway: new MockLLMGateway(ECHO_HANDLER),
+      contextCache: cache,
+      prisma: stub.prisma,
+      withQueryTimeout: async (p) => p,
+    });
+    // Same cache key → still exactly one entry, not two.
+    expect(cache.size()).toBe(1);
   });
 
   it("reuses an existing MentorThread when one already exists for the (enrollmentId, stageRef)", async () => {

@@ -30,6 +30,7 @@ import {
   buildMentorContext,
   buildMentorPrompt,
   estimateRequestCostUsd,
+  InMemoryMentorContextCache,
   MockLLMGateway,
   redact,
   runLeakTests,
@@ -37,6 +38,7 @@ import {
 import type {
   LLMGateway,
   MentorContext,
+  MentorContextCache,
   ModelTier,
   PriceTable,
   SpendStore,
@@ -119,6 +121,11 @@ export interface MentorRuntimeInput {
    * Falls back to `defaultMentorPriceTable()` when omitted.
    */
   priceTable?: PriceTable;
+   * Optional stage-static context cache. The route wires the process-wide
+   * `defaultMentorContextCache()`; tests can pass an isolated cache or omit
+   * to skip caching entirely.
+   */
+  contextCache?: MentorContextCache;
   /** Override the persistence client. Tests pass a stub. */
   prisma?: MentorRuntimePrisma;
   /** Override the timeout wrapper. Tests pass an identity wrapper. */
@@ -219,6 +226,51 @@ export function defaultGateway(): LLMGateway {
   }
 }
 
+let _processContextCache: MentorContextCache | undefined;
+
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  if (!value) return fallback;
+  const n = Number.parseInt(value, 10);
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return n;
+}
+
+/**
+ * Return the process-wide stage-static mentor context cache, lazily
+ * constructed. Loader callbacks for artifact excerpts, rubric criteria, and
+ * branch feedback are deterministic for a given
+ * `(packageVersionId, stageId, visibility)` triple, so caching the assembled
+ * `MentorContext` skips repeated content reads on every mentor turn.
+ *
+ * Tunables (env):
+ *   - `MENTOR_CONTEXT_CACHE_TTL_MS` (default 300_000 = 5 minutes)
+ *   - `MENTOR_CONTEXT_CACHE_MAX_ENTRIES` (default 256)
+ *
+ * The in-memory variant is deliberately scoped to one Node process; a
+ * Redis-backed multi-instance cache is tracked alongside the rate limiter
+ * open gap in `backlog/05-mentor-safety.md`.
+ */
+export function defaultMentorContextCache(): MentorContextCache {
+  if (!_processContextCache) {
+    _processContextCache = new InMemoryMentorContextCache({
+      ttlMs: parsePositiveInt(
+        process.env["MENTOR_CONTEXT_CACHE_TTL_MS"],
+        5 * 60_000,
+      ),
+      maxEntries: parsePositiveInt(
+        process.env["MENTOR_CONTEXT_CACHE_MAX_ENTRIES"],
+        256,
+      ),
+    });
+  }
+  return _processContextCache;
+}
+
+/** Test-only override to reset the cached cache between suites. */
+export function resetDefaultMentorContextCacheForTests(): void {
+  _processContextCache = undefined;
+}
+
 /**
  * Detect the misconfigured-visibility case the context builder warns about.
  * `buildMentorContext` resolves `always` on the forbidden scopes to `never`
@@ -313,6 +365,7 @@ export async function runMentorRequest(
       packageVersionId: input.enrollment.packageVersionId,
       stagePolicy,
       visibilityState: visibility,
+      ...(input.contextCache ? { cache: input.contextCache } : {}),
       loaders: {
         artifactRefs,
         loadArtifact: async (ref: string) => ({ ref, text: "" }),
