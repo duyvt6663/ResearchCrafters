@@ -7,7 +7,7 @@ reflect that snapshot.
 
 ## Audience
 
-- [ ] Define target alpha persona.
+- [x] Define target alpha persona. See `docs/ALPHA_PERSONA.md`.
 - [ ] Recruit 20-50 serious AI engineers.
 - [ ] Include at least 5 senior engineers or researchers for quality feedback.
 - [ ] Exclude users who only want passive summaries from the first cohort.
