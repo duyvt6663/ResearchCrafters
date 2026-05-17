@@ -245,7 +245,30 @@ reflect that snapshot.
 - [ ] Land the events dual-write: PostHog primary, audit-grade rows in the
       Postgres `Event` table.
 - [ ] Surface the migration UX flow in the web app.
-- [ ] Add privacy plumbing: encryption-at-rest fields. _(data export endpoint
-      and deletion cascade workflow have landed at
-      `apps/web/lib/account-cascade.ts` + `apps/web/app/api/account/{delete,export}/route.ts`;
-      encryption-at-rest remains.)_
+- [x] Add privacy plumbing: encryption-at-rest fields. _(landed: column-level
+      AES-256-GCM at the Prisma extension boundary in
+      `packages/db/src/crypto.ts` (envelope `enc:v1:<base64url(JSON)>`,
+      authenticated, idempotent on re-encrypt, fail-loud `MissingKeyError` /
+      `DecryptError`) and `packages/db/src/encrypted-fields.ts`
+      (`ENCRYPTED_FIELDS` policy: `Account.access_token`,
+      `Account.refresh_token`, `Account.id_token`, `Session.sessionToken`,
+      `MentorMessage.bodyText`, `StageAttempt.answer` w/ jsonStringify).
+      Wired into the singleton via `withEncryption()` in
+      `packages/db/src/client.ts`; read path tolerates legacy plaintext
+      rows for the bridge period and decrypt failures null the field +
+      structured-warn rather than throwing. Operator + key-rotation +
+      backfill docs at `packages/db/ENCRYPTION.md`. Schema PII JSDoc on
+      the six fields points back to the live policy. Verification:
+      `pnpm --filter @researchcrafters/db test` -> 31/31 (1 skipped
+      live-Postgres integration) covering round-trip, fresh-IV
+      non-determinism, ciphertext-tamper / wrong-key `DecryptError`,
+      `MissingKeyError`, idempotency, and PBKDF2 stretch determinism.
+      Data export + deletion cascade already at
+      `apps/web/lib/account-cascade.ts` +
+      `apps/web/app/api/account/{delete,export}/route.ts`. QA:
+      `qa/encryption-at-rest-fields-2026-05-17.md`. Known follow-ups —
+      web bundle splitting (`@researchcrafters/db` top-level
+      re-exporting `node:crypto`) and typecheck typings for the
+      extension — are tracked separately in
+      `backlog/10-integration-quality-gaps.md` and
+      `backlog/08-infra-foundations.md` §Open gaps.)_
