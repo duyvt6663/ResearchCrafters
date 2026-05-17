@@ -205,14 +205,36 @@ reflect that snapshot.
 
 ## Share Cards
 
-- [ ] Store immutable share-card payload snapshot.
-      _(schema exists, but `/api/share-cards` currently returns a stub payload
-      and does not write a DB row.)_
-- [ ] Include package slug and version.
-- [ ] Include completion status.
-- [ ] Include score summary.
-- [ ] Include hardest decision when available.
-- [ ] Include selected branch and branch type.
+- [x] Store immutable share-card payload snapshot.
+      _(wired: `POST /api/share-cards` now persists a `ShareCard` row via
+      `createShareCard` (`apps/web/lib/data/share-cards.ts`) with a
+      synchronously-generated `publicSlug` from
+      `@researchcrafters/worker.generatePublicSlug`. The full
+      `ShareCardPayload` from `buildShareCardPayload` is stored in
+      `ShareCard.payload` JSON so future reads are not recomputed from the
+      live enrollment/package state. QA:
+      `qa/share-card-payload-snapshot-2026-05-17.md`.)_
+- [x] Include package slug and version.
+      _(`payload.packageSlug` + `payload.packageVersionId` from
+      `buildShareCardPayload`; route also writes `packageVersionId` to the
+      row column for FK / indexing.)_
+- [x] Include completion status.
+      _(`payload.completionStatus` — `"complete"` when every authored
+      stage ref is in `enrollment.completedStageRefs`, else
+      `"in_progress"`.)_
+- [x] Include score summary.
+      _(`payload.scoreSummary = { passed, total }` derived from the
+      enrollment's completed stage count and the authored stage list.)_
+- [x] Include hardest decision when available.
+      _(`payload.hardestDecision` — caller-supplied
+      `body.hardestDecision`, falling back to the package's
+      `sampleDecision.prompt`; omitted when neither is present.)_
+- [x] Include selected branch and branch type.
+      _(`payload.selectedBranchType` — caller-supplied
+      `selectedBranchType` mapped through `mapBranchKind` so authored
+      `failed` becomes the public-safe `alternative`. Branch identity
+      itself lives on the StageAttempt; the snapshot pins the branch
+      *type* the learner ultimately published.)_
 - [ ] Include cohort selection percentage only after minimum-N suppression passes.
 - [ ] Include learner-written evidence-grounded insight when available.
 

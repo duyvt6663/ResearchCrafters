@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@researchcrafters/db";
+import { generatePublicSlug } from "@researchcrafters/worker";
 import { getEnrollment } from "@/lib/data/enrollment";
 import { getPackageBySlug } from "@/lib/data/packages";
+import { createShareCard } from "@/lib/data/share-cards";
 import { getSessionFromRequest } from "@/lib/auth";
 import { denialHttpStatus, permissions } from "@/lib/permissions";
 import { track } from "@/lib/telemetry";
@@ -99,24 +102,37 @@ export async function POST(req: Request): Promise<NextResponse> {
       cohortPercentage: null,
     });
 
-    const id = `sc-${Date.now()}`;
-    setActiveSpanAttributes({ "rc.share_card.id": id });
+    if (!session.userId) {
+      return NextResponse.json(
+        { error: "unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const publicSlug = generatePublicSlug();
+    const record = await createShareCard({
+      userId: session.userId,
+      enrollmentId: enr.id,
+      packageVersionId: enr.packageVersionId,
+      payload: payload as unknown as Prisma.InputJsonValue,
+      publicSlug,
+    });
+
+    setActiveSpanAttributes({ "rc.share_card.id": record.id });
     await track("share_card_created", {
-      shareCardId: id,
+      shareCardId: record.id,
       enrollmentId: enr.id,
       packageVersionId: enr.packageVersionId,
     });
 
-    // DB stub. Durable share-card rows are tracked under backlog/06; this
-    // route still returns the freshly-derived snapshot so the share page +
-    // preview component can render the real payload shape.
     return NextResponse.json({
       shareCard: {
-        id,
+        id: record.id,
         enrollmentId: enr.id,
         packageVersionId: enr.packageVersionId,
-        publicUrl: `https://researchcrafters.example/share/${id}`,
-        imageUrl: `https://researchcrafters.example/share/${id}.png`,
+        publicSlug,
+        publicUrl: `https://researchcrafters.example/share/${publicSlug}`,
+        imageUrl: `https://researchcrafters.example/share/${publicSlug}.png`,
         payload,
       },
     });
