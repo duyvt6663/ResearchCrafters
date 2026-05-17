@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolveActivePatchSeq } from "@researchcrafters/db";
+import { prisma, resolveActivePatchSeq, withQueryTimeout } from "@researchcrafters/db";
 import { getEnrollment, getStage } from "@/lib/data/enrollment";
 import { getSessionFromRequest } from "@/lib/auth";
 import { denialHttpStatus, permissions } from "@/lib/permissions";
@@ -61,7 +61,6 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
-    const attemptId = `sa-${Date.now()}`;
     // Caller may pin a specific patch generation (replay / migration tooling);
     // otherwise resolve the currently-active patch_seq for the enrollment's
     // package version so telemetry attributes the attempt to the right
@@ -75,6 +74,35 @@ export async function POST(req: Request): Promise<NextResponse> {
         activePatchSeq = 0;
       }
     }
+
+    // Persist a durable StageAttempt row so the cuid we return is stable
+    // across replays/grade overrides and analytics can join on the row.
+    // (backlog/06 §Open gaps from snapshot — line 177.) Fall back to a
+    // synthesized id only when the DB write fails so callers still get a
+    // usable shape during local dev / DB outages, matching the
+    // submissions-init route's contract.
+    let attemptId: string | null = null;
+    try {
+      const attempt = await withQueryTimeout(
+        prisma.stageAttempt.create({
+          data: {
+            enrollmentId: enr.id,
+            stageRef: stage.ref,
+            answer: (body.answer ?? {}) as object,
+            executionStatus: "queued",
+            patchSeq: activePatchSeq ?? 0,
+          },
+          select: { id: true },
+        }),
+      );
+      attemptId = attempt.id;
+    } catch {
+      attemptId = null;
+    }
+    if (!attemptId) {
+      attemptId = `sa-${Date.now()}`;
+    }
+
     await track("stage_attempt_submitted", {
       enrollmentId: enr.id,
       stageRef: stage.ref,

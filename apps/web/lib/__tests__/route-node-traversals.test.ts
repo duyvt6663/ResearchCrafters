@@ -14,6 +14,10 @@ const mocks = vi.hoisted(() => ({
   getSessionFromRequest: vi.fn(),
   canAccess: vi.fn(),
   track: vi.fn(),
+  decisionNodeFindUnique: vi.fn(),
+  branchFindUnique: vi.fn(),
+  nodeTraversalCreate: vi.fn(),
+  withQueryTimeout: vi.fn(),
 }));
 
 vi.mock("@/lib/data/enrollment", () => ({
@@ -34,6 +38,15 @@ vi.mock("@/lib/telemetry", () => ({
   track: mocks.track,
 }));
 
+vi.mock("@researchcrafters/db", () => ({
+  prisma: {
+    decisionNode: { findUnique: mocks.decisionNodeFindUnique },
+    branch: { findUnique: mocks.branchFindUnique },
+    nodeTraversal: { create: mocks.nodeTraversalCreate },
+  },
+  withQueryTimeout: mocks.withQueryTimeout,
+}));
+
 import { POST } from "../../app/api/node-traversals/route";
 
 beforeEach(() => {
@@ -42,6 +55,15 @@ beforeEach(() => {
   mocks.getSessionFromRequest.mockReset();
   mocks.canAccess.mockReset();
   mocks.track.mockReset();
+  mocks.decisionNodeFindUnique.mockReset();
+  mocks.branchFindUnique.mockReset();
+  mocks.nodeTraversalCreate.mockReset();
+  mocks.withQueryTimeout.mockReset();
+  mocks.withQueryTimeout.mockImplementation(async (p) => p);
+  // Default: schema lookups succeed and the traversal row is created.
+  mocks.decisionNodeFindUnique.mockResolvedValue({ id: "dn-cuid-1" });
+  mocks.branchFindUnique.mockResolvedValue({ id: "br-cuid-1" });
+  mocks.nodeTraversalCreate.mockResolvedValue({ id: "nt-cuid-1" });
 });
 
 function makeRequest(body: unknown): Request {
@@ -141,6 +163,164 @@ describe("POST /api/node-traversals", () => {
         confidence: 0.7,
       }),
     );
+  });
+
+  it("persists a durable NodeTraversal row resolved through (packageVersionId, ref) and returns its cuid", async () => {
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-1",
+      packageVersionId: "pv-1",
+      activeStageRef: "S002",
+    });
+    mocks.getStage.mockResolvedValue({
+      ref: "S002",
+      isFreePreview: false,
+      isLocked: false,
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+    mocks.decisionNodeFindUnique.mockResolvedValue({ id: "dn-real" });
+    mocks.branchFindUnique.mockResolvedValue({ id: "br-real" });
+    mocks.nodeTraversalCreate.mockResolvedValue({ id: "nt-durable-1" });
+
+    const res = await POST(
+      makeRequest({
+        enrollmentId: "enr-1",
+        stageRef: "S002",
+        nodeRef: "N002",
+        branchId: "branch-canonical",
+      }),
+    );
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { traversal: { id: string } };
+    expect(json.traversal.id).toBe("nt-durable-1");
+    expect(mocks.decisionNodeFindUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          packageVersionId_nodeId: {
+            packageVersionId: "pv-1",
+            nodeId: "N002",
+          },
+        },
+      }),
+    );
+    expect(mocks.branchFindUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          packageVersionId_branchId: {
+            packageVersionId: "pv-1",
+            branchId: "branch-canonical",
+          },
+        },
+      }),
+    );
+    expect(mocks.nodeTraversalCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          enrollmentId: "enr-1",
+          decisionNodeId: "dn-real",
+          branchId: "br-real",
+        },
+      }),
+    );
+  });
+
+  it("falls back to a synthesized nt- id when the decision node can't be resolved (FK required)", async () => {
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-1",
+      packageVersionId: "pv-1",
+      activeStageRef: "S002",
+    });
+    mocks.getStage.mockResolvedValue({
+      ref: "S002",
+      isFreePreview: false,
+      isLocked: false,
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+    mocks.decisionNodeFindUnique.mockResolvedValue(null);
+
+    const res = await POST(
+      makeRequest({
+        enrollmentId: "enr-1",
+        stageRef: "S002",
+        nodeRef: "N_unknown",
+        branchId: "branch-canonical",
+      }),
+    );
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { traversal: { id: string } };
+    expect(json.traversal.id).toMatch(/^nt-\d+$/);
+    expect(mocks.nodeTraversalCreate).not.toHaveBeenCalled();
+    // Telemetry still fires so the analytics path is unaffected by the
+    // FK miss.
+    expect(mocks.track).toHaveBeenCalled();
+  });
+
+  it("persists with a null branchId when only the decision node resolves", async () => {
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-1",
+      packageVersionId: "pv-1",
+      activeStageRef: "S002",
+    });
+    mocks.getStage.mockResolvedValue({
+      ref: "S002",
+      isFreePreview: false,
+      isLocked: false,
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+    mocks.decisionNodeFindUnique.mockResolvedValue({ id: "dn-real" });
+    mocks.branchFindUnique.mockResolvedValue(null);
+    mocks.nodeTraversalCreate.mockResolvedValue({ id: "nt-no-branch" });
+
+    const res = await POST(
+      makeRequest({
+        enrollmentId: "enr-1",
+        stageRef: "S002",
+        nodeRef: "N002",
+        branchId: "unknown-branch",
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(mocks.nodeTraversalCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          decisionNodeId: "dn-real",
+          branchId: null,
+        }),
+      }),
+    );
+  });
+
+  it("falls back to a synthesized id when the traversal create throws (best-effort durability)", async () => {
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-1",
+      packageVersionId: "pv-1",
+      activeStageRef: "S002",
+    });
+    mocks.getStage.mockResolvedValue({
+      ref: "S002",
+      isFreePreview: false,
+      isLocked: false,
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+    mocks.decisionNodeFindUnique.mockResolvedValue({ id: "dn-real" });
+    mocks.branchFindUnique.mockResolvedValue({ id: "br-real" });
+    mocks.nodeTraversalCreate.mockRejectedValue(new Error("db_unreachable"));
+
+    const res = await POST(
+      makeRequest({
+        enrollmentId: "enr-1",
+        stageRef: "S002",
+        nodeRef: "N002",
+        branchId: "branch-canonical",
+      }),
+    );
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { traversal: { id: string } };
+    expect(json.traversal.id).toMatch(/^nt-\d+$/);
+    expect(mocks.track).toHaveBeenCalled();
   });
 
   it("forbids paid-stage traversal without entitlement (no telemetry)", async () => {

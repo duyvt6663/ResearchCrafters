@@ -236,9 +236,14 @@ reflect that snapshot.
 - [x] Wire `permissions.canAccess` to live `Membership` and `Entitlement` rows.
 - [x] Fix `/api/enrollments/:id/graph` to await the Prisma-backed decision
       graph. _(Tier-1 fix landed.)_
-- [ ] Persist `node_traversals` and `stage_attempts` from API routes instead of
-      returning synthesized ids. _(routes now Bearer-aware and 400-validate
-      empty bodies; durable rows remain.)_
+- [x] Persist `node_traversals` and `stage_attempts` from API routes instead of
+      returning synthesized ids. _(landed: `POST /api/stage-attempts` and
+      `POST /api/node-traversals` now write through `prisma.stageAttempt.create`
+      / `prisma.nodeTraversal.create` (resolving YAML `nodeRef`/`branchId` via
+      the `(packageVersionId, ...)` unique indexes) and return the durable
+      cuid. A `sa-<ts>` / `nt-<ts>` fallback still fires when the DB write
+      fails so dev/outage callers get a usable response shape. QA:
+      `qa/persist-node-traversals-stage-attempts-2026-05-17.md`.)_
 - [ ] Build the branch-stats rollup job (per-branch N>=5, per-node N>=20, 5%
       rounding). _(execution depends on bringing up Redis; runner-loop agent
       may retarget the port — in flight.)_
