@@ -15,9 +15,8 @@
 //   - `mentor_messages` rows persist with the model telemetry fields.
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { MockLLMGateway } from "@researchcrafters/ai";
-import type { SpendStore } from "@researchcrafters/ai";
 import { InMemoryMentorContextCache, MockLLMGateway } from "@researchcrafters/ai";
+import type { SpendStore } from "@researchcrafters/ai";
 import type { StagePolicy } from "@researchcrafters/erp-schema";
 import {
   runMentorRequest,
