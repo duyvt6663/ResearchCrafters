@@ -121,6 +121,7 @@ export interface MentorRuntimeInput {
    * Falls back to `defaultMentorPriceTable()` when omitted.
    */
   priceTable?: PriceTable;
+  /**
    * Optional stage-static context cache. The route wires the process-wide
    * `defaultMentorContextCache()`; tests can pass an isolated cache or omit
    * to skip caching entirely.

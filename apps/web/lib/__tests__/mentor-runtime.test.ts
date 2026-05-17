@@ -432,6 +432,8 @@ describe("runMentorRequest", () => {
     if (result.kind !== "ok") throw new Error("expected ok outcome");
     expect(recordSpend).not.toHaveBeenCalled();
     expect(result.spentUsd).toBe(0);
+  });
+
   it("threads a shared context cache so repeat requests for the same stage are stage-static", async () => {
     // The mentor runtime forwards its `contextCache` to `buildMentorContext`.
     // We can prove the wiring works by reusing the same cache across two
