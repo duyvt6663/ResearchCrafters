@@ -213,7 +213,15 @@ reflect that snapshot.
 - [ ] Include score summary.
 - [ ] Include hardest decision when available.
 - [ ] Include selected branch and branch type.
-- [ ] Include cohort selection percentage only after minimum-N suppression passes.
+- [x] Include cohort selection percentage only after minimum-N suppression passes.
+      _(landed: `safeCohortPercentage` in `apps/web/lib/share-cards.ts`
+      enforces NODE_MIN_N=20 / BRANCH_MIN_N=5 with 5% rounding pinned to
+      the worker rollup; `buildShareCardPayload` treats `cohortSample` as
+      authoritative so a caller cannot leak a low-N percentage even by
+      also passing `cohortPercentage`. Route currently passes
+      `cohortPercentage: null` until `node_traversals` are persisted
+      (tracked separately at line 159/177). QA:
+      `qa/share-card-cohort-min-n-2026-05-17.md`.)_
 - [ ] Include learner-written evidence-grounded insight when available.
 
 ## Acceptance Criteria
