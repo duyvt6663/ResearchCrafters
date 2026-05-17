@@ -415,6 +415,66 @@ Telemetry taxonomy:
 - `paywall_viewed`
 - `subscription_started`
 
+### Events storage and dual-write contract
+
+PostHog is the primary product analytics store for every telemetry event
+emitted via `@researchcrafters/telemetry` `track(...)`. The worker
+implementation lives in `packages/telemetry/src/track.ts` and resolves a
+PostHog client lazily from `packages/telemetry/src/init.ts` (env vars
+`POSTHOG_API_KEY`, optional `POSTHOG_HOST`). When the key is unset the
+PostHog write is a no-op; nothing else changes.
+
+Events flagged as **audit-grade** are additionally persisted as a compact
+row in the Postgres `Event` table through the shared
+`@researchcrafters/db` Prisma client. Audit-grade is the closed set in
+`packages/telemetry/src/events.ts` `AUDIT_GRADE_EVENTS`:
+
+- `grade_created`
+- `grade_overridden`
+- `evaluator_redaction_triggered`
+- `mentor_output_flagged_for_review`
+- `subscription_started`
+- `branch_feedback_unlocked`
+
+These are the events that affect entitlement, grading, mentor policy,
+payments, or moderation — anything we may have to defend to a learner,
+parent, instructor, payment processor, or regulator. New telemetry types
+default to product-analytics-only; promote to audit-grade only when a
+written reason exists and add the name to `AUDIT_GRADE_EVENTS` plus a
+note in this section.
+
+**Which store to query for which question:**
+
+| Question | Store | Why |
+| --- | --- | --- |
+| Funnels, cohorts, retention, A/B exposure, stage confusion, share loop, paywall conversion | PostHog | Native funnel/retention queries, session replay, all events land here. |
+| "Did this learner's grade change, when, by whom?" | Postgres `Event` (`grade_created`, `grade_overridden`) | Audit-grade row joined to the `Grade` table, retained indefinitely. |
+| "Why did this evaluator output get redacted?" | Postgres `Event` (`evaluator_redaction_triggered`) | Carries `matchedTargets`, retained indefinitely. |
+| "When was a mentor output flagged for review?" | Postgres `Event` (`mentor_output_flagged_for_review`) | Carries `reason`, `modelTier`, `modelId`. |
+| "When did a subscription start and on what plan?" | Postgres `Event` (`subscription_started`) plus billing source-of-truth | PostHog mirror is fine for funnel math, billing/audit needs Postgres. |
+| "Which branch unlocked feedback for this enrollment?" | Postgres `Event` (`branch_feedback_unlocked`) | Audit-grade because it gates downstream feedback access. |
+| Counts, time-series, dashboards for non-audit events | PostHog | Audit table is not indexed for general analytics; do not query it. |
+
+**Retention policy:**
+
+- PostHog: 13 months (project retention setting). Older events fall off
+  PostHog automatically; that is acceptable because every audit-grade
+  event is also in Postgres.
+- Postgres `Event` audit-grade rows (`auditGrade = true`): **indefinite**.
+  No scheduled deletion. These are the long-term defensible record.
+- Postgres `Event` non-audit rows: should be **scrubbed to anonymized
+  aggregates after 24 months** (drop `userId`, keep counts by
+  `packageVersionId` / `stageRef` / week). Today only audit-grade rows
+  are written, so the scrubbing job is a no-op until non-audit writes
+  are introduced — when they are, add a worker job alongside
+  `apps/worker/src/jobs/` and reference it here.
+
+Operator note: dual-write is best-effort. Both PostHog and Postgres
+writes are wrapped in try/catch in `track()` and failures are logged via
+`console.warn` so a telemetry outage never blocks the request that
+emitted it. Backfill the Postgres copy from PostHog export if needed —
+audit-grade rows are the load-bearing path.
+
 ## 6. Repo Structure
 
 Recommended initial monorepo:
