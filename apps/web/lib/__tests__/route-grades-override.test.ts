@@ -26,16 +26,115 @@ const mocks = vi.hoisted(() => ({
   track: vi.fn(),
 }));
 
-vi.mock("@researchcrafters/db", () => ({
-  prisma: {
+class TestGradeNotFoundError extends Error {
+  constructor(gradeId: string) {
+    super(`grade ${gradeId} not found`);
+    this.name = "GradeNotFoundError";
+  }
+}
+
+vi.mock("@researchcrafters/db", () => {
+  const prismaSurface = {
     grade: {
       findUnique: mocks.gradeFindUnique,
       update: mocks.gradeUpdate,
     },
     $transaction: mocks.prismaTransaction,
-  },
-  withQueryTimeout: mocks.withQueryTimeout,
-}));
+  };
+  return {
+    prisma: prismaSurface,
+    withQueryTimeout: mocks.withQueryTimeout,
+    GradeNotFoundError: TestGradeNotFoundError,
+    // The route consumes `makePrismaGradeStore` from `@researchcrafters/db`.
+    // The real factory's `appendOverride` runs `$transaction` → `findUnique`
+    // → `update`, which is exactly the surface the existing assertions pin;
+    // inline a minimal re-implementation here so the test stays self-contained
+    // without spinning up the live Prisma client.
+    makePrismaGradeStore: () => ({
+      async findByKey() {
+        return null;
+      },
+      async insert(grade: unknown) {
+        return grade;
+      },
+      async appendOverride(
+        gradeId: string,
+        entry: {
+          reviewerId: string;
+          note: string;
+          appliedAt: string;
+          override: {
+            status?: string;
+            rubricScore?: number;
+            feedback?: string;
+          };
+        },
+      ) {
+        return mocks.withQueryTimeout(
+          prismaSurface.$transaction(async (tx: {
+            grade: {
+              findUnique: (args: { where: { id: string } }) => Promise<{
+                history?: unknown;
+                passed: boolean;
+                score: number | null;
+                id: string;
+                stageAttemptId: string;
+                submissionId: string | null;
+                rubricVersion: string;
+                evaluatorVersion: string;
+                dimensions: unknown;
+                evidenceRefs: unknown;
+                modelMeta: unknown;
+                createdAt: Date;
+              } | null>;
+              update: (args: {
+                where: { id: string };
+                data: Record<string, unknown>;
+              }) => Promise<Record<string, unknown>>;
+            };
+          }) => {
+            const row = await tx.grade.findUnique({ where: { id: gradeId } });
+            if (!row) throw new TestGradeNotFoundError(gradeId);
+            const history = Array.isArray(row.history) ? row.history : [];
+            const nextHistory = [...history, entry];
+            const data: Record<string, unknown> = { history: nextHistory };
+            if (entry.override.status !== undefined) {
+              data["passed"] = entry.override.status === "passed";
+            }
+            if (entry.override.rubricScore !== undefined) {
+              data["score"] = entry.override.rubricScore;
+            }
+            const updated = await tx.grade.update({ where: { id: gradeId }, data });
+            const u = updated as Record<string, unknown>;
+            const updatedHistory = Array.isArray(u["history"])
+              ? (u["history"] as unknown[])
+              : nextHistory;
+            const overrideStatus = entry.override.status;
+            const status =
+              overrideStatus !== undefined
+                ? overrideStatus
+                : (u["passed"] ?? row.passed) ? "passed" : "failed";
+            return {
+              id: row.id,
+              submissionId: row.submissionId ?? "",
+              stageId: row.stageAttemptId,
+              rubricVersion: row.rubricVersion,
+              evaluatorVersion: row.evaluatorVersion,
+              status,
+              rubricScore:
+                (u["score"] as number | null | undefined) ?? row.score ?? 0,
+              passThreshold: 0,
+              dimensions: [],
+              feedback: "",
+              history: updatedHistory,
+              createdAt: row.createdAt.toISOString(),
+            };
+          }),
+        );
+      },
+    }),
+  };
+});
 
 vi.mock("@/lib/auth", () => ({
   getSessionFromRequest: mocks.getSessionFromRequest,

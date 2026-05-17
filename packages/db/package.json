@@ -34,7 +34,8 @@
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0"
+    "@prisma/client": "^5.22.0",
+    "@researchcrafters/evaluator-sdk": "workspace:*"
   },
   "devDependencies": {
     "@researchcrafters/config": "workspace:*",
