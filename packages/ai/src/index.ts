@@ -7,6 +7,16 @@ export {
 } from './context-builder.js';
 export type { BuildMentorContextInput, VisibilityState } from './context-builder.js';
 export {
+  InMemoryMentorContextCache,
+  mentorContextCacheKey,
+  fnv1aDigest,
+} from './context-cache.js';
+export type {
+  MentorContextCache,
+  MentorContextCacheKeyInput,
+  InMemoryMentorContextCacheOptions,
+} from './context-cache.js';
+export {
   buildMentorPrompt,
   buildSystemPrompt,
   buildUserPrompt,
@@ -27,5 +37,13 @@ export type {
   PriceTable,
   SpendStore,
 } from './cost-cap.js';
-export { getAuthoredRefusal } from './refusal.js';
-export type { RefusalReason } from './refusal.js';
+export {
+  getAuthoredRefusal,
+  platformDefaultRefusals,
+  MENTOR_REFUSAL_SCOPES,
+} from './refusal.js';
+export type {
+  AuthoredRefusal,
+  GetAuthoredRefusalInput,
+  MentorRefusalScope,
+} from './refusal.js';

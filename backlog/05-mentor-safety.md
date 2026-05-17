@@ -22,7 +22,10 @@ reflect that snapshot.
       whenever any policy field uses `after_pass`.
 - [x] Gate mentor context through `permissions.canAccess`.
 - [x] Gate solution visibility through stage state.
-- [ ] Author refusal copy per package; do not let the model generate refusals. _(stubbed)_
+- [x] Author refusal copy per package; do not let the model generate refusals.
+      _(landed: `package.safety.mentor_refusals` schema + resnet authored
+      block; `@researchcrafters/ai` `getAuthoredRefusal` resolves overrides
+      over platform defaults — no LLM-authored refusals.)_
 
 ## Context Builder
 
@@ -39,7 +42,14 @@ reflect that snapshot.
 - [x] Add hint request endpoint.
 - [x] Add feedback request endpoint.
 - [ ] Rate-limit mentor requests per user and package. _(stubbed)_
-- [ ] Cache stage-static context.
+- [x] Cache stage-static context.
+      _(landed: `InMemoryMentorContextCache` in `@researchcrafters/ai`
+      keys on `(packageVersionId, stageId, visibility, policyDigest,
+      artifactRefs)` with TTL + FIFO eviction;
+      `apps/web/lib/mentor-runtime.ts` wires
+      `defaultMentorContextCache()` into every mentor request via the
+      `/api/mentor/messages` route. Multi-instance Redis-backed cache
+      still tracked as an open gap alongside the rate limiter.)_
 - [x] Route hints to cheaper model.
 - [x] Route evidence-grounded writing feedback to stronger model.
 - [x] Store mentor threads and messages. _(persisted via Prisma in
@@ -99,8 +109,10 @@ reflect that snapshot.
 
 ## Open gaps from snapshot
 
-- [ ] Author the per-package refusal copy in `@researchcrafters/ui/copy`;
-      `getAuthoredRefusal` currently returns placeholder strings.
+- [x] Author the per-package refusal copy. `getAuthoredRefusal` in
+      `@researchcrafters/ai` now ships non-placeholder platform defaults and
+      resolves per-package overrides from `package.safety.mentor_refusals`;
+      `content/packages/resnet/package.yaml` declares concrete authored copy.
 - [ ] Wire production `SpendStore` and `RateLimiter` implementations from the web
       app rather than relying on the interfaces shipped in `packages/ai`.
 - [ ] Surface per-package mentor budget caps in the database schema.

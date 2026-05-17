@@ -5,6 +5,8 @@ import type {
   releaseSchema,
   reviewSchema,
   safetySchema,
+  mentorRefusalsSchema,
+  mentorRefusalScopeEnum,
   statusEnum,
   difficultyEnum,
   packageDifficultyEnum,
@@ -57,6 +59,8 @@ export type Paper = z.infer<typeof paperSchema>;
 export type Release = z.infer<typeof releaseSchema>;
 export type Review = z.infer<typeof reviewSchema>;
 export type Safety = z.infer<typeof safetySchema>;
+export type MentorRefusals = z.infer<typeof mentorRefusalsSchema>;
+export type MentorRefusalScope = z.infer<typeof mentorRefusalScopeEnum>;
 export type Status = z.infer<typeof statusEnum>;
 export type Difficulty = z.infer<typeof difficultyEnum>;
 export type PackageDifficulty = z.infer<typeof packageDifficultyEnum>;

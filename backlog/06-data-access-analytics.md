@@ -42,7 +42,7 @@ reflect that snapshot.
       `artifact/trace/exploration_tree.yaml` for the web experiment-tree UI.
 - [ ] Decide whether trace graph data is mirrored into Postgres or served as a
       package-file-backed API payload.
-- [ ] Store source hash and package build manifest.
+- [x] Store source hash and package build manifest.
 - [x] Store active patch sequence.
 
 ## Access Policy
@@ -65,7 +65,7 @@ reflect that snapshot.
 - [ ] New enrollments use latest live package version.
 - [ ] Keep existing enrollments pinned.
 - [x] Implement `package_version_patches` with `patch_seq`.
-- [ ] Allow only cosmetic overlays for patches.
+- [x] Allow only cosmetic overlays for patches.
 - [x] Record active `patch_seq` on stage attempts.
 - [ ] Require new package version for graph/stage/rubric/runner/solution changes.
 - [ ] Make migration opt-in.
