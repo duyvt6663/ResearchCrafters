@@ -178,18 +178,37 @@ reflect that snapshot.
 
 ## Events Storage
 
-- [ ] Send all telemetry events to PostHog (or chosen analytics vendor) as the
+- [x] Send all telemetry events to PostHog (or chosen analytics vendor) as the
       primary product analytics store.
-- [ ] Persist a compact audit-grade copy in Postgres `events` for events that
+      _(wired: `packages/telemetry/src/init.ts` lazy `posthog-node` client;
+      `packages/telemetry/src/track.ts` `track()` captures every event.
+      `POSTHOG_API_KEY` + optional `POSTHOG_HOST` enable network writes; unset
+      = no-op. Documented in `docs/TECHNICAL.md` §Telemetry > Events storage
+      and dual-write contract. QA:
+      `qa/telemetry-dual-write-contract-docs-2026-05-17.md`.)_
+- [x] Persist a compact audit-grade copy in Postgres `events` for events that
       affect entitlement, grading, mentor policy, payments, or moderation.
-- [ ] Define which events are audit-grade (e.g., `grade_created`,
+      _(wired: `packages/telemetry/src/track.ts` dual-writes audit-grade
+      events to the Postgres `Event` table via `@researchcrafters/db` Prisma
+      client when `isAuditGradeEvent(name)`.)_
+- [x] Define which events are audit-grade (e.g., `grade_created`,
       `grade_overridden`, `evaluator_redaction_triggered`, `subscription_started`,
       `branch_feedback_unlocked`).
-- [ ] Define retention: PostHog 13 months, Postgres `events` indefinite for
+      _(defined: `packages/telemetry/src/events.ts` `AUDIT_GRADE_EVENTS` —
+      `grade_created`, `grade_overridden`, `evaluator_redaction_triggered`,
+      `mentor_output_flagged_for_review`, `subscription_started`,
+      `branch_feedback_unlocked`. Promotion criteria documented in
+      `docs/TECHNICAL.md`.)_
+- [x] Define retention: PostHog 13 months, Postgres `events` indefinite for
       audit-grade rows, scrubbed to anonymized aggregates after 24 months for
       others.
-- [ ] Document the dual-write contract so engineers know which store to query
+      _(documented in `docs/TECHNICAL.md` §Telemetry > Events storage.
+      Postgres currently only writes audit-grade rows, so the 24-month
+      scrubbing job is a no-op until non-audit writes are introduced.)_
+- [x] Document the dual-write contract so engineers know which store to query
       for which question.
+      _(documented in `docs/TECHNICAL.md` §Telemetry > Events storage —
+      includes a "which store for which question" table.)_
 
 ## Migration UX
 
