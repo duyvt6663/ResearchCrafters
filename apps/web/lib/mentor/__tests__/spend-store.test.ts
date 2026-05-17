@@ -7,7 +7,7 @@ import {
 
 describe("InMemoryMentorSpendStore", () => {
   it("accumulates per-user spend within the sliding window", async () => {
-    let now = 1_000_000;
+    const now = 1_000_000;
     const store = new InMemoryMentorSpendStore({
       userDailyWindowMs: 60_000,
       now: () => now,
@@ -33,7 +33,7 @@ describe("InMemoryMentorSpendStore", () => {
   });
 
   it("prunes per-user hits older than the window", async () => {
-    let now = 1_000_000;
+    const now = 1_000_000;
     const store = new InMemoryMentorSpendStore({
       userDailyWindowMs: 1000,
       now: () => now,

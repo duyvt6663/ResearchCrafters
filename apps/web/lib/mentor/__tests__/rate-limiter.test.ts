@@ -7,7 +7,7 @@ import {
 
 describe("InMemoryMentorRateLimiter", () => {
   it("allows requests up to the per-user-package limit and then refuses", async () => {
-    let now = 1_000_000;
+    const now = 1_000_000;
     const limiter = new InMemoryMentorRateLimiter({
       perUserLimit: 100,
       perUserPackageLimit: 2,
@@ -29,7 +29,7 @@ describe("InMemoryMentorRateLimiter", () => {
   });
 
   it("refuses on the per-user window when the per-pair window is loose", async () => {
-    let now = 1_000_000;
+    const now = 1_000_000;
     const limiter = new InMemoryMentorRateLimiter({
       perUserLimit: 2,
       perUserPackageLimit: 100,
@@ -46,7 +46,7 @@ describe("InMemoryMentorRateLimiter", () => {
   });
 
   it("re-allows once the sliding window expires", async () => {
-    let now = 1_000_000;
+    const now = 1_000_000;
     const limiter = new InMemoryMentorRateLimiter({
       perUserLimit: 1,
       perUserPackageLimit: 1,
