@@ -117,7 +117,15 @@ reflect that snapshot.
 ## Acceptance Criteria
 
 - [x] Mentor can help without seeing hidden solution files.
-- [ ] Mentor leak tests run in package CI.
+- [x] Mentor leak tests run in package CI.
+      _(landed in PR #43, commit e4936a6: `researchcrafters leak-test`
+      CLI wired in `packages/cli/src/commands/leak-test.ts` and
+      registered in `packages/cli/src/index.ts`; per-package
+      "Leak-test ERP packages" step added to
+      `.github/workflows/ci.yml` after the validate step, auto-selecting
+      the `anthropic` gateway when `secrets.ANTHROPIC_API_KEY` is
+      present and falling back to the `clean-refusal` mock otherwise.
+      See `qa/leak-test-cli-per-package-ci-2026-05-16.md`.)_
 - [ ] Flagged mentor outputs have an owner and review path.
 - [x] Mentor cost can be controlled by stage, user, and model tier.
 
