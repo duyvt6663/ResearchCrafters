@@ -239,9 +239,22 @@ reflect that snapshot.
 - [ ] Persist `node_traversals` and `stage_attempts` from API routes instead of
       returning synthesized ids. _(routes now Bearer-aware and 400-validate
       empty bodies; durable rows remain.)_
-- [ ] Build the branch-stats rollup job (per-branch N>=5, per-node N>=20, 5%
-      rounding). _(execution depends on bringing up Redis; runner-loop agent
-      may retarget the port — in flight.)_
+- [x] Build the branch-stats rollup job (per-branch N>=5, per-node N>=20, 5%
+      rounding). _(landed: `apps/worker/src/jobs/branch-stats-rollup.ts`
+      exports `NODE_MIN_N=20`, `BRANCH_MIN_N=5`, `roundToNearestFive`,
+      `aggregateTraversals`, `computePercent`, and `runBranchStatsRollup`
+      with idempotent upsert; `apps/worker/src/scheduler.ts` fans out a
+      15-minute repeating job per `(packageVersionId, cohort)` over a 1h
+      rolling window, scoped to `PUBLIC_COHORTS` so `alpha_beta` stays
+      off the recurring schedule; `apps/worker/src/index.ts` mounts a
+      BullMQ consumer; `apps/web/app/api/admin/rollup-branch-stats/route.ts`
+      provides the admin trigger with `isCohort` validation. Tests:
+      `apps/worker/test/branch-stats.test.ts`,
+      `apps/worker/test/branch-stats-thresholds.test.ts`,
+      `apps/worker/test/scheduler.test.ts` — 17 passed. QA:
+      `qa/branch-stats-rollup-build-2026-05-17.md`. Live signal still
+      blocked on `node_traversals` persistence — separate item at line
+      203 / `backlog/06-data-access-analytics.md:79`.)_
 - [ ] Land the events dual-write: PostHog primary, audit-grade rows in the
       Postgres `Event` table.
 - [ ] Surface the migration UX flow in the web app.
