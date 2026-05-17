@@ -11,6 +11,8 @@ export {
   releaseSchema,
   reviewSchema,
   safetySchema,
+  mentorRefusalsSchema,
+  mentorRefusalScopeEnum,
   fixtureRefreshIntervalEnum,
   fixtureRefreshTriggerEnum,
   fixtureRefreshCadenceObjectSchema,
@@ -53,3 +55,15 @@ export {
   runnerResourcesSchema,
   runnerNetworkEnum,
 } from './runner.js';
+export {
+  patchOverlaySchema,
+  patchPackageOverlaySchema,
+  patchStageOverlaySchema,
+  validatePatchOverlay,
+} from './patch.js';
+export type {
+  PatchOverlay,
+  PatchPackageOverlay,
+  PatchStageOverlay,
+  PatchOverlayValidation,
+} from './patch.js';

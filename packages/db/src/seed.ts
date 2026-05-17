@@ -18,9 +18,12 @@
 
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createHash } from "node:crypto";
 
-import { loadPackage, buildPackageManifest } from "@researchcrafters/content-sdk";
+import {
+  loadPackage,
+  buildPackageManifest,
+  computeManifestSourceHash,
+} from "@researchcrafters/content-sdk";
 import type {
   LoadedPackage,
   PackageBuildManifest,
@@ -339,37 +342,15 @@ function buildStoredManifest(
   };
 }
 
-function stableHash(value: unknown): string {
-  // Deterministic JSON serialization for the source hash. We sort object
-  // keys recursively so re-running the seed against an unchanged package
-  // produces the same hash.
-  const json = stableJson(value);
-  return `sha256:${createHash("sha256").update(json).digest("hex")}`;
-}
-
-function stableJson(value: unknown): string {
-  if (value === null) return "null";
-  if (Array.isArray(value)) {
-    return `[${value.map((v) => stableJson(v)).join(",")}]`;
-  }
-  if (typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>).sort(
-      ([a], [b]) => (a < b ? -1 : a > b ? 1 : 0),
-    );
-    return `{${entries
-      .map(([k, v]) => `${JSON.stringify(k)}:${stableJson(v)}`)
-      .join(",")}}`;
-  }
-  return JSON.stringify(value);
-}
-
 // -- Seed entry point --------------------------------------------------------
 
 async function main(): Promise<void> {
   const loaded = await loadPackage(RESNET_DIR);
   const build = buildPackageManifest(loaded);
   const manifest = buildStoredManifest(loaded, build);
-  const sourceHash = stableHash(build);
+  // Use the shared content-sdk helper so the hash matches the one written
+  // alongside `manifest.json` by `researchcrafters build`.
+  const sourceHash = computeManifestSourceHash(build);
 
   const user = await prisma.user.upsert({
     where: { email: FIXTURE_USER_EMAIL },

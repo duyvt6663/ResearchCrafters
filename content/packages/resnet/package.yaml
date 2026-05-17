@@ -41,6 +41,35 @@ safety:
     - "shortcut connection"
     - "He et al."
     - "canonical answer"
+  # Per-package authored refusal copy. Per backlog/05-mentor-safety.md, the
+  # model is never allowed to write refusals; any scope below overrides the
+  # platform default returned by @researchcrafters/ai `getAuthoredRefusal`.
+  # Scopes omitted here keep the platform default.
+  mentor_refusals:
+    solution_request:
+      title: "I won't hand you the ResNet answer."
+      body: "Working out the degradation problem and the residual fix is the whole point of this package. I'll point at the evidence and the failure mode instead — that's where the paper's argument actually lives."
+      hint: "Re-read the plain vs. residual training curves on stage S002 and ask: what is each block trying to learn?"
+    out_of_context:
+      title: "That isn't in scope for this ResNet stage."
+      body: "I'm only allowed to lean on the artifacts and rubric for the stage you're on. Other ResNet sections — and other papers — stay out of this thread on purpose."
+      hint: "Open the Evidence tab to see exactly which artifacts this stage exposes."
+    policy_block:
+      title: "ResNet safety policy blocked that mentor request."
+      body: "The block came from the package's safety policy, not from a model refusal. Most often this means the question reaches for hidden solution material or asks the mentor to grade itself."
+      hint: "Rephrase the question in terms of the rubric criteria or the evidence on this stage."
+    flagged_output:
+      title: "Mentor response withheld for this ResNet stage."
+      body: "The draft response tripped the leak-test guardrails for this package, so it never reached you. No partial answer is shown — that is by design."
+      hint: "Try a narrower question grounded in a specific figure or claim from the evidence panel."
+    budget_cap:
+      title: "Daily ResNet mentor budget reached."
+      body: "Your mentor budget for this package is used up for now. Submitted work and rubric feedback are still available while the budget resets."
+      hint: "Re-read your last mentor reply and the rubric — most stages can be closed without another mentor turn."
+    rate_limit:
+      title: "Slow down — ResNet mentor rate limit hit."
+      body: "You're sending messages faster than the mentor is allowed to answer on this package. Your draft is kept; the limit resets in a few minutes."
+      hint: "Use the pause to compare the plain-net and residual-net learning curves yourself first."
 review:
   expert_reviewer: ""
   last_reviewed_at: ""

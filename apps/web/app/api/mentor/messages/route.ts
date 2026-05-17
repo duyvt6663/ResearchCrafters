@@ -9,7 +9,10 @@ import {
   mentorMessageRequestSchema,
   mentorMessageResponseSchema,
 } from "@/lib/api-contract";
-import { runMentorRequest } from "@/lib/mentor-runtime";
+import {
+  defaultMentorContextCache,
+  runMentorRequest,
+} from "@/lib/mentor-runtime";
 import { setActiveSpanAttributes, withSpan } from "@/lib/tracing";
 
 export const runtime = "nodejs";
@@ -150,6 +153,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       stage: { ref: stage.ref, stagePolicy },
       mode: body.mode,
       message: body.message,
+      contextCache: defaultMentorContextCache(),
       track,
     });
 
