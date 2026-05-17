@@ -49,6 +49,15 @@ vi.mock("@/lib/telemetry", () => ({
 
 vi.mock("@/lib/mentor-runtime", () => ({
   runMentorRequest: mocks.runMentorRequest,
+  // The route passes the process-wide cache into the runtime call. Tests
+  // mock the runtime entirely, so a stub return is enough to satisfy the
+  // import and let `runMentorRequest` assertions inspect the wiring.
+  defaultMentorContextCache: () => ({
+    get: () => undefined,
+    set: () => undefined,
+    delete: () => undefined,
+    clear: () => undefined,
+  }),
 }));
 
 vi.mock("@researchcrafters/db", () => ({

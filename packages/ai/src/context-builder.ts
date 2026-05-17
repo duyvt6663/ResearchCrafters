@@ -4,6 +4,11 @@ import type {
   MentorVisibilityState,
 } from '@researchcrafters/erp-schema';
 import type { MentorContext } from './types.js';
+import {
+  fnv1aDigest,
+  mentorContextCacheKey,
+  type MentorContextCache,
+} from './context-cache.js';
 
 /**
  * State of the world used to evaluate visibility triggers. The web app passes
@@ -36,6 +41,19 @@ export interface BuildMentorContextInput {
    * forward these to telemetry so package authors see misconfigured policies.
    */
   warn?: (msg: string) => void;
+  /**
+   * Optional cache for stage-static contexts. When provided, the builder
+   * looks up `(packageVersionId, stageId, visibility, policyDigest,
+   * artifactRefs)` and only invokes loaders on a miss. Hits are returned
+   * verbatim, including the cached `policySnapshot` and `redactionTargets`.
+   *
+   * Pass a digest if you already have one (package build hash, content
+   * commit SHA, etc.); the builder falls back to a stable digest of the
+   * stage policy when omitted.
+   */
+  cache?: MentorContextCache;
+  /** Optional stable digest of the stage policy. See `cache`. */
+  policyDigest?: string;
 }
 
 /**
@@ -78,8 +96,29 @@ export function isVisible(
 export async function buildMentorContext(
   input: BuildMentorContextInput,
 ): Promise<MentorContext> {
-  const { stagePolicy, visibilityState, loaders, warn } = input;
+  const { stagePolicy, visibilityState, loaders, warn, cache } = input;
   const v = stagePolicy.mentor_visibility;
+
+  // Cache lookup precedes the visibility/loader work so a hit short-circuits
+  // the entire builder. The key encodes everything that can change the
+  // resulting context — policy digest, visibility, artifact refs — so a hit
+  // is safe to return verbatim.
+  let cacheKey: string | undefined;
+  if (cache) {
+    cacheKey = mentorContextCacheKey({
+      stageId: input.stageId,
+      packageVersionId: input.packageVersionId,
+      visibilityState,
+      artifactRefs: loaders.artifactRefs,
+      policyDigest: input.policyDigest ?? fnv1aDigest(stagePolicy),
+    });
+    const hit = cache.get(cacheKey);
+    if (hit) {
+      // Refresh `attempt` since it's request-scoped metadata, not part of
+      // the cache key — every other field is stage-static.
+      return hit.attempt === input.attempt ? hit : { ...hit, attempt: input.attempt };
+    }
+  }
 
   // Hard guard: forbidden scopes can never be `always`.
   for (const scope of FORBIDDEN_ALWAYS_SCOPES) {
@@ -128,6 +167,10 @@ export async function buildMentorContext(
     ...(rubricCriteria !== undefined ? { rubricCriteria } : {}),
     ...(branchFeedback !== undefined ? { branchFeedback } : {}),
   };
+
+  if (cache && cacheKey) {
+    cache.set(cacheKey, context);
+  }
 
   return context;
 }

@@ -42,7 +42,14 @@ reflect that snapshot.
 - [x] Add hint request endpoint.
 - [x] Add feedback request endpoint.
 - [ ] Rate-limit mentor requests per user and package. _(stubbed)_
-- [ ] Cache stage-static context.
+- [x] Cache stage-static context.
+      _(landed: `InMemoryMentorContextCache` in `@researchcrafters/ai`
+      keys on `(packageVersionId, stageId, visibility, policyDigest,
+      artifactRefs)` with TTL + FIFO eviction;
+      `apps/web/lib/mentor-runtime.ts` wires
+      `defaultMentorContextCache()` into every mentor request via the
+      `/api/mentor/messages` route. Multi-instance Redis-backed cache
+      still tracked as an open gap alongside the rate limiter.)_
 - [x] Route hints to cheaper model.
 - [x] Route evidence-grounded writing feedback to stronger model.
 - [x] Store mentor threads and messages. _(persisted via Prisma in
