@@ -117,7 +117,19 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 
 - [x] Inventory PII fields across the data model. _(`/// PII:` JSDoc
       annotations on every PII field in `packages/db/prisma/schema.prisma`)_
-- [ ] Add encryption-at-rest for sensitive columns (auth tokens, mentor transcripts).
+- [x] Add encryption-at-rest for sensitive columns (auth tokens, mentor
+      transcripts). _(landed: `packages/db/src/crypto.ts` (AES-256-GCM,
+      `enc:v1:` envelope, authenticated, idempotent) +
+      `packages/db/src/encrypted-fields.ts` (`ENCRYPTED_FIELDS` policy +
+      `withEncryption()` Prisma client extension covering
+      `Account.{access,refresh,id}_token`, `Session.sessionToken`,
+      `MentorMessage.bodyText`, `StageAttempt.answer`). Wired into the
+      singleton in `packages/db/src/client.ts`. Operator + rotation +
+      backfill docs at `packages/db/ENCRYPTION.md`. Tests:
+      `packages/db/test/crypto.test.ts` -> 13 pass, 1 skipped live-PG
+      integration. QA: `qa/encryption-at-rest-fields-2026-05-17.md`. See
+      `backlog/06-data-access-analytics.md ## Open gaps from snapshot`
+      for the rollup pointer.)_
 - [x] Add user data export endpoint behind authentication. _(`apps/web/app/api/account/export/route.ts` calls `exportAccount` from `lib/account-cascade.ts`)_
 - [x] Add user account deletion endpoint that cascades through submissions and
       mentor data per 06 retention rules. _(`apps/web/lib/account-cascade.ts`
@@ -161,10 +173,20 @@ Depends on: nothing. Blocks: 01, 03, 04, 05, 06.
 - [x] Stand up CI workflow that runs typecheck, test, Playwright smoke, and
       `researchcrafters validate` on every PR. _(`.github/workflows/ci.yml`)_
 - [ ] Add container image scans and digest pinning for runner base images.
-- [ ] Land privacy foundations: PII inventory, encryption-at-rest, data export,
-      deletion cascade. _(PII inventory, data export, and deletion cascade have
-      landed; encryption-at-rest column-level helper is **in flight** in
-      this run.)_
+- [x] Land privacy foundations: PII inventory, encryption-at-rest, data export,
+      deletion cascade. _(all four landed: PII inventory via `/// PII:`
+      JSDoc on every sensitive column in
+      `packages/db/prisma/schema.prisma`; encryption-at-rest via the
+      column-level Prisma extension in `packages/db/src/crypto.ts` +
+      `packages/db/src/encrypted-fields.ts` (wired in `client.ts`; docs
+      at `packages/db/ENCRYPTION.md`); data export at
+      `apps/web/app/api/account/export/route.ts`; deletion cascade at
+      `apps/web/lib/account-cascade.ts` +
+      `apps/web/app/api/account/delete/route.ts`. QA:
+      `qa/encryption-at-rest-fields-2026-05-17.md`. Known integration
+      cleanups (web bundle splitting for the DB top-level export,
+      extension typecheck typings) remain open in
+      `backlog/10-integration-quality-gaps.md`.)_
 - [ ] Codify SLO target dashboards in a single observability surface.
 - [x] Pick an auth provider and wire it through the web app. _(NextAuth v5 +
       Prisma adapter)_
