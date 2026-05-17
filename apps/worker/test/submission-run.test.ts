@@ -1,4 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest';
+import { afterEach } from 'vitest';
 import {
   runSubmissionRun,
   type SubmissionRunJob,
@@ -8,6 +9,11 @@ import {
   type GraderFn,
   type GradeRow,
 } from '../src/jobs/submission-run.js';
+import {
+  _resetTelemetryForTests,
+  initTelemetry,
+  setEventStoreForTests,
+} from '@researchcrafters/telemetry';
 
 // -----------------------------------------------------------------------------
 // Fake Prisma — captures every mutation so the asserts can read state back.
@@ -222,11 +228,31 @@ describe('runSubmissionRun', () => {
   let executorCalls: number;
   let graderCalls: number;
   let lastGraderInput: Parameters<GraderFn>[0] | null;
+  let auditEvents: Array<{ name: string; payload: Record<string, unknown> }>;
 
   beforeEach(() => {
     executorCalls = 0;
     graderCalls = 0;
     lastGraderInput = null;
+    auditEvents = [];
+    _resetTelemetryForTests();
+    setEventStoreForTests({
+      event: {
+        async create({ data }) {
+          auditEvents.push({
+            name: data.name,
+            payload: data.payload as Record<string, unknown>,
+          });
+          return undefined;
+        },
+      },
+    });
+    initTelemetry({});
+  });
+
+  afterEach(() => {
+    _resetTelemetryForTests();
+    setEventStoreForTests(null);
   });
 
   function fakeExecutor(artifacts: RunnerArtifacts): RunnerExecutor {
@@ -357,6 +383,22 @@ describe('runSubmissionRun', () => {
     expect(sa.gradeId).toBe('grade_1');
     expect(sa.passed).toBe(true);
     expect(sa.score).toBe(0.85);
+
+    // grade_created is audit-grade per packages/telemetry/src/events.ts
+    // AUDIT_GRADE_EVENTS — it must land in the Event store exactly once
+    // with the (gradeId, submissionId, stageAttemptId, rubricVersion,
+    // evaluatorVersion, passed, score) tuple the dashboards depend on.
+    const gradeCreated = auditEvents.filter((e) => e.name === 'grade_created');
+    expect(gradeCreated).toHaveLength(1);
+    expect(gradeCreated[0]!.payload).toEqual({
+      gradeId: 'grade_1',
+      submissionId: 'sub_1',
+      stageAttemptId: 'sa_1',
+      rubricVersion: 'rubric-analysis',
+      evaluatorVersion: '0.1.0',
+      passed: true,
+      score: 0.85,
+    });
   });
 
   it('runnerMode=replay with hash mismatch (executor throws) records crash and skips grading', async () => {
@@ -399,6 +441,9 @@ describe('runSubmissionRun', () => {
         data: expect.objectContaining({ executionStatus: 'crash' }),
       }),
     ]);
+
+    // No grade was created => no grade_created event.
+    expect(auditEvents.filter((e) => e.name === 'grade_created')).toHaveLength(0);
   });
 
   it('executionStatus=timeout does NOT call the evaluator', async () => {
