@@ -46,7 +46,7 @@ describe("InMemoryMentorRateLimiter", () => {
   });
 
   it("re-allows once the sliding window expires", async () => {
-    const now = 1_000_000;
+    let now = 1_000_000;
     const limiter = new InMemoryMentorRateLimiter({
       perUserLimit: 1,
       perUserPackageLimit: 1,

@@ -33,7 +33,7 @@ describe("InMemoryMentorSpendStore", () => {
   });
 
   it("prunes per-user hits older than the window", async () => {
-    const now = 1_000_000;
+    let now = 1_000_000;
     const store = new InMemoryMentorSpendStore({
       userDailyWindowMs: 1000,
       now: () => now,
