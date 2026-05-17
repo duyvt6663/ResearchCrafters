@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type * as ContentSdkModule from '@researchcrafters/content-sdk';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -8,9 +9,7 @@ import { fileURLToPath } from 'node:url';
 // (manifest.json + source-hash.txt) and not the orthogonal pedagogy
 // validator, which has its own dedicated suite.
 vi.mock('@researchcrafters/content-sdk', async () => {
-  const actual = await vi.importActual<
-    typeof import('@researchcrafters/content-sdk')
-  >('@researchcrafters/content-sdk');
+  const actual = await vi.importActual<typeof ContentSdkModule>('@researchcrafters/content-sdk');
   return {
     ...actual,
     validatePackage: async () => ({
