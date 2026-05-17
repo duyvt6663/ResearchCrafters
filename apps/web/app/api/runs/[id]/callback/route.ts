@@ -157,7 +157,14 @@ export async function POST(
         id: string;
         metricsJson: unknown;
         startedAt: Date | null;
-        submission: { stageAttemptId: string };
+        submission: {
+          stageAttemptId: string;
+          stageAttempt?: {
+            enrollmentId: string;
+            stageRef: string;
+            branchId: string | null;
+          } | null;
+        };
       }
     | null = null;
   try {
@@ -168,7 +175,18 @@ export async function POST(
           id: true,
           metricsJson: true,
           startedAt: true,
-          submission: { select: { stageAttemptId: true } },
+          submission: {
+            select: {
+              stageAttemptId: true,
+              stageAttempt: {
+                select: {
+                  enrollmentId: true,
+                  stageRef: true,
+                  branchId: true,
+                },
+              },
+            },
+          },
         },
       }),
     );
@@ -253,6 +271,36 @@ export async function POST(
     ...(body.executionStatus ? { executionStatus: body.executionStatus } : {}),
     ...(body.gradeId ? { gradeId: body.gradeId } : {}),
   });
+
+  // Branch feedback unlocks once the runner finishes and a grade is recorded.
+  // Audit-grade per backlog/06 — emit best-effort with the (enrollment, stage,
+  // branch, decision node) tuple the analytics store needs to bucket by branch.
+  if (body.status === "ok" && body.gradeId) {
+    const att = existing.submission.stageAttempt;
+    if (att && att.branchId) {
+      let decisionNodeId: string | null = null;
+      try {
+        const traversal = await withQueryTimeout(
+          prisma.nodeTraversal.findFirst({
+            where: { enrollmentId: att.enrollmentId, branchId: att.branchId },
+            orderBy: { selectedAt: "desc" },
+            select: { decisionNodeId: true },
+          }),
+        );
+        decisionNodeId = traversal?.decisionNodeId ?? null;
+      } catch {
+        decisionNodeId = null;
+      }
+      if (decisionNodeId) {
+        await track("branch_feedback_unlocked", {
+          enrollmentId: att.enrollmentId,
+          stageRef: att.stageRef,
+          decisionNodeId,
+          branchId: att.branchId,
+        });
+      }
+    }
+  }
 
   return NextResponse.json({ ok: true, runId: id });
   });
