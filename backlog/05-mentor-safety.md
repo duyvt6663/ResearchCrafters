@@ -97,13 +97,35 @@ reflect that snapshot.
 
 ## SLOs
 
-- [ ] p95 mentor first token for hints under 5 seconds.
-- [ ] p95 mentor first token for writing feedback under 15 seconds.
+- [x] p95 mentor first token for hints under 5 seconds.
+      _(landed: `apps/web/lib/mentor-runtime.ts` times every
+      `gateway.complete(...)` call and emits a
+      `mentor_first_token_latency` telemetry event tagged with
+      `mode: "hint"`, `modelTier`, `modelId`, `latencyMs`,
+      `sloMs: 5000`, and a per-request `withinSlo` boolean.
+      `MENTOR_FIRST_TOKEN_SLO_MS` exports the authored thresholds.
+      The gateway is non-streaming today, so `latencyMs` is the
+      completion duration; when streaming lands the same start marker
+      pairs with the first-chunk timestamp without changing the event
+      shape. Dashboards compute p95 directly from this stream.)_
+- [x] p95 mentor first token for writing feedback under 15 seconds.
+      _(landed: same emission as the hint SLO, but for
+      `mode: "feedback"` requests (`clarify` and `review_draft`) with
+      `sloMs: 15000`. See `mentor_first_token_latency` in
+      `packages/telemetry/src/events.ts`.)_
 
 ## Acceptance Criteria
 
 - [x] Mentor can help without seeing hidden solution files.
-- [ ] Mentor leak tests run in package CI.
+- [x] Mentor leak tests run in package CI.
+      _(landed in PR #43, commit e4936a6: `researchcrafters leak-test`
+      CLI wired in `packages/cli/src/commands/leak-test.ts` and
+      registered in `packages/cli/src/index.ts`; per-package
+      "Leak-test ERP packages" step added to
+      `.github/workflows/ci.yml` after the validate step, auto-selecting
+      the `anthropic` gateway when `secrets.ANTHROPIC_API_KEY` is
+      present and falling back to the `clean-refusal` mock otherwise.
+      See `qa/leak-test-cli-per-package-ci-2026-05-16.md`.)_
 - [ ] Flagged mentor outputs have an owner and review path.
 - [x] Mentor cost can be controlled by stage, user, and model tier.
 
@@ -125,7 +147,16 @@ reflect that snapshot.
       copy; the runtime also records the priced token cost on the spend
       store after each successful response. Redis-backed multi-instance
       implementations remain an open follow-up.)_
-- [ ] Surface per-package mentor budget caps in the database schema.
+- [x] Surface per-package mentor budget caps in the database schema.
+      _(landed: `PackageVersion` gained three nullable USD columns
+      `mentorBudgetUserDailyUsd`, `mentorBudgetPackageUsd`,
+      `mentorBudgetStageUsd` via migration
+      `packages/db/prisma/migrations/1_mentor_budget_caps`. A new
+      `resolveMentorBudgetCaps()` helper in `packages/db/src` overlays
+      any populated columns on the platform defaults so the mentor
+      runtime can swap `defaultMentorBudgetCaps()` for a per-package
+      lookup without changing the `BudgetCaps` shape consumed by
+      `checkBudget` / `recordMentorRequestSpend`.)_
 - [ ] Build the mentor message review queue UI and flagged-output triage flow.
 - [x] Persist `mentor_messages` rows with full token telemetry from the web
       `/api/mentor/messages` route to Postgres. _(landed in

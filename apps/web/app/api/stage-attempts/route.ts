@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolveActivePatchSeq } from "@researchcrafters/db";
 import { getEnrollment, getStage } from "@/lib/data/enrollment";
 import { getSessionFromRequest } from "@/lib/auth";
 import { denialHttpStatus, permissions } from "@/lib/permissions";
@@ -61,11 +62,24 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     const attemptId = `sa-${Date.now()}`;
+    // Caller may pin a specific patch generation (replay / migration tooling);
+    // otherwise resolve the currently-active patch_seq for the enrollment's
+    // package version so telemetry attributes the attempt to the right
+    // cosmetic patch generation. (backlog/06 §Version and Patch Policy
+    // line 69.)
+    let activePatchSeq = body.patchSeq;
+    if (activePatchSeq == null) {
+      try {
+        activePatchSeq = await resolveActivePatchSeq(enr.packageVersionId);
+      } catch {
+        activePatchSeq = 0;
+      }
+    }
     await track("stage_attempt_submitted", {
       enrollmentId: enr.id,
       stageRef: stage.ref,
       attemptId,
-      patchSeq: body.patchSeq ?? 0,
+      patchSeq: activePatchSeq,
     });
 
     return NextResponse.json({

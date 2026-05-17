@@ -62,11 +62,11 @@ reflect that snapshot.
 ## Version and Patch Policy
 
 - [x] Pin enrollment to `package_version_id`.
-- [ ] New enrollments use latest live package version.
+- [x] New enrollments use latest live package version.
 - [ ] Keep existing enrollments pinned.
 - [x] Implement `package_version_patches` with `patch_seq`.
 - [x] Allow only cosmetic overlays for patches.
-- [ ] Record active `patch_seq` on stage attempts.
+- [x] Record active `patch_seq` on stage attempts.
 - [ ] Require new package version for graph/stage/rubric/runner/solution changes.
 - [ ] Make migration opt-in.
 - [ ] Preserve prior enrollment, attempts, mentor threads, and share cards on migration.
@@ -74,8 +74,16 @@ reflect that snapshot.
 
 ## Branch Stats and Privacy
 
-- [ ] Define cohorts: `all_attempts`, `completers`, `entitled_paid`, `alpha_beta`.
-- [ ] Exclude `alpha_beta` from public percentages by default.
+- [x] Define cohorts: `all_attempts`, `completers`, `entitled_paid`, `alpha_beta`.
+      _(single source of truth at `packages/telemetry/src/cohorts.ts`:
+      `COHORTS`, `COHORT_DEFINITIONS` carries the membership rule for each.
+      QA: `qa/branch-stats-cohort-definitions-2026-05-17.md`.)_
+- [x] Exclude `alpha_beta` from public percentages by default.
+      _(`COHORT_DEFINITIONS.alpha_beta.includeInPublicPercentages = false`
+      drives `PUBLIC_COHORTS`; `isPublicCohort` is the guard for the
+      learner-facing reader path; `SCHEDULED_BRANCH_STATS_COHORTS` is
+      derived from `PUBLIC_COHORTS` so the recurring rollup never writes
+      alpha-beta rows. Backfill via admin trigger when needed.)_
 - [ ] Compute branch stats by package version, stage, node, branch, cohort, and time window.
       _(blocked until `node_traversals` are persisted by the API instead of
       synthesized after telemetry.)_

@@ -491,4 +491,66 @@ describe("runMentorRequest", () => {
     expect(stub.threadCreate).not.toHaveBeenCalled();
     expect(stub.messageCreate).toHaveBeenCalledTimes(2);
   });
+
+  it("emits mentor_first_token_latency tagged with the per-mode SLO threshold", async () => {
+    // Two requests: one hint-mode (SLO 5000ms, cheaper tier) and one
+    // feedback-mode (SLO 15000ms, stronger tier). The runtime must emit a
+    // `mentor_first_token_latency` event for each with the correct
+    // `sloMs`, `mode`, and a numeric `latencyMs`.
+    const stub = makePrismaStub();
+    stub.threadFindFirst.mockResolvedValue({ id: "thread-slo" });
+    stub.messageCreate.mockResolvedValue({ id: "row" });
+
+    const gateway = new MockLLMGateway(ECHO_HANDLER);
+    const tracked: Array<{ event: string; payload: Record<string, unknown> }> =
+      [];
+    const track = async (
+      event: string,
+      payload: Record<string, unknown>,
+    ): Promise<void> => {
+      tracked.push({ event, payload });
+    };
+
+    await runMentorRequest({
+      enrollment: { id: ENR_ID, packageVersionId: PV_ID },
+      stage: { ref: STAGE_REF, stagePolicy: policy() },
+      mode: "hint",
+      message: "quick question",
+      gateway,
+      prisma: stub.prisma,
+      withQueryTimeout: async (p) => p,
+      track,
+    });
+
+    await runMentorRequest({
+      enrollment: { id: ENR_ID, packageVersionId: PV_ID },
+      stage: { ref: STAGE_REF, stagePolicy: policy() },
+      mode: "review_draft",
+      message: "please review",
+      gateway,
+      prisma: stub.prisma,
+      withQueryTimeout: async (p) => p,
+      track,
+    });
+
+    const latencyEvents = tracked.filter(
+      (t) => t.event === "mentor_first_token_latency",
+    );
+    expect(latencyEvents).toHaveLength(2);
+
+    const hint = latencyEvents[0]!.payload;
+    expect(hint["mode"]).toBe("hint");
+    expect(hint["modelTier"]).toBe("hint");
+    expect(hint["sloMs"]).toBe(5000);
+    expect(hint["enrollmentId"]).toBe(ENR_ID);
+    expect(hint["stageRef"]).toBe(STAGE_REF);
+    expect(typeof hint["latencyMs"]).toBe("number");
+    expect(hint["latencyMs"] as number).toBeGreaterThanOrEqual(0);
+    expect(typeof hint["withinSlo"]).toBe("boolean");
+
+    const feedback = latencyEvents[1]!.payload;
+    expect(feedback["mode"]).toBe("feedback");
+    expect(feedback["modelTier"]).toBe("feedback");
+    expect(feedback["sloMs"]).toBe(15000);
+  });
 });

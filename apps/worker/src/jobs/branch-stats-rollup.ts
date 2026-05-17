@@ -1,12 +1,14 @@
-export type BranchStatsCohort =
-  | 'all_attempts'
-  | 'completers'
-  | 'entitled_paid'
-  | 'alpha_beta';
+import type { Cohort } from '@researchcrafters/telemetry';
+
+/**
+ * @deprecated use `Cohort` from `@researchcrafters/telemetry`. Kept as an
+ * alias so existing call sites and tests keep compiling.
+ */
+export type BranchStatsCohort = Cohort;
 
 export interface BranchStatsRollupJob {
   packageVersionId: string;
-  cohort: BranchStatsCohort;
+  cohort: Cohort;
   /** ISO 8601. */
   windowStart: string;
   /** ISO 8601. */
