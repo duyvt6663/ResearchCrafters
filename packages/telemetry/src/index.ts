@@ -29,6 +29,14 @@ export type {
 } from './events.js';
 export { AUDIT_GRADE_EVENTS, isAuditGradeEvent } from './events.js';
 export {
+  COHORTS,
+  COHORT_DEFINITIONS,
+  PUBLIC_COHORTS,
+  isCohort,
+  isPublicCohort,
+  type CohortDefinition,
+} from './cohorts.js';
+export {
   initTelemetry,
   _resetTelemetryForTests,
   type InitTelemetryOptions,

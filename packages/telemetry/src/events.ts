@@ -1,8 +1,4 @@
-export type Cohort =
-  | 'all_attempts'
-  | 'completers'
-  | 'entitled_paid'
-  | 'alpha_beta';
+export type { Cohort } from './cohorts.js';
 
 export type BranchType =
   | 'canonical'

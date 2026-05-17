@@ -561,7 +561,10 @@ model BranchStat {
   // YAML branch id (Branch.branchId), not the cuid, so rollups stay stable
   // across schema reshuffles.
   branchId         String
-  // Allowed values: 'all_attempts' | 'completers' | 'entitled_paid' | 'alpha_beta'
+  // Allowed values are defined by `Cohort` in @researchcrafters/telemetry
+  // (see packages/telemetry/src/cohorts.ts). `alpha_beta` is excluded from
+  // public percentages by default; the recurring rollup only writes the
+  // cohorts in `PUBLIC_COHORTS`.
   cohort           String
   windowStart      DateTime
   windowEnd        DateTime

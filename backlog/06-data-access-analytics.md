@@ -74,8 +74,16 @@ reflect that snapshot.
 
 ## Branch Stats and Privacy
 
-- [ ] Define cohorts: `all_attempts`, `completers`, `entitled_paid`, `alpha_beta`.
-- [ ] Exclude `alpha_beta` from public percentages by default.
+- [x] Define cohorts: `all_attempts`, `completers`, `entitled_paid`, `alpha_beta`.
+      _(single source of truth at `packages/telemetry/src/cohorts.ts`:
+      `COHORTS`, `COHORT_DEFINITIONS` carries the membership rule for each.
+      QA: `qa/branch-stats-cohort-definitions-2026-05-17.md`.)_
+- [x] Exclude `alpha_beta` from public percentages by default.
+      _(`COHORT_DEFINITIONS.alpha_beta.includeInPublicPercentages = false`
+      drives `PUBLIC_COHORTS`; `isPublicCohort` is the guard for the
+      learner-facing reader path; `SCHEDULED_BRANCH_STATS_COHORTS` is
+      derived from `PUBLIC_COHORTS` so the recurring rollup never writes
+      alpha-beta rows. Backfill via admin trigger when needed.)_
 - [ ] Compute branch stats by package version, stage, node, branch, cohort, and time window.
       _(blocked until `node_traversals` are persisted by the API instead of
       synthesized after telemetry.)_
