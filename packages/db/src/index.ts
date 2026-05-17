@@ -86,3 +86,14 @@ export type {
   GradeStorePrisma,
   MakePrismaGradeStoreOptions,
 } from "./grade-store.js";
+
+// Active `PackageVersionPatch.patchSeq` resolver. Returns the highest
+// patch_seq currently shipped against a package version (or 0 when none
+// exist) so callers — currently the stage-attempt write path — can freeze
+// the active patch generation on the row at creation time.
+// (backlog/06 §Version and Patch Policy line 69.)
+export { resolveActivePatchSeq } from "./active-patch-seq.js";
+export type {
+  ActivePatchSeqPrisma,
+  ResolveActivePatchSeqOptions,
+} from "./active-patch-seq.js";

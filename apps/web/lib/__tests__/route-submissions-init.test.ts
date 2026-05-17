@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => ({
   submissionCreate: vi.fn(),
   submissionUpdate: vi.fn(),
   withQueryTimeout: vi.fn(),
+  resolveActivePatchSeq: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -59,6 +60,7 @@ vi.mock("@researchcrafters/db", () => ({
     },
   },
   withQueryTimeout: mocks.withQueryTimeout,
+  resolveActivePatchSeq: mocks.resolveActivePatchSeq,
 }));
 
 import { POST } from "../../app/api/submissions/route";
@@ -76,6 +78,8 @@ beforeEach(() => {
   Object.values(mocks).forEach((m) => m.mockReset());
   // Identity wrapper around Prisma promises.
   mocks.withQueryTimeout.mockImplementation(async (p) => p);
+  // Default to "no patches shipped" (base package version).
+  mocks.resolveActivePatchSeq.mockResolvedValue(0);
   mocks.getStorageEnv.mockReturnValue({
     buckets: {
       submissions: "researchcrafters-submissions",
@@ -163,6 +167,12 @@ describe("POST /api/submissions (init)", () => {
     const attemptArg = mocks.stageAttemptCreate.mock.calls[0]?.[0];
     expect(attemptArg.data.enrollmentId).toBe("enr-1");
     expect(attemptArg.data.stageRef).toBe("S001");
+    // Active patch_seq is resolved against the submitted package version and
+    // frozen on the row (backlog/06 §Version and Patch Policy line 69).
+    expect(mocks.resolveActivePatchSeq).toHaveBeenCalledWith(
+      VALID_BODY.packageVersionId,
+    );
+    expect(attemptArg.data.patchSeq).toBe(0);
 
     // Submission row created with the recorded sha + sizes.
     expect(mocks.submissionCreate).toHaveBeenCalledTimes(1);
@@ -202,6 +212,36 @@ describe("POST /api/submissions (init)", () => {
         stageRef: "S001",
       }),
     );
+  });
+
+  it("freezes a non-zero active patchSeq on the StageAttempt row", async () => {
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+    mocks.enrollmentFindFirst.mockResolvedValue({ id: "enr-1" });
+    mocks.stageAttemptCreate.mockResolvedValue({ id: "att-9" });
+    mocks.submissionCreate.mockResolvedValue({ id: "sub-real" });
+    mocks.submissionUpdate.mockResolvedValue({ id: "sub-real" });
+    mocks.resolveActivePatchSeq.mockResolvedValue(3);
+
+    const res = await POST(makeRequest(VALID_BODY));
+    expect(res.status).toBe(200);
+    const attemptArg = mocks.stageAttemptCreate.mock.calls[0]?.[0];
+    expect(attemptArg.data.patchSeq).toBe(3);
+  });
+
+  it("falls back to patchSeq 0 when the resolver throws", async () => {
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-paid" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+    mocks.enrollmentFindFirst.mockResolvedValue({ id: "enr-1" });
+    mocks.stageAttemptCreate.mockResolvedValue({ id: "att-9" });
+    mocks.submissionCreate.mockResolvedValue({ id: "sub-real" });
+    mocks.submissionUpdate.mockResolvedValue({ id: "sub-real" });
+    mocks.resolveActivePatchSeq.mockRejectedValue(new Error("db hiccup"));
+
+    const res = await POST(makeRequest(VALID_BODY));
+    expect(res.status).toBe(200);
+    const attemptArg = mocks.stageAttemptCreate.mock.calls[0]?.[0];
+    expect(attemptArg.data.patchSeq).toBe(0);
   });
 
   it("uses caller-supplied stageAttemptId when provided (skips StageAttempt create)", async () => {
