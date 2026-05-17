@@ -103,7 +103,16 @@ reflect that snapshot.
       `getAuthoredRefusal` currently returns placeholder strings.
 - [ ] Wire production `SpendStore` and `RateLimiter` implementations from the web
       app rather than relying on the interfaces shipped in `packages/ai`.
-- [ ] Surface per-package mentor budget caps in the database schema.
+- [x] Surface per-package mentor budget caps in the database schema.
+      _(landed: `PackageVersion` gained three nullable USD columns
+      `mentorBudgetUserDailyUsd`, `mentorBudgetPackageUsd`,
+      `mentorBudgetStageUsd` via migration
+      `packages/db/prisma/migrations/1_mentor_budget_caps`. A new
+      `resolveMentorBudgetCaps()` helper in `packages/db/src` overlays
+      any populated columns on the platform defaults so the mentor
+      runtime can swap `defaultMentorBudgetCaps()` for a per-package
+      lookup without changing the `BudgetCaps` shape consumed by
+      `checkBudget` / `recordMentorRequestSpend`.)_
 - [ ] Build the mentor message review queue UI and flagged-output triage flow.
 - [x] Persist `mentor_messages` rows with full token telemetry from the web
       `/api/mentor/messages` route to Postgres. _(landed in
