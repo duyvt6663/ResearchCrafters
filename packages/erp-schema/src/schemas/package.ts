@@ -94,11 +94,53 @@ export const reviewSchema = z.object({
  * existing package. The validator (pedagogy layer) is where that escalation
  * lands once content has caught up.
  */
+/**
+ * Per-package authored refusal copy.
+ *
+ * Per backlog/05-mentor-safety.md (`Stage Policy` › "Author refusal copy per
+ * package; do not let the model generate refusals."), refusal strings shown to
+ * the learner are authored content — never produced by the LLM. This block
+ * lets a package override the platform-default copy resolved by
+ * `getAuthoredRefusal` in `@researchcrafters/ai`.
+ *
+ * Every scope is optional: any scope the package omits falls back to the
+ * platform default. Each scope override carries a short `title`, a learner-
+ * facing `body`, and an optional `hint` that points the learner at a useful
+ * next action.
+ */
+const refusalCopySchema = z.object({
+  title: z.string().min(1),
+  body: z.string().min(1),
+  hint: z.string().min(1).optional(),
+});
+
+export const mentorRefusalScopeEnum = z.enum([
+  'solution_request',
+  'out_of_context',
+  'rate_limit',
+  'budget_cap',
+  'policy_block',
+  'flagged_output',
+]);
+
+export const mentorRefusalsSchema = z.record(
+  mentorRefusalScopeEnum,
+  refusalCopySchema,
+);
+
 export const safetySchema = z.object({
   redaction_targets: z.array(z.string().min(1)).min(1, {
     message: 'safety.redaction_targets must contain at least one entry when the block is present',
   }),
   banned_patterns: z.array(z.string()).optional(),
+  /**
+   * Optional per-package authored refusal copy. See `mentorRefusalsSchema`.
+   * The keys are mentor refusal scopes (`solution_request`, `out_of_context`,
+   * `rate_limit`, `budget_cap`, `policy_block`, `flagged_output`); any scope
+   * the package omits falls back to platform defaults. Refusal strings MUST
+   * be authored — the LLM is never allowed to write them.
+   */
+  mentor_refusals: mentorRefusalsSchema.optional(),
 });
 
 /**

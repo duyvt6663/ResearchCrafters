@@ -11,6 +11,8 @@ export {
   releaseSchema,
   reviewSchema,
   safetySchema,
+  mentorRefusalsSchema,
+  mentorRefusalScopeEnum,
   fixtureRefreshIntervalEnum,
   fixtureRefreshTriggerEnum,
   fixtureRefreshCadenceObjectSchema,
