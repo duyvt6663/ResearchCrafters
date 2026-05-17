@@ -60,6 +60,20 @@ export type {
   DeviceCodeFlow,
 } from "@prisma/client";
 
+// Per-package mentor budget caps. Surfaces the nullable USD columns added
+// to `PackageVersion` in migration `1_mentor_budget_caps` so callers can
+// resolve effective caps for a package without re-implementing the
+// "row overrides; null inherits default" overlay rule.
+export {
+  resolveMentorBudgetCaps,
+  PackageVersionNotFoundError,
+} from "./mentor-budget-caps.js";
+export type {
+  MentorBudgetCapsUsd,
+  MentorBudgetCapsPrisma,
+  ResolveMentorBudgetCapsOptions,
+} from "./mentor-budget-caps.js";
+
 // Shared Prisma-backed `GradeStore` for the evaluator-sdk. Lives in
 // `packages/db` so both the worker grader (`gradeAttempt`) and the web
 // reviewer override route can construct the same persistent store instead
