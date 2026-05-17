@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => ({
   canAccess: vi.fn(),
   track: vi.fn(),
   resolveActivePatchSeq: vi.fn(),
+  stageAttemptCreate: vi.fn(),
+  withQueryTimeout: vi.fn(),
 }));
 
 vi.mock("@/lib/data/enrollment", () => ({
@@ -38,6 +40,10 @@ vi.mock("@/lib/telemetry", () => ({
 }));
 
 vi.mock("@researchcrafters/db", () => ({
+  prisma: {
+    stageAttempt: { create: mocks.stageAttemptCreate },
+  },
+  withQueryTimeout: mocks.withQueryTimeout,
   resolveActivePatchSeq: mocks.resolveActivePatchSeq,
 }));
 
@@ -51,6 +57,12 @@ beforeEach(() => {
   mocks.track.mockReset();
   mocks.resolveActivePatchSeq.mockReset();
   mocks.resolveActivePatchSeq.mockResolvedValue(0);
+  mocks.stageAttemptCreate.mockReset();
+  mocks.withQueryTimeout.mockReset();
+  // Identity wrapper around Prisma promises by default.
+  mocks.withQueryTimeout.mockImplementation(async (p) => p);
+  // Default: prisma write succeeds with a real cuid-shaped id.
+  mocks.stageAttemptCreate.mockResolvedValue({ id: "sa-cuid-1" });
 });
 
 function makeRequest(body: unknown, headers: Record<string, string> = {}): Request {
@@ -132,6 +144,84 @@ describe("POST /api/stage-attempts", () => {
       "stage_attempt_submitted",
       expect.objectContaining({ stageRef: "S001" }),
     );
+  });
+
+  it("persists a durable StageAttempt row and returns its cuid (backlog/06 line 177)", async () => {
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-1",
+      packageVersionId: "pv-1",
+      activeStageRef: "S001",
+    });
+    mocks.getStage.mockResolvedValue({
+      ref: "S001",
+      isFreePreview: true,
+      isLocked: false,
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-1" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+    mocks.resolveActivePatchSeq.mockResolvedValue(3);
+    mocks.stageAttemptCreate.mockResolvedValue({ id: "cuid_durable_1" });
+
+    const res = await POST(
+      makeRequest({
+        enrollmentId: "enr-1",
+        stageRef: "S001",
+        answer: { text: "draft" },
+      }),
+    );
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as {
+      attempt: { id: string; status: string };
+    };
+    expect(json.attempt.id).toBe("cuid_durable_1");
+    expect(json.attempt.id.startsWith("sa-")).toBe(false);
+    // Verify what gets persisted: the contract pins the durable column
+    // values (enrollment fk, stageRef, answer, executionStatus, patchSeq).
+    expect(mocks.stageAttemptCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          enrollmentId: "enr-1",
+          stageRef: "S001",
+          answer: { text: "draft" },
+          executionStatus: "queued",
+          patchSeq: 3,
+        }),
+      }),
+    );
+    expect(mocks.track).toHaveBeenCalledWith(
+      "stage_attempt_submitted",
+      expect.objectContaining({ attemptId: "cuid_durable_1", patchSeq: 3 }),
+    );
+  });
+
+  it("falls back to a synthesized sa- id when the DB write fails (best-effort durability)", async () => {
+    mocks.getEnrollment.mockResolvedValue({
+      id: "enr-1",
+      packageVersionId: "pv-1",
+      activeStageRef: "S001",
+    });
+    mocks.getStage.mockResolvedValue({
+      ref: "S001",
+      isFreePreview: true,
+      isLocked: false,
+    });
+    mocks.getSessionFromRequest.mockResolvedValue({ userId: "u-1" });
+    mocks.canAccess.mockResolvedValue({ allowed: true });
+    mocks.stageAttemptCreate.mockRejectedValue(new Error("db_unreachable"));
+
+    const res = await POST(
+      makeRequest({
+        enrollmentId: "enr-1",
+        stageRef: "S001",
+        answer: { text: "draft" },
+      }),
+    );
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { attempt: { id: string } };
+    // Synthesized fallback keeps the legacy `sa-<ts>` shape so callers
+    // built before this change still parse the response.
+    expect(json.attempt.id).toMatch(/^sa-\d+$/);
+    expect(mocks.track).toHaveBeenCalled();
   });
 
   it("resolves the active patchSeq against the enrollment's package version when the caller doesn't pin one", async () => {
