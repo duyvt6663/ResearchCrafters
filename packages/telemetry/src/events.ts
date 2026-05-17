@@ -136,6 +136,15 @@ export interface MentorFeedbackRequestedEvent {
   threadId?: string;
 }
 
+export interface MentorRateLimitedEvent {
+  name: 'mentor_rate_limited';
+  enrollmentId: string;
+  stageRef: string;
+  userId: string;
+  scope: 'per_user' | 'per_user_package';
+  retryAfterSeconds: number;
+}
+
 /**
  * Mentor first-token latency, captured per request so dashboards can
  * compute the p95 against the authored SLO. The current `LLMGateway` is
@@ -216,6 +225,7 @@ export type TelemetryEvent =
   | EvaluatorRedactionTriggeredEvent
   | MentorHintRequestedEvent
   | MentorFeedbackRequestedEvent
+  | MentorRateLimitedEvent
   | MentorFirstTokenLatencyEvent
   | StageCompletedEvent
   | ShareCardCreatedEvent

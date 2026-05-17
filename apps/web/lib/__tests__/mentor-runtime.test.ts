@@ -16,11 +16,16 @@
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { InMemoryMentorContextCache, MockLLMGateway } from "@researchcrafters/ai";
+import type { SpendStore } from "@researchcrafters/ai";
 import type { StagePolicy } from "@researchcrafters/erp-schema";
 import {
   runMentorRequest,
   type MentorRuntimePrisma,
 } from "../mentor-runtime.js";
+import type {
+  MentorRateLimitDecision,
+  MentorRateLimiter,
+} from "../mentor/rate-limiter.js";
 
 // The runtime imports `prisma` and `withQueryTimeout` from
 // `@researchcrafters/db`. We mock the module so the *default* code path in
@@ -291,6 +296,141 @@ describe("runMentorRequest", () => {
           (t.payload as { reason?: string }).reason === "visibility_misconfig",
       ),
     ).toBe(true);
+  });
+
+  it("returns a rate_limited outcome and skips the gateway when the limiter refuses", async () => {
+    const stub = makePrismaStub();
+    const gateway = new MockLLMGateway(ECHO_HANDLER);
+    const completeSpy = vi.spyOn(gateway, "complete");
+
+    const decision: MentorRateLimitDecision = {
+      allowed: false,
+      scope: "per_user_package",
+      retryAfterSeconds: 42,
+    };
+    const limiter: MentorRateLimiter = {
+      check: vi.fn().mockResolvedValue(decision),
+    };
+    const tracked: Array<{ event: string; payload: unknown }> = [];
+
+    const result = await runMentorRequest({
+      enrollment: { id: ENR_ID, packageVersionId: PV_ID },
+      stage: { ref: STAGE_REF, stagePolicy: policy() },
+      mode: "hint",
+      message: "hi",
+      userId: "u-99",
+      rateLimiter: limiter,
+      gateway,
+      prisma: stub.prisma,
+      withQueryTimeout: async (p) => p,
+      track: async (event, payload) => {
+        tracked.push({ event, payload });
+      },
+    });
+
+    expect(result.kind).toBe("rate_limited");
+    if (result.kind !== "rate_limited") return;
+    expect(result.scope).toBe("per_user_package");
+    expect(result.retryAfterSeconds).toBe(42);
+    expect(limiter.check).toHaveBeenCalledWith({
+      userId: "u-99",
+      packageId: PV_ID,
+    });
+    // Gateway must not be invoked, no rows persisted, no leak-test calls.
+    expect(completeSpy).not.toHaveBeenCalled();
+    expect(stub.threadFindFirst).not.toHaveBeenCalled();
+    expect(stub.messageCreate).not.toHaveBeenCalled();
+    // Telemetry event recorded for ops dashboards.
+    expect(
+      tracked.some(
+        (t) =>
+          t.event === "mentor_rate_limited" &&
+          (t.payload as { scope?: string }).scope === "per_user_package",
+      ),
+    ).toBe(true);
+  });
+
+  it("records mentor spend on the spend store with the priced token counts", async () => {
+    const stub = makePrismaStub();
+    stub.threadFindFirst.mockResolvedValue({ id: "thread-spend" });
+    stub.messageCreate
+      .mockResolvedValueOnce({ id: "u" })
+      .mockResolvedValueOnce({ id: "a" });
+
+    const gateway = new MockLLMGateway(ECHO_HANDLER);
+    const recordSpend = vi.fn();
+    const spendStore: SpendStore = {
+      getUserDailySpendUsd: async () => 0,
+      getPackageSpendUsd: async () => 0,
+      getStageSpendUsd: async () => 0,
+      recordSpend,
+    };
+
+    const result = await runMentorRequest({
+      enrollment: { id: ENR_ID, packageVersionId: PV_ID },
+      stage: { ref: STAGE_REF, stagePolicy: policy() },
+      mode: "review_draft",
+      message: "Spend tracking smoke",
+      userId: "u-paid",
+      spendStore,
+      // Force a known price so the assertion is independent of default table.
+      priceTable: {
+        "claude-3-5-sonnet-latest": {
+          inputPerMillionUsd: 3.0,
+          outputPerMillionUsd: 15.0,
+        },
+      },
+      gateway,
+      prisma: stub.prisma,
+      withQueryTimeout: async (p) => p,
+    });
+
+    if (result.kind !== "ok") throw new Error("expected ok outcome");
+    expect(recordSpend).toHaveBeenCalledTimes(1);
+    const call = recordSpend.mock.calls[0]?.[0] as {
+      userId: string;
+      packageId: string;
+      stageId: string;
+      usd: number;
+    };
+    expect(call.userId).toBe("u-paid");
+    expect(call.packageId).toBe(PV_ID);
+    expect(call.stageId).toBe(STAGE_REF);
+    // The mock gateway returns positive token counts; spent must be >= 0
+    // and round-trip the explicit price table.
+    expect(call.usd).toBeGreaterThan(0);
+    expect(result.spentUsd).toBeCloseTo(call.usd, 10);
+  });
+
+  it("skips spend recording when no userId is provided", async () => {
+    const stub = makePrismaStub();
+    stub.threadFindFirst.mockResolvedValue({ id: "thread-anon" });
+    stub.messageCreate
+      .mockResolvedValueOnce({ id: "u" })
+      .mockResolvedValueOnce({ id: "a" });
+    const recordSpend = vi.fn();
+    const spendStore: SpendStore = {
+      getUserDailySpendUsd: async () => 0,
+      getPackageSpendUsd: async () => 0,
+      getStageSpendUsd: async () => 0,
+      recordSpend,
+    };
+
+    const result = await runMentorRequest({
+      enrollment: { id: ENR_ID, packageVersionId: PV_ID },
+      stage: { ref: STAGE_REF, stagePolicy: policy() },
+      mode: "hint",
+      message: "anon path",
+      // No userId provided.
+      spendStore,
+      gateway: new MockLLMGateway(ECHO_HANDLER),
+      prisma: stub.prisma,
+      withQueryTimeout: async (p) => p,
+    });
+
+    if (result.kind !== "ok") throw new Error("expected ok outcome");
+    expect(recordSpend).not.toHaveBeenCalled();
+    expect(result.spentUsd).toBe(0);
   });
 
   it("threads a shared context cache so repeat requests for the same stage are stage-static", async () => {

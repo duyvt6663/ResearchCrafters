@@ -1,7 +1,6 @@
 export { loadPackage } from './loader.js';
 export { buildPackageManifest } from './build.js';
 export { sha256File } from './hash.js';
-export { computeManifestSourceHash } from './source-hash.js';
 export {
   validatePackage,
   validateStructural,
