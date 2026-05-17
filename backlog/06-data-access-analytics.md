@@ -127,15 +127,52 @@ reflect that snapshot.
       a `branchId`; the decision node is resolved from the latest
       `NodeTraversal` for that (enrollment, branch).)_
 - [ ] Emit `branch_feedback_viewed`.
-- [ ] Emit `runner_job_started`.
-- [ ] Emit `runner_job_completed`.
-- [ ] Emit `grade_created`.
-- [ ] Emit `grade_overridden`.
-- [ ] Emit `evaluator_redaction_triggered`.
-- [ ] Emit `mentor_hint_requested`.
-- [ ] Emit `mentor_feedback_requested`.
+- [x] Emit `runner_job_started`.
+      _(Fired from `apps/web/app/api/submissions/[id]/finalize/route.ts`
+      after enqueuing the Run row; payload carries `runId`, `submissionId`,
+      `stageRef`, and `queueDeferred`.)_
+- [x] Emit `runner_job_completed`.
+      _(Fired from `apps/web/app/api/runs/[id]/callback/route.ts` once the
+      runner reports a terminal status; payload carries `runId`,
+      `submissionId`, `status`, and `durationMs`.)_
+- [x] Emit `grade_created`.
+      _(Audit-grade. Fired from
+      `apps/worker/src/jobs/submission-run.ts` immediately after the
+      grader returns a Grade row and the `StageAttempt.gradeId` mirror is
+      written. The grader is idempotent on
+      `(submissionId, rubricVersion, evaluatorVersion)`, so a retry
+      returns the same `gradeId` and the dual-write sink dedupes
+      downstream.)_
+- [x] Emit `grade_overridden`.
+      _(Audit-grade. Fired from
+      `apps/web/app/api/grades/[id]/override/route.ts` after the
+      reviewer override is persisted; payload carries `gradeId`,
+      `reviewerId`, and the previous/next score tuple.)_
+- [x] Emit `evaluator_redaction_triggered`.
+      _(Audit-grade. Fired from `apps/web/lib/mentor-runtime.ts` at
+      every redaction site — prompt-build, mid-stream, and post-stream
+      — so dashboards see each trigger; payload carries
+      `matchedTargets` and the relevant `submissionId`/`gradeId`.)_
+- [x] Emit `mentor_hint_requested`.
+      _(Fired from `apps/web/app/api/mentor/messages/route.ts` when the
+      mentor request `mode === "hint"`; payload carries `enrollmentId`,
+      `stageRef`, and `threadId`.)_
+- [x] Emit `mentor_feedback_requested`.
+      _(Fired from `apps/web/app/api/mentor/messages/route.ts` when the
+      mentor request `mode !== "hint"` (the feedback / explain-branch
+      branch); payload carries `enrollmentId` and `stageRef`. `threadId`
+      is optional on the event and is omitted at this site because the
+      mentor thread is created later in the runtime call.)_
 - [ ] Emit `stage_completed`.
-- [ ] Emit `share_card_created`.
+- [x] Emit `share_card_created`.
+      _(Fired from two complementary sites so PostHog records the share
+      lifecycle exactly once per surface: `apps/web/app/api/share-cards/route.ts`
+      emits when the share-card row is first created with the synthesized
+      `shareCardId`/`enrollmentId`/`packageVersionId`, and
+      `apps/worker/src/jobs/share-card-render.ts` emits again after the
+      render job assigns the durable `publicSlug`, carrying the same
+      tuple plus `publicSlug` so analytics can correlate creation with
+      the public URL.)_
 - [ ] Emit `paywall_viewed`.
 - [ ] Emit `subscription_started`.
 

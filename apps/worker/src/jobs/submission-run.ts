@@ -20,6 +20,7 @@
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { track } from '@researchcrafters/telemetry';
 import {
   setActiveSpanAttributes,
   withSpan,
@@ -527,6 +528,21 @@ async function runSubmissionRunInner(
         passed: grade.passed,
         score: grade.score,
       },
+    });
+    // Audit-grade per backlog/06 §Events Storage; emit once per
+    // newly-created Grade row. The grader is idempotent on
+    // (submissionId, rubricVersion, evaluatorVersion), so a retry
+    // returns the same grade.id and the dual-write sink dedupes on
+    // event_uuid downstream.
+    await track({
+      name: 'grade_created',
+      gradeId: grade.id,
+      submissionId: grade.submissionId,
+      stageAttemptId: grade.stageAttemptId,
+      rubricVersion: grade.rubricVersion,
+      evaluatorVersion: grade.evaluatorVersion,
+      passed: grade.passed,
+      ...(typeof grade.score === 'number' ? { score: grade.score } : {}),
     });
     return {
       runId: job.runId,
